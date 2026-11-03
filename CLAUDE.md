@@ -92,7 +92,7 @@ cd backend
 uv sync                                  # instalar dependências
 uv run alembic upgrade head              # aplicar migrations
 uv run alembic revision --autogenerate -m "descricao"
-uv run uvicorn app.main:app --reload
+uv run fastapi dev main.py               # http://localhost:8000/docs
 uv run pytest tests/unit
 uv run pytest tests/integration          # requer Docker (Testcontainers)
 uv run ruff check . && uv run ruff format . && uv run mypy app
@@ -117,39 +117,39 @@ Se um comando acima ainda não existir, crie-o seguindo este padrão e atualize 
 
 ## Modelo de dados
 
-Todas as entidades de usuário têm `usuario_id` (o `sub` do Auth0) e timestamps.
+Nomes em inglês (classe / tabela). Detalhes e glossário em `_docs/modelo-de-dados.md`. Todas as entidades de usuário têm `user_id` (o `sub` do Auth0), `created_at` e `updated_at`.
 
-- **Projeto**: nome, descrição, público_alvo, tom_de_voz (padrão). CRUD completo. Topo da hierarquia: a marca do usuário ou um cliente. Exclusão só sem assuntos e documentos (`409`).
-- **Assunto**: projeto_id, nome, descrição, público_alvo e tom_de_voz **opcionais** (vazios = valem os do projeto). CRUD completo.
-- **Post**: título, assunto_id, status (`rascunho`, `aprovado`, `publicado`), data_prevista. CRUD completo. Sem `projeto_id`: o projeto vem do assunto.
-- **VariacaoPost**: post_id, rede (`linkedin`, `instagram`, `x`), texto, hashtags, contagem de caracteres. **Detalhe de Post** (tela mestre-detalhe).
-- **Imagem**: variacao_id, chave S3, prompt usado, formato.
-- **Metrica**: variacao_id, publicado_em, impressões, curtidas, comentários, compartilhamentos, cliques, coletado_em.
-- **Documento**: projeto_id, nome, chave S3, tipo, status de processamento (`pendente`, `processando`, `pronto`, `erro`).
-- **Chunk**: documento_id, conteúdo, embedding (`vector`), `tsvector`. `ON DELETE CASCADE` a partir de Documento.
-- **ExecucaoAgente** (com projeto_id) / **PassoAgente**: registro de cada execução e de cada tool chamada, exibido na tela.
+- **Project** / `projects`: name, description, target_audience, voice_tone (padrão). CRUD completo. Topo da hierarquia: a marca do usuário ou um cliente. Exclusão só sem subjects e documents (`409`).
+- **Subject** / `subjects`: project_id, name, description, target_audience e voice_tone **opcionais** (vazios = valem os do projeto). CRUD completo.
+- **Post** / `posts`: title, subject_id, status (`draft`, `review`, `approved`, `published`), expected_date. CRUD completo. Sem `project_id`: o projeto vem do subject.
+- **PostVariation** / `post_variations`: post_id, network (`linkedin`, `instagram`, `x`), text, hashtags, char_count. **Detalhe de Post** (tela mestre-detalhe).
+- **Image** / `images`: variation_id, s3_key, prompt, format.
+- **Metric** / `metrics`: variation_id, published_at, impressions, likes, comments, shares, clicks, collected_at.
+- **Document** / `documents`: project_id, name, s3_key, type, status (`pending`, `processing`, `ready`, `error`).
+- **Chunk** / `chunks`: document_id, content, embedding (`vector`), search_vector (`tsvector`). `ON DELETE CASCADE` a partir de Document.
+- **AgentRun** / `agent_runs` (com project_id) e **AgentStep** / `agent_steps`: registro de cada execução e de cada tool chamada, exibido na tela.
 
-No banco, salve **apenas a chave do objeto S3** (ex.: `usuarios/{id}/projetos/{id}/posts/{id}/{uuid}.png`), nunca a URL.
+No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/posts/{id}/{uuid}.png`), nunca a URL.
 
-**Escopo por projeto:** listagens de assuntos, posts, documentos, relatório e execuções exigem `projeto_id`, e o backend sempre confere se o projeto pertence ao usuário do token. No frontend, o projeto atual vem do seletor no cabeçalho.
+**Escopo por projeto:** listagens de subjects, posts, documents, relatório e execuções exigem `project_id`, e o backend sempre confere se o projeto pertence ao usuário do token. No frontend, o projeto atual vem do seletor no cabeçalho.
 
 ## Agente
 
 - Loop: o LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder.
 - **Máximo de 8 iterações** por execução. Ao atingir o limite, encerre e informe o usuário.
-- Prompts de sistema separados para **Ideação** e **Criação**, em `app/ai/agent/prompts/`.
+- Prompts de sistema separados para **Ideação** (`ideation`) e **Criação** (`creation`), em `app/ai/agent/prompts/`.
 - Tools (uma por arquivo em `app/ai/tools/`, com schema de entrada em Pydantic):
-  - `pesquisar_web(query)`: Tavily ou Brave, sempre retornando as fontes
-  - `obter_projeto()`, `listar_assuntos()` e `obter_assunto(id)` (público e tom resolvidos: do assunto ou, se vazios, do projeto)
-  - `buscar_documentos(query)`: RAG híbrido (vetorial + full-text)
-  - `buscar_posts_anteriores(assunto)`: exemplos de estilo, apenas posts aprovados ou publicados
-  - `analisar_desempenho()`: agregados de métricas por assunto, dia, horário, rede e imagem
-  - `adaptar_para_rede(texto, rede)`: limites e formato de cada rede
-  - `gerar_imagem(prompt, formato)`: sem texto dentro da imagem
-  - `salvar_rascunho(post)`
-- **Toda tool recebe o `usuario_id` e o `projeto_id` do contexto** (token e projeto validado na requisição), nunca do LLM. O LLM jamais escolhe de qual usuário ou projeto ler dados.
-- O agente **só salva como rascunho**. Aprovar e publicar é sempre ação do usuário.
-- Cada passo (tool, argumentos, duração, erro) vira log estruturado e um registro em `PassoAgente`.
+  - `search_web(query)`: Tavily ou Brave, sempre retornando as fontes
+  - `get_project()`, `list_subjects()` e `get_subject(id)` (público e tom resolvidos: do subject ou, se vazios, do projeto)
+  - `search_documents(query)`: RAG híbrido (vetorial + full-text)
+  - `search_past_posts(subject)`: exemplos de estilo, apenas posts `approved` ou `published`
+  - `analyze_performance()`: agregados de métricas por subject, dia, horário, rede e imagem
+  - `adapt_for_network(text, network)`: limites e formato de cada rede
+  - `generate_image(prompt, format)`: sem texto dentro da imagem
+  - `save_draft(post)`
+- **Toda tool recebe o `user_id` e o `project_id` do contexto** (token e projeto validado na requisição), nunca do LLM. O LLM jamais escolhe de qual usuário ou projeto ler dados.
+- O agente **só salva como `draft`**. Aprovar e publicar é sempre ação do usuário.
+- Cada passo (tool, argumentos, duração, erro) vira log estruturado e um registro em `AgentStep`.
 - Recomendações de desempenho só com amostra mínima (5 posts por grupo). Abaixo disso, o agente deve dizer que os dados são insuficientes.
 
 ## Provedores de IA
@@ -163,11 +163,11 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `usuarios/{id}/projetos/{i
 1. O frontend pede ao backend uma URL pré-assinada de upload (o backend valida tipo e tamanho).
 2. O arquivo vai **direto do navegador para o S3**.
 3. O backend é avisado, baixa o arquivo, extrai o texto (pypdf, python-docx), faz chunking, gera embeddings e grava em `Chunk`.
-4. A busca combina similaridade vetorial e full-text, sempre filtrando por `usuario_id` e `projeto_id`.
+4. A busca combina similaridade vetorial e full-text, sempre filtrando por `user_id` e `project_id`.
 
 ## Convenções
 
-- **Idioma:** domínio, entidades e rotas em português (`assuntos`, `posts`, `variacoes`). Termos técnicos genéricos podem ficar em inglês (`service`, `repository`, `provider`).
+- **Idioma:** código, banco e API em **inglês**: classes, tabelas, colunas, valores de enum, rotas e campos da API (`/api/v1/subjects`, `subject_id`), nomes de tools e comentários. **Português** só no que o usuário vê no frontend: textos da interface (via i18n) e URLs das páginas (`/assuntos`, `/posts/novo`). A documentação em `_docs/` fica em português, citando os identificadores em inglês. Ver decisão 20 em `_docs/decisoes.md`.
 - **Interface multilíngue (pt-BR e en):** i18next. Nenhum texto de interface fica fixo no componente: todo texto novo entra em `frontend/src/locales/pt-BR/app.json` **e** `frontend/src/locales/en/app.json` (namespace `app`), e é lido com `useTranslation("app")`. Números e datas usam `useFormat()` (`src/lib/format.ts`). pt-BR é o idioma padrão.
 - **Backend:** routers finos, regra de negócio em `services/`, acesso a dados em `repositories/`. Tipagem completa (mypy sem erros). Funções assíncronas para I/O.
 - **API:** REST, prefixo `/api/v1`, erros no formato `{"detail": ...}`. Documentação via OpenAPI do FastAPI.
@@ -179,7 +179,7 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `usuarios/{id}/projetos/{i
 
 - **Configuração** só por variáveis de ambiente (pydantic-settings). Mantenha `.env.example` atualizado. Nunca commite `.env`, chaves ou kubeconfig.
 - **Segredos** em produção ficam em Secrets do Kubernetes e no GitHub Secrets.
-- **Logs** em JSON no stdout (structlog), com `request_id` e `usuario_id` quando houver. Nunca grave logs em arquivo. Nunca registre tokens, chaves ou conteúdo completo de documentos.
+- **Logs** em JSON no stdout (structlog), com `request_id` e `user_id` quando houver. Nunca grave logs em arquivo. Nunca registre tokens, chaves ou conteúdo completo de documentos.
 - **Dependências** declaradas e travadas (`uv.lock`, `package-lock.json`).
 - **Processos sem estado:** nada de arquivos em disco local. Tudo que persiste vai para o Postgres ou o S3.
 
@@ -248,4 +248,4 @@ O núcleo (CRUDs, mestre-detalhe, RAG, agente, OAuth, CI/CD, testes, deploy) nun
 - Prazo para finalizacao 15/11/2026: prefira a solução mais simples que atenda aos requisitos do TCC.
 - Não adicione dependências sem necessidade clara; se adicionar, explique o motivo.
 - Mantenha o README e este arquivo atualizados quando mudar comandos, estrutura ou decisões.
-- A documentação técnica fica em `docs/` (índice em `docs/README.md`). Todo push de funcionalidade nova atualiza `docs/changelog.md` e os documentos afetados; decisões novas entram em `docs/decisoes.md`.
+- A documentação técnica fica em `_docs/` (índice em `_docs/README.md`). Todo push de funcionalidade nova atualiza `_docs/changelog.md` e os documentos afetados; decisões novas entram em `_docs/decisoes.md`.

@@ -1,10 +1,27 @@
 # Modelo de dados
 
-> Status: **planejado**. Toda mudança de modelo vem com migration Alembic revisada à mão. Atualize este diagrama junto.
+> Status: **em implementação** (`projects`, `subjects`, `posts` e `images` já têm migration). IDs são UUID, gerados pelo backend. Toda mudança de modelo vem com migration Alembic revisada à mão. Atualize este diagrama junto.
 
-Todas as entidades do usuário têm `usuario_id` (o `sub` do Auth0), `criado_em` e `atualizado_em`. Todas as consultas filtram por `usuario_id`.
+Nomes de classes, tabelas, colunas e valores de enum ficam em **inglês** (ver [decisão 20](decisoes.md)). A interface traduz os valores para o usuário (ex.: `draft` aparece como "Rascunho").
 
-O **Projeto** (a marca do próprio usuário ou um cliente) é o topo da hierarquia: assuntos, documentos e execuções do agente pertencem a um projeto, e os posts pertencem a ele através do assunto. Assim, o conteúdo e os documentos de um cliente nunca se misturam com os de outro.
+Todas as entidades do usuário têm `user_id` (o `sub` do Auth0), `created_at` e `updated_at`. Todas as consultas filtram por `user_id`.
+
+O **Project** (a marca do próprio usuário ou um cliente) é o topo da hierarquia: subjects, documents e agent runs pertencem a um projeto, e os posts pertencem a ele através do subject. Assim, o conteúdo e os documentos de um cliente nunca se misturam com os de outro.
+
+## Glossário
+
+| Domínio (interface) | Classe | Tabela |
+| --- | --- | --- |
+| Projeto | `Project` | `projects` |
+| Assunto | `Subject` | `subjects` |
+| Post | `Post` | `posts` |
+| Variação do post | `PostVariation` | `post_variations` |
+| Imagem | `Image` | `images` |
+| Métrica | `Metric` | `metrics` |
+| Documento | `Document` | `documents` |
+| Trecho (chunk) | `Chunk` | `chunks` |
+| Execução do agente | `AgentRun` | `agent_runs` |
+| Passo do agente | `AgentStep` | `agent_steps` |
 
 ## Diagrama de classes
 
@@ -12,175 +29,176 @@ O **Projeto** (a marca do próprio usuário ou um cliente) é o topo da hierarqu
 classDiagram
     direction LR
 
-    class Projeto {
+    class Project {
         +UUID id
-        +str usuario_id
-        +str nome
-        +str descricao
-        +str publico_alvo
-        +str tom_de_voz
+        +str user_id
+        +str name
+        +str description
+        +str target_audience
+        +str voice_tone
     }
 
-    class Assunto {
+    class Subject {
         +UUID id
-        +str usuario_id
-        +UUID projeto_id
-        +str nome
-        +str descricao
-        +str? publico_alvo
-        +str? tom_de_voz
+        +str user_id
+        +UUID project_id
+        +str name
+        +str description
+        +str? target_audience
+        +str? voice_tone
     }
 
     class Post {
         +UUID id
-        +str usuario_id
-        +UUID assunto_id
-        +str titulo
-        +StatusPost status
-        +date data_prevista
+        +str user_id
+        +UUID subject_id
+        +str title
+        +PostStatus status
+        +date expected_date
     }
 
-    class VariacaoPost {
+    class PostVariation {
         +UUID id
         +UUID post_id
-        +Rede rede
-        +str texto
+        +Network network
+        +str text
         +list~str~ hashtags
-        +int contagem_caracteres
+        +int char_count
     }
 
-    class Imagem {
+    class Image {
         +UUID id
-        +UUID variacao_id
-        +str chave_s3
+        +UUID variation_id
+        +str s3_key
         +str? prompt
-        +FormatoImagem formato
+        +ImageFormat format
     }
 
-    class Metrica {
+    class Metric {
         +UUID id
-        +UUID variacao_id
-        +datetime publicado_em
-        +int impressoes
-        +int curtidas
-        +int comentarios
-        +int compartilhamentos
-        +int cliques
-        +datetime coletado_em
+        +UUID variation_id
+        +datetime published_at
+        +int impressions
+        +int likes
+        +int comments
+        +int shares
+        +int clicks
+        +datetime collected_at
     }
 
-    class Documento {
+    class Document {
         +UUID id
-        +str usuario_id
-        +UUID projeto_id
-        +str nome
-        +str chave_s3
-        +str tipo
-        +int tamanho_bytes
-        +StatusDocumento status
-        +str? mensagem_erro
-        +int? total_chunks
+        +str user_id
+        +UUID project_id
+        +str name
+        +str s3_key
+        +str type
+        +int size_bytes
+        +DocumentStatus status
+        +str? error_message
+        +int? chunk_count
     }
 
     class Chunk {
         +UUID id
-        +UUID documento_id
-        +str conteudo
+        +UUID document_id
+        +str content
         +vector embedding
-        +tsvector busca_texto
+        +tsvector search_vector
     }
 
-    class ExecucaoAgente {
+    class AgentRun {
         +UUID id
-        +str usuario_id
-        +UUID projeto_id
-        +ModoAgente modo
-        +str pedido
-        +str? resposta
+        +str user_id
+        +UUID project_id
+        +AgentMode mode
+        +str request
+        +str? response
         +UUID? post_id
-        +int iteracoes
-        +StatusExecucao status
-        +datetime iniciada_em
-        +datetime? finalizada_em
+        +int iterations
+        +RunStatus status
+        +datetime started_at
+        +datetime? finished_at
     }
 
-    class PassoAgente {
+    class AgentStep {
         +UUID id
-        +UUID execucao_id
-        +int ordem
+        +UUID run_id
+        +int step_number
         +str tool
-        +json argumentos
-        +json resultado
-        +str? resultado_resumo
-        +int duracao_ms
-        +str? erro
+        +json arguments
+        +json result
+        +str? result_summary
+        +int duration_ms
+        +str? error
     }
 
-    class StatusPost {
+    class PostStatus {
         <<enumeration>>
-        rascunho
-        aprovado
-        publicado
+        draft
+        review
+        approved
+        published
     }
 
-    class Rede {
+    class Network {
         <<enumeration>>
         linkedin
         instagram
         x
     }
 
-    class StatusDocumento {
+    class DocumentStatus {
         <<enumeration>>
-        pendente
-        processando
-        pronto
-        erro
+        pending
+        processing
+        ready
+        error
     }
 
-    class FormatoImagem {
+    class ImageFormat {
         <<enumeration>>
         1:1
         4:5
         16:9
     }
 
-    class ModoAgente {
+    class AgentMode {
         <<enumeration>>
-        ideacao
-        criacao
+        ideation
+        creation
     }
 
-    class StatusExecucao {
+    class RunStatus {
         <<enumeration>>
-        executando
-        concluida
-        erro
-        limite_atingido
+        running
+        completed
+        error
+        limit_reached
     }
 
-    Projeto "1" --> "*" Assunto
-    Projeto "1" --> "*" Documento
-    Projeto "1" --> "*" ExecucaoAgente
-    Assunto "1" --> "*" Post
-    Post "1" *-- "*" VariacaoPost : mestre-detalhe
-    VariacaoPost "1" *-- "*" Imagem
-    VariacaoPost "1" *-- "*" Metrica
-    Documento "1" *-- "*" Chunk : ON DELETE CASCADE
-    ExecucaoAgente "1" *-- "*" PassoAgente
+    Project "1" --> "*" Subject
+    Project "1" --> "*" Document
+    Project "1" --> "*" AgentRun
+    Subject "1" --> "*" Post
+    Post "1" *-- "*" PostVariation : mestre-detalhe
+    PostVariation "1" *-- "*" Image
+    PostVariation "1" *-- "*" Metric
+    Document "1" *-- "*" Chunk : ON DELETE CASCADE
+    AgentRun "1" *-- "*" AgentStep
 ```
 
 ## Regras
 
 | Entidade | Regra |
 | --- | --- |
-| Projeto | CRUD completo. Define o público-alvo e o tom de voz padrão. Só pode ser excluído quando não tem assuntos nem documentos (a API responde `409` caso contrário), para evitar apagar conteúdo e arquivos no S3 por engano. |
-| Assunto | CRUD completo (requisito do TCC). Pertence a um projeto. `publico_alvo` e `tom_de_voz` são opcionais: quando vazios, valem os do projeto. Só pode ser excluído sem posts (`409` caso contrário). |
-| Post | CRUD completo. O agente só cria com status `rascunho`; aprovar e publicar é ação do usuário. Não tem `projeto_id`: o projeto vem do assunto (`post → assunto → projeto`), evitando dados duplicados que podem ficar inconsistentes. |
-| VariacaoPost | Editada na mesma tela do Post (mestre-detalhe, requisito do TCC). No máximo uma variação por rede em cada post, e pelo menos uma. Ao salvar o post, a variação de uma rede que continua mantém o `id` (as imagens e métricas ficam ligadas a ele). `contagem_caracteres` conta texto + hashtags e não pode passar do limite da rede (LinkedIn 3000, Instagram 2200, X 280). |
-| Imagem | Guarda só a chave S3 (ex.: `usuarios/{id}/projetos/{id}/posts/{id}/{uuid}.png`), nunca a URL. `prompt` preenchido quando gerada pelo agente, `null` quando enviada pelo usuário. PNG, JPEG ou WebP até 5 MB; no máximo 10 por variação. Apagada (com o objeto no S3) junto com a variação. |
-| Metrica | Uma coleta registrada manualmente pelo usuário, só com o post `publicado`. Os números são totais acumulados no momento da coleta; a mais recente é a que vale. `coletado_em` não pode ser antes de `publicado_em` nem no futuro. Taxa de engajamento = (curtidas + comentários + compartilhamentos + cliques) ÷ impressões. Apagada junto com a variação. |
-| Documento | Pertence a um projeto e só é usado pelo RAG desse projeto. O status acompanha o processamento: `pendente` → `processando` → `pronto` ou `erro`. Chave S3: `usuarios/{id}/projetos/{id}/documentos/{uuid}.{ext}`. |
-| Chunk | Apagado em cascata com o Documento. A dimensão do `embedding` vem da configuração; trocar o modelo de embeddings exige reprocessar tudo. Índices: HNSW no `embedding` e GIN no `tsvector`. |
-| ExecucaoAgente | Criada como `executando` e atualizada pelo loop em segundo plano. `post_id` aponta para o rascunho salvo pelo agente (modo criação). |
-| PassoAgente | Um registro por tool chamada, gravado assim que a tool termina (é o que a tela mostra ao vivo). `resultado` guarda a saída completa; `resultado_resumo` é o texto curto exibido. |
+| Project | CRUD completo. Define o público-alvo e o tom de voz padrão. Só pode ser excluído quando não tem subjects nem documents (a API responde `409` caso contrário), para evitar apagar conteúdo e arquivos no S3 por engano. |
+| Subject | CRUD completo (requisito do TCC). Pertence a um projeto. `target_audience` e `voice_tone` são opcionais: quando vazios, valem os do projeto. Só pode ser excluído sem posts (`409` caso contrário). |
+| Post | CRUD completo. Status: `draft` → `review` (aguardando revisão) → `approved` → `published`, guardado como enum nativo do Postgres (`post_status`). O agente só cria com status `draft`; enviar para revisão, aprovar e publicar é ação do usuário. Não tem `project_id`: o projeto vem do subject (`post → subject → project`), evitando dados duplicados que podem ficar inconsistentes. |
+| PostVariation | Editada na mesma tela do Post (mestre-detalhe, requisito do TCC). No máximo uma variação por rede em cada post, e pelo menos uma. Ao salvar o post, a variação de uma rede que continua mantém o `id` (as imagens e métricas ficam ligadas a ele). `char_count` conta texto + hashtags e não pode passar do limite da rede (LinkedIn 3000, Instagram 2200, X 280). |
+| Image | Guarda só a chave S3 (ex.: `users/{id}/projects/{id}/posts/{id}/{uuid}.png`), nunca a URL. `prompt` preenchido quando gerada pelo agente, `null` quando enviada pelo usuário. PNG, JPEG ou WebP até 5 MB; no máximo 10 por variação. Apagada (com o objeto no S3) junto com a variação. |
+| Metric | Uma coleta registrada manualmente pelo usuário, só com o post `published`. Os números são totais acumulados no momento da coleta; a mais recente é a que vale. `collected_at` não pode ser antes de `published_at` nem no futuro. Taxa de engajamento = (likes + comments + shares + clicks) ÷ impressions. Apagada junto com a variação. |
+| Document | Pertence a um projeto e só é usado pelo RAG desse projeto. O status acompanha o processamento: `pending` → `processing` → `ready` ou `error`. Chave S3: `users/{id}/projects/{id}/documents/{uuid}.{ext}`. |
+| Chunk | Apagado em cascata com o Document. A dimensão do `embedding` vem da configuração; trocar o modelo de embeddings exige reprocessar tudo. Índices: HNSW no `embedding` e GIN no `search_vector`. |
+| AgentRun | Criada como `running` e atualizada pelo loop em segundo plano. `post_id` aponta para o rascunho salvo pelo agente (modo `creation`). |
+| AgentStep | Um registro por tool chamada, gravado assim que a tool termina (é o que a tela mostra ao vivo). `result` guarda a saída completa; `result_summary` é o texto curto exibido. |

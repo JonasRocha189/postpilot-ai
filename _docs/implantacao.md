@@ -76,7 +76,7 @@ flowchart LR
 
 ## Logs
 
-JSON no stdout (structlog), com `request_id` e `usuario_id` quando houver. Sem arquivos de log. Tokens, chaves e conteúdo completo de documentos nunca são registrados.
+JSON no stdout (structlog), com `request_id` e `user_id` quando houver. Sem arquivos de log. Tokens, chaves e conteúdo completo de documentos nunca são registrados.
 
 ## Backup
 

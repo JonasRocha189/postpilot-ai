@@ -12,6 +12,20 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-03
+
+### Adicionado
+
+- Backend: FastAPI, conexão assíncrona com o PostgreSQL (SQLAlchemy + asyncpg), configuração por `.env` (pydantic-settings) e Alembic com a primeira migration (`projects`, `subjects`, `posts`, `images`).
+- API: CRUD de projetos (`/api/v1/projects`), filtrado pelo dono e com `409` ao excluir projeto com assuntos. Usuário fixo `dev-user` até a integração com o Auth0 (dependência `get_current_user_id`).
+- Ambiente local: Postgres do Docker na porta `5433`, para não conflitar com um PostgreSQL instalado no Windows.
+
+### Alterado
+
+- Código, banco e API em inglês; português só na interface (decisão 20). `modelo-de-dados.md`, `api.md`, `agente-e-rag.md`, `arquitetura.md`, `frontend-rotas.md` e `implantacao.md` atualizados com os novos nomes, e glossário domínio ↔ código no modelo de dados.
+- Documentação movida de `docs/` para `_docs/`.
+- Post ganhou o status `review` (aguardando revisão), entre `draft` e `approved`, como enum do Postgres (`post_status`). IDs passam a ser UUID.
+
 ## 2026-10-28
 
 ### Adicionado

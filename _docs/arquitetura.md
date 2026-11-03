@@ -73,17 +73,17 @@ Pontos importantes:
 ```mermaid
 flowchart TB
     subgraph api["api/ (routers FastAPI)"]
-        r_assuntos["assuntos"]
-        r_posts["posts / variações"]
-        r_docs["documentos"]
-        r_metricas["métricas / relatório"]
-        r_agente["agente"]
+        r_assuntos["subjects"]
+        r_posts["posts / variations"]
+        r_docs["documents"]
+        r_metricas["metrics / reports"]
+        r_agente["agent"]
     end
 
     core["core/<br/><i>config, JWT Auth0, logging</i>"]
 
     subgraph services["services/"]
-        s_crud["Serviços de domínio<br/><i>assuntos, posts, métricas</i>"]
+        s_crud["Serviços de domínio<br/><i>subjects, posts, metrics</i>"]
         s_docs["Serviço de documentos"]
         s_agente["Serviço do agente"]
     end
@@ -122,7 +122,7 @@ Regras de dependência:
 
 - Routers são finos e só chamam services.
 - O código do agente depende **apenas das interfaces** em `ai/providers/`, nunca de um SDK diretamente.
-- O `usuario_id` vem do token validado em `core/` e é repassado a services, repositories e tools. O LLM nunca escolhe de qual usuário ler dados.
+- O `user_id` vem do token validado em `core/` e é repassado a services, repositories e tools. O LLM nunca escolhe de qual usuário ler dados.
 
 ## Componentes do frontend
 
