@@ -9,7 +9,7 @@
 > Todas as telas estão em **português e inglês**. O seletor de idioma fica no cabeçalho (entre o tema e o usuário) e no rodapé das telas de login e cadastro.
 > As páginas de demonstração do TailAdmin ficam em `/template/*` só como referência visual e devem ser removidas antes da entrega.
 
-Roteamento com React Router. Páginas carregadas sob demanda (`React.lazy`) para reduzir o bundle inicial.
+Roteamento com React Router. As URLs do frontend ficam em português, porque o usuário as vê; as rotas da API (coluna "API usada") ficam em inglês (ver [decisão 20](decisoes.md)). Páginas carregadas sob demanda (`React.lazy`) para reduzir o bundle inicial.
 
 ## Públicas
 
@@ -24,26 +24,26 @@ Roteamento com React Router. Páginas carregadas sob demanda (`React.lazy`) para
 
 Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 
-**Projeto atual:** um seletor no cabeçalho (no lugar da busca do template) define o projeto em que o usuário está trabalhando (como em Vercel ou Linear). As rotas de conteúdo não mudam; elas mostram só os dados do projeto selecionado, e as chamadas à API enviam o `projeto_id`. A escolha fica salva no navegador. Sem nenhum projeto cadastrado, as telas de conteúdo mostram um convite para criar o primeiro projeto.
+**Projeto atual:** um seletor no cabeçalho (no lugar da busca do template) define o projeto em que o usuário está trabalhando (como em Vercel ou Linear). As rotas de conteúdo não mudam; elas mostram só os dados do projeto selecionado, e as chamadas à API enviam o `project_id`. A escolha fica salva no navegador. Sem nenhum projeto cadastrado, as telas de conteúdo mostram um convite para criar o primeiro projeto.
 
 | Rota | Página | API usada | Requisito do TCC |
 | --- | --- | --- | --- |
 | `/` | Redireciona para `/dashboard` | | |
-| `/projetos` | Lista de projetos (marca própria ou clientes) | `GET /projetos`, `DELETE /projetos/{id}` | CRUD |
-| `/projetos/novo` | Cadastro de projeto: nome, descrição, público-alvo e tom de voz padrão | `POST /projetos` | CRUD |
-| `/projetos/:id` | Edição de projeto | `GET`, `PUT /projetos/{id}` | CRUD |
-| `/dashboard` | Posts por status, próximos posts previstos, últimas execuções do agente e **todas as métricas de desempenho** (impressões e engajamento por assunto, rede, dia e horário) | `GET /posts`, `GET /agente/execucoes`, `GET /relatorio/desempenho` | Relatório de desempenho |
-| `/assuntos` | Lista de assuntos | `GET /assuntos`, `DELETE /assuntos/{id}` | CRUD |
-| `/assuntos/novo` | Cadastro de assunto | `POST /assuntos` | CRUD |
-| `/assuntos/:id` | Edição de assunto | `GET`, `PUT /assuntos/{id}` | CRUD |
+| `/projetos` | Lista de projetos (marca própria ou clientes) | `GET /projects`, `DELETE /projects/{id}` | CRUD |
+| `/projetos/novo` | Cadastro de projeto: nome, descrição, público-alvo e tom de voz padrão | `POST /projects` | CRUD |
+| `/projetos/:id` | Edição de projeto | `GET`, `PUT /projects/{id}` | CRUD |
+| `/dashboard` | Posts por status, próximos posts previstos, últimas execuções do agente e **todas as métricas de desempenho** (impressões e engajamento por assunto, rede, dia e horário) | `GET /posts`, `GET /agent/runs`, `GET /reports/performance` | Relatório de desempenho |
+| `/assuntos` | Lista de assuntos | `GET /subjects`, `DELETE /subjects/{id}` | CRUD |
+| `/assuntos/novo` | Cadastro de assunto | `POST /subjects` | CRUD |
+| `/assuntos/:id` | Edição de assunto | `GET`, `PUT /subjects/{id}` | CRUD |
 | `/posts` | Lista de posts, com filtros na URL (`?status=rascunho&assunto=…`) | `GET /posts`, `DELETE /posts/{id}` | CRUD |
 | `/posts/novo` | Cadastro de post com suas variações. Depois de criar, abre `/posts/:id` para adicionar imagens | `POST /posts` | CRUD + mestre-detalhe |
-| `/posts/:id` | **Mestre-detalhe**: dados do post no topo e uma aba por rede (LinkedIn, Instagram, X) com texto, hashtags e contador de caracteres pelo limite da rede, mais as **imagens** (envio direto para o S3; as geradas pelo agente mostram o prompt) e as **métricas** da variação (resumo, histórico de coletas e registro, só com o post publicado). Imagens e métricas são gravadas na hora e aparecem quando a variação já está salva | `GET`, `PUT /posts/{id}`, `/variacoes/{id}/imagens`, `/variacoes/{id}/metricas` | Mestre-detalhe |
-| `/calendario` | Posts no calendário pela `data_prevista`, com cor por status. Clicar em um post abre um modal de detalhes com link para `/posts/:id` | `GET /posts` | |
-| `/documentos` | Lista com status de processamento e upload na mesma tela | `/documentos/*` | IA (RAG) |
-| `/agente` | Conversa com o agente, com troca de modo (`?modo=ideacao` ou `criacao`) | `POST /agente/execucoes` | IA |
-| `/agente/execucoes` | Histórico de execuções | `GET /agente/execucoes` | |
-| `/agente/execucoes/:id` | Uma execução com seus passos (tool, argumentos, duração, erro) | `GET /agente/execucoes/{id}` | |
+| `/posts/:id` | **Mestre-detalhe**: dados do post no topo e uma aba por rede (LinkedIn, Instagram, X) com texto, hashtags e contador de caracteres pelo limite da rede, mais as **imagens** (envio direto para o S3; as geradas pelo agente mostram o prompt) e as **métricas** da variação (resumo, histórico de coletas e registro, só com o post publicado). Imagens e métricas são gravadas na hora e aparecem quando a variação já está salva | `GET`, `PUT /posts/{id}`, `/variations/{id}/images`, `/variations/{id}/metrics` | Mestre-detalhe |
+| `/calendario` | Posts no calendário pela `expected_date`, com cor por status. Clicar em um post abre um modal de detalhes com link para `/posts/:id` | `GET /posts` | |
+| `/documentos` | Lista com status de processamento e upload na mesma tela | `/documents/*` | IA (RAG) |
+| `/agente` | Conversa com o agente, com troca de modo (`?modo=ideacao` ou `criacao`) | `POST /agent/runs` | IA |
+| `/agente/execucoes` | Histórico de execuções | `GET /agent/runs` | |
+| `/agente/execucoes/:id` | Uma execução com seus passos (tool, argumentos, duração, erro) | `GET /agent/runs/{id}` | |
 | `/perfil` | Dados do usuário (Auth0) e botão de alterar senha | Auth0 | Ciclo de vida do usuário |
 
 ## Menu lateral

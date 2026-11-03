@@ -84,7 +84,7 @@ Navegador ──HTTPS──> Traefik (k3s)
 
 O loop do agente é implementado diretamente sobre o tool calling do SDK do provedor, sem LangChain ou LlamaIndex. O código depende apenas de interfaces (`LLMProvider`, `EmbeddingProvider`, `ImageProvider`, `VectorStore`), o que permite trocar de provedor.
 
-A documentação técnica está em [`docs/`](docs/README.md): [modelos C4](docs/arquitetura.md) (contexto, contêineres, componentes), [diagrama de classes](docs/modelo-de-dados.md), [agente e RAG](docs/agente-e-rag.md), [API](docs/api.md), [modelo de implantação](docs/implantacao.md), [decisões](docs/decisoes.md) e [changelog](docs/changelog.md).
+A documentação técnica está em [`_docs/`](_docs/README.md): [modelos C4](_docs/arquitetura.md) (contexto, contêineres, componentes), [diagrama de classes](_docs/modelo-de-dados.md), [agente e RAG](_docs/agente-e-rag.md), [API](_docs/api.md), [modelo de implantação](_docs/implantacao.md), [decisões](_docs/decisoes.md) e [changelog](_docs/changelog.md).
 
 ## Como executar localmente
 
@@ -101,7 +101,7 @@ docker compose up -d
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run uvicorn app.main:app --reload
+uv run fastapi dev main.py               # http://localhost:8000/docs
 
 # Frontend
 cd frontend

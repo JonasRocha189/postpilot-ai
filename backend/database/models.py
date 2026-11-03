@@ -15,6 +15,8 @@ class UUIDMixin:
 
 
 class PostStatus(enum.StrEnum):
+    """Lifecycle of a post: draft -> review -> approved -> published."""
+
     DRAFT = "draft"
     REVIEW = "review"
     APPROVED = "approved"
@@ -22,6 +24,8 @@ class PostStatus(enum.StrEnum):
 
 
 class Project(UUIDMixin, TimestampMixin, Base):
+    """The user's own brand or a client. Top of the hierarchy."""
+
     __tablename__ = "projects"
 
     user_id: Mapped[str] = mapped_column(String(255), index=True)
@@ -34,6 +38,8 @@ class Project(UUIDMixin, TimestampMixin, Base):
 
 
 class Subject(UUIDMixin, TimestampMixin, Base):
+    """A topic inside a project. Empty audience/tone fall back to the project's."""
+
     __tablename__ = "subjects"
 
     user_id: Mapped[str] = mapped_column(String(255), index=True)
@@ -48,6 +54,8 @@ class Subject(UUIDMixin, TimestampMixin, Base):
 
 
 class Post(UUIDMixin, TimestampMixin, Base):
+    """A social media post. Belongs to a project through its subject."""
+
     __tablename__ = "posts"
 
     user_id: Mapped[str] = mapped_column(String(255), index=True)
@@ -71,6 +79,8 @@ class Post(UUIDMixin, TimestampMixin, Base):
 
 
 class Image(UUIDMixin, TimestampMixin, Base):
+    """An image attached to a post. Stores only the storage key, never the URL."""
+
     __tablename__ = "images"
 
     post_id: Mapped[uuid.UUID] = mapped_column(

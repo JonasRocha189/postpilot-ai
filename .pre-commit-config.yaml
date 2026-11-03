@@ -1,0 +1,42 @@
+# Git hooks for the whole repository. Setup (once per clone):
+#   cd backend && uv sync && uv run pre-commit install
+# Run on every file:  uv run --directory backend pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+        exclude: ^infra/helm/  # Helm templates are not plain YAML
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        exclude: ^frontend/  # frontend formatting is handled by Prettier/ESLint
+      - id: trailing-whitespace
+        exclude: ^frontend/
+
+  # Local hooks use the versions locked in backend/uv.lock and frontend/package-lock.json.
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (backend)
+        entry: uv run --directory backend ruff check --fix .
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff format (backend)
+        entry: uv run --directory backend ruff format .
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+
+      - id: eslint
+        name: eslint (frontend)
+        entry: npm --prefix frontend run lint
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
