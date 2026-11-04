@@ -217,7 +217,7 @@ const SEED_IMAGEM_DO_POST: Record<number, string> = {
 };
 
 function seedPosts(): Post[] {
-  return SEED_POSTS.map(([title, subject_id, , dias], i) => {
+  return SEED_POSTS.map(([title, subject_id, redes, dias], i) => {
     const agora = agoraIso();
     return {
       id: `post-${i + 1}`,
@@ -226,7 +226,9 @@ function seedPosts(): Post[] {
       content: `${title}. Texto de exemplo.`,
       status: dias < 0 ? "published" : i % 2 === 0 ? "approved" : "draft",
       expected_date: diaDaquiA(dias),
-      image_id: SEED_IMAGEM_DO_POST[i] ?? null,
+      network: redes[0],
+      format: SEED_IMAGEM_DO_POST[i] || redes[0] === "instagram" ? "single" : "text",
+      image_ids: SEED_IMAGEM_DO_POST[i] ? [SEED_IMAGEM_DO_POST[i]] : [],
       created_at: agora,
       updated_at: agora,
     };

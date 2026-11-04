@@ -1,5 +1,5 @@
 // Integration: posts list (filters in the URL and in the API query) and the
-// post form with the image picker (library of the current project).
+// post form: network, format, text editor, calendar date and ordered images.
 import PostFormPage from "@/pages/Posts/PostFormPage";
 import Posts from "@/pages/Posts/Posts";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -15,11 +15,13 @@ function seed() {
 }
 
 describe("Posts list (/posts)", () => {
-  it("shows the posts with subject, local date and status", async () => {
+  it("shows the posts with subject, network, local date and status", async () => {
     const { subject } = seed();
     fakeApi.addPost(subject.id, {
       title: "Backup em nuvem",
       status: "review",
+      network: "instagram",
+      format: "carousel",
       expected_date: "2026-11-20",
     });
 
@@ -30,6 +32,9 @@ describe("Posts list (/posts)", () => {
     ).closest("tr")!;
     expect(within(row).getByText("Em revisão")).toBeInTheDocument();
     expect(within(row).getAllByText("Cloud").length).toBeGreaterThan(0);
+    expect(
+      within(row).getAllByText("Instagram · Carrossel").length,
+    ).toBeGreaterThan(0);
     // Date-only value is shown as the same local day (not the day before)
     expect(within(row).getAllByText(/20 de nov/).length).toBeGreaterThan(0);
   });
@@ -69,52 +74,115 @@ describe("Posts list (/posts)", () => {
 });
 
 describe("Post form (/posts/new)", () => {
-  it("creates a post with an image chosen from the project's library", async () => {
+  it("creates an Instagram carousel: calendar date, editor toolbar and ordered images", async () => {
     const { project, subject } = seed();
-    const image = fakeApi.addImage(project.id, {
-      description: "Checklist de segurança",
-    });
+    const a = fakeApi.addImage(project.id, { description: "Imagem A" });
+    const b = fakeApi.addImage(project.id, { description: "Imagem B" });
     const { user, location } = renderPage(<PostFormPage />, {
       path: "/posts/new",
     });
 
-    await user.type(
-      await screen.findByLabelText(/^Título/),
-      "Checklist de fim de ano",
-    );
+    await user.type(await screen.findByLabelText(/^Título/), "Checklist");
     await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
     await user.selectOptions(screen.getByLabelText(/^Status/), "review");
-    await user.type(screen.getByLabelText("Data prevista"), "2026-11-20");
-    await user.type(screen.getByLabelText("Conteúdo"), "Texto do post");
 
-    await user.click(
-      screen.getByRole("button", { name: "Escolher da biblioteca" }),
-    );
+    // Date shown as dd/mm/aaaa, sent as AAAA-MM-DD
+    const data = screen.getByLabelText("Data prevista");
+    expect(data).toHaveAttribute("placeholder", "dd/mm/aaaa");
+    await user.type(data, "20/11/2026");
+    await user.tab();
+    expect(data).toHaveValue("20/11/2026");
+
+    // Network (Instagram by default) and format
+    expect(screen.getByRole("radio", { name: /^Instagram/ })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: /^Carrossel/ }));
+
+    // Editor: bullet at the start of the line and an emoji at the cursor
+    const editor = screen.getByLabelText("Conteúdo");
+    await user.type(editor, "Dica do dia");
+    await user.click(screen.getByRole("button", { name: /Inserir marcador/ }));
+    await user.click(screen.getByRole("button", { name: "Inserir emoji" }));
+    await user.click(screen.getByRole("button", { name: "Inserir 🚀" }));
+    expect(editor).toHaveValue("• Dica do dia🚀");
+    expect(screen.getByText("14 / 2.200 caracteres")).toBeInTheDocument();
+
+    // Pick B then A in the library, then move A to the front
+    await user.click(screen.getByRole("button", { name: "Escolher" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(
-      await within(dialog).findByRole("button", {
-        name: "Checklist de segurança",
-      }),
+      await within(dialog).findByRole("button", { name: "Imagem B" }),
     );
-    // Picker closes and shows the chosen image
+    await user.click(within(dialog).getByRole("button", { name: "Imagem A" }));
+    await user.click(
+      within(dialog).getByRole("button", { name: "Concluir (2)" }),
+    );
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
-    expect(
-      screen.getByRole("button", { name: "Trocar imagem" }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("2 de 20")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Mover imagem 2 para a esquerda" }),
+    );
 
     await user.click(screen.getByRole("button", { name: "Criar post" }));
 
     await waitFor(() => expect(location()).toBe("/posts"));
     expect(fakeApi.requests("POST", "/posts")[0].body).toEqual({
-      title: "Checklist de fim de ano",
+      title: "Checklist",
       subject_id: subject.id,
       status: "review",
+      network: "instagram",
+      format: "carousel",
       expected_date: "2026-11-20",
-      content: "Texto do post",
-      image_id: image.id,
+      content: "• Dica do dia🚀",
+      image_ids: [a.id, b.id],
     });
+  });
+
+  it("on X, offers text only and enforces the 280-character limit", async () => {
+    const { subject } = seed();
+    const { user } = renderPage(<PostFormPage />, { path: "/posts/new" });
+
+    await user.type(await screen.findByLabelText(/^Título/), "Fio");
+    await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
+    await user.click(screen.getByRole("radio", { name: /^X/ }));
+    expect(
+      screen.getByRole("radio", { name: /^Várias imagens/ }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: /^Só texto/ }));
+
+    // Text only: no image picker
+    expect(
+      screen.queryByRole("button", { name: "Escolher" }),
+    ).not.toBeInTheDocument();
+    const editor = screen.getByLabelText("Conteúdo");
+    await user.click(editor);
+    await user.paste("a".repeat(281));
+    expect(screen.getByText("281 / 280 caracteres")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Criar post" }));
+    expect(
+      await screen.findByText(
+        "Passou do limite de 280 caracteres do X (contando as hashtags).",
+      ),
+    ).toBeInTheDocument();
+    expect(fakeApi.requests("POST", "/posts")).toHaveLength(0);
+  });
+
+  it("previews the post cut where the network shows “see more”", async () => {
+    seed();
+    const { user } = renderPage(<PostFormPage />, { path: "/posts/new" });
+    const editor = await screen.findByLabelText("Conteúdo");
+    await user.click(editor);
+    await user.paste(`${"a".repeat(125)}FIM`);
+
+    await user.click(screen.getByRole("tab", { name: "Pré-visualizar" }));
+    expect(
+      screen.getByText("Como aparece no feed do Instagram"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/FIM/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "mais" }));
+    expect(screen.getByText(/FIM/)).toBeInTheDocument();
   });
 
   it("validates title and subject without calling the API", async () => {
@@ -127,6 +195,23 @@ describe("Post form (/posts/new)", () => {
       await screen.findByText("Informe o título do post."),
     ).toBeInTheDocument();
     expect(screen.getByText("Selecione o assunto.")).toBeInTheDocument();
+    expect(fakeApi.requests("POST", "/posts")).toHaveLength(0);
+  });
+
+  it("asks for the image before approving a single-image post", async () => {
+    const { subject } = seed();
+    const { user } = renderPage(<PostFormPage />, { path: "/posts/new" });
+
+    await user.type(await screen.findByLabelText(/^Título/), "Post");
+    await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
+    await user.selectOptions(screen.getByLabelText(/^Status/), "approved");
+    await user.click(screen.getByRole("button", { name: "Criar post" }));
+
+    expect(
+      await screen.findByText(
+        "Posts aprovados ou publicados precisam de uma imagem.",
+      ),
+    ).toBeInTheDocument();
     expect(fakeApi.requests("POST", "/posts")).toHaveLength(0);
   });
 
@@ -156,12 +241,15 @@ describe("Post form (/posts/new)", () => {
     expect(location()).toBe("/posts/new");
   });
 
-  it("edits a post and removes its image (image_id: null)", async () => {
+  it("edits a post: loads the date, clears it and removes the image", async () => {
     const { project, subject } = seed();
     const image = fakeApi.addImage(project.id, { description: "Nuvem" });
     const post = fakeApi.addPost(subject.id, {
       title: "Com imagem",
-      image_id: image.id,
+      network: "instagram",
+      format: "single",
+      expected_date: "2026-11-20",
+      image_ids: [image.id],
     });
     const { user, location } = renderPage(<PostFormPage />, {
       path: "/posts/:id",
@@ -169,10 +257,18 @@ describe("Post form (/posts/new)", () => {
     });
 
     expect(await screen.findByDisplayValue("Com imagem")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: "Remover" }));
+    expect(screen.getByLabelText("Data prevista")).toHaveValue("20/11/2026");
+    await user.click(screen.getByRole("button", { name: "Limpar data" }));
+    expect(screen.getByLabelText("Data prevista")).toHaveValue("");
+    await user.click(
+      await screen.findByRole("button", { name: "Remover imagem 1" }),
+    );
     await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
 
     await waitFor(() => expect(location()).toBe("/posts"));
-    expect(fakeApi.requests("PUT")[0].body).toMatchObject({ image_id: null });
+    expect(fakeApi.requests("PUT")[0].body).toMatchObject({
+      expected_date: null,
+      image_ids: [],
+    });
   });
 });

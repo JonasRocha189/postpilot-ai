@@ -3,6 +3,7 @@
 // (project scoping, 404, 409, 422) and the S3 presigned upload.
 import type { Assunto } from "@/features/assuntos/types";
 import type { Imagem } from "@/features/imagens/types";
+import { erroRegraPost } from "@/features/posts/redes";
 import type { Post } from "@/features/posts/types";
 import type { Projeto } from "@/features/projetos/types";
 import { http, HttpResponse } from "msw/http";
@@ -187,9 +188,11 @@ const handlers = [
     const input = await body<Partial<Post>>(request);
     const projectId = projectOfSubject(input.subject_id ?? "");
     if (!projectId) return notFound("Subject");
+    const imageIds = input.image_ids ?? [];
     if (
-      input.image_id &&
-      db.images.find((i) => i.id === input.image_id)?.project_id !== projectId
+      imageIds.some(
+        (id) => db.images.find((i) => i.id === id)?.project_id !== projectId,
+      )
     ) {
       return invalid("Image is not in this project's library");
     }
@@ -199,11 +202,22 @@ const handlers = [
       title: input.title ?? "",
       content: input.content ?? null,
       status: input.status ?? "draft",
+      network: input.network!,
+      format: input.format!,
       expected_date: input.expected_date ?? null,
-      image_id: input.image_id ?? null,
+      image_ids: imageIds,
       created_at: now,
       updated_at: now,
     };
+    // Same network rules as the backend (format, text length, images)
+    const rule = erroRegraPost({
+      network: post.network,
+      format: post.format,
+      imagens: imageIds.length,
+      texto: post.content ?? "",
+      status: post.status,
+    });
+    if (rule) return invalid(rule.mensagem);
     db.posts.push(post);
     return HttpResponse.json(post, { status: 201 });
   }),
@@ -280,7 +294,7 @@ const handlers = [
     return HttpResponse.json(semChave(image), { status: 201 });
   }),
   http.delete(`${API}/images/:id`, ({ params }) => {
-    if (db.posts.some((p) => p.image_id === params.id))
+    if (db.posts.some((p) => p.image_ids.includes(params.id as string)))
       return conflict("Image is used by posts");
     db.images = db.images.filter((i) => i.id !== params.id);
     return noContent();
@@ -340,8 +354,10 @@ export const fakeApi = {
       title: "Post",
       content: null,
       status: "draft",
+      network: "linkedin",
+      format: "text",
       expected_date: null,
-      image_id: null,
+      image_ids: [],
       created_at: now,
       updated_at: now,
       ...data,

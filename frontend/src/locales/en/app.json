@@ -10,6 +10,7 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "calendar": "Calendar",
+    "bestPractices": "Best practices",
     "profile": "Profile",
     "templateGroup": "Template (reference)",
     "toggleSidebar": "Toggle menu",
@@ -243,7 +244,7 @@
     "details": {
       "scheduledFor": "Scheduled for",
       "subject": "Subject",
-      "networks": "Networks",
+      "networks": "Network",
       "status": "Status",
       "openPost": "Open post"
     }
@@ -334,10 +335,10 @@
     "columns": {
       "title": "Title",
       "subject": "Subject",
-      "networks": "Networks",
       "date": "Planned date",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "network": "Network"
     },
     "delete": {
       "title": "Delete \"{name}\"?",
@@ -355,50 +356,99 @@
       "statusHint": "The agent always creates drafts; approving and publishing is up to you.",
       "scheduledFor": "Planned date",
       "content": "Content",
-      "contentPlaceholder": "Write the post text",
-      "variations": "Variations by network",
-      "variationsHint": "One text per network, following each network's format and character limit.",
-      "tabFilled": "(has variation)",
-      "tabEmpty": "(no variation)",
-      "tabError": "(has errors)",
-      "noVariation": "This post has no {network} variation yet.",
-      "addVariation": "Add {network} variation",
-      "removeVariation": "Remove {network} variation",
-      "text": "Text",
-      "textPlaceholder": "Post text for {network}",
-      "hashtags": "Hashtags",
-      "hashtagsPlaceholder": "#cloud #security",
-      "hashtagsHint": "Separate with spaces or commas. The # is optional.",
-      "counter": "{count} / {limit} characters (including hashtags)",
       "errors": {
         "titleRequired": "Enter the post title.",
         "subjectRequired": "Select the subject.",
-        "textRequired": "Write the text for this variation.",
         "tooLongForNetwork": "Over {network}'s {limit}-character limit (including hashtags).",
-        "tooManyHashtags": "Use at most 30 hashtags.",
-        "variationRequired": "Add a variation for at least one network."
+        "formatNotAvailable": "This format isn't available on {network}.",
+        "tooManyImages": "Use at most {max} images in this format.",
+        "needsOneImage": "Approved or published posts need an image.",
+        "needsTwoImages": "Approved or published carousels need at least 2 images."
       },
-      "saveFirst": "Save the post to add images and metrics to the {network} variation.",
-      "savedImmediately": "Images and metrics are saved right away; no need to click \"Save changes\".",
-      "images": "Images",
-      "metrics": "Metrics",
-      "removeTitle": "Remove the {network} variation?",
-      "removeMessage": "It has {images} image(s) and {metrics} metrics record(s), which will be deleted when you save the post.",
       "created": "Post created. You can now add images to each variation.",
       "image": {
         "label": "Image",
-        "none": "No image chosen.",
-        "selected": "Chosen image",
+        "labelMany": "Images, in carousel order",
+        "count": "{count} of {max}",
         "loading": "Loading…",
-        "choose": "Choose from library",
+        "choose": "Choose",
+        "add": "Add",
         "change": "Change image",
-        "remove": "Remove",
+        "removeOne": "Remove image {n}",
+        "moveLeft": "Move image {n} left",
+        "moveRight": "Move image {n} right",
         "dialogTitle": "Choose the post's image",
+        "dialogTitleMany": "Choose up to {max} images, in carousel order",
         "loadError": "Couldn't load the library.",
         "emptyLibrary": "The project's library has no images yet.",
         "goToLibrary": "Upload images to the library",
         "uploadMore": "Upload more images",
-        "option": "Image {n}"
+        "option": "Image {n}",
+        "done": "Done ({count})"
+      },
+      "publishSection": "Network, text and images",
+      "network": "Network",
+      "networkHint": "Up to {limit} characters",
+      "format": "Format",
+      "seeBestPractices": "See {network} best practices",
+      "formats": {
+        "instagram": {
+          "single": {
+            "label": "Single image",
+            "hint": "1080 × 1350 (4:5) or 1080 × 1080"
+          },
+          "carousel": {
+            "label": "Carousel",
+            "hint": "2 to 20 images, 1080 × 1350 (4:5)"
+          }
+        },
+        "linkedin": {
+          "text": {
+            "label": "Text only",
+            "hint": "No image: the text is the content"
+          },
+          "single": {
+            "label": "Single image",
+            "hint": "1200 × 627, 1200 × 1200 or 1080 × 1350"
+          },
+          "carousel": {
+            "label": "Carousel",
+            "hint": "2 to 20 images, posted as a PDF (1080 × 1350)"
+          }
+        },
+        "x": {
+          "text": {
+            "label": "Text only",
+            "hint": "Up to 280 characters"
+          },
+          "single": {
+            "label": "Single image",
+            "hint": "1600 × 900 (16:9) or 1080 × 1080"
+          },
+          "carousel": {
+            "label": "Multiple images",
+            "hint": "2 to 4 images (X has no carousel)"
+          }
+        }
+      },
+      "editor": {
+        "mode": "Editor mode",
+        "edit": "Edit",
+        "preview": "Preview",
+        "toolbar": "Text tools",
+        "emoji": "Insert emoji",
+        "emojiPanel": "Emojis",
+        "insertEmoji": "Insert {emoji}",
+        "moreEmojis": "More emojis: Windows + . or Ctrl + Cmd + Space on a Mac.",
+        "bullet": "Insert a bullet (•) at the start of the line",
+        "hashtag": "Insert hashtag",
+        "placeholder": "Write the post text for {network}",
+        "previewTitle": "How it looks in the {network} feed",
+        "previewEmpty": "Write the text to see the preview.",
+        "seeMore": "more",
+        "visibleHint": "The first {count} characters show before “see more”.",
+        "visibleAll": "The whole post shows in the feed.",
+        "counter": "{count} / {limit} characters"
       }
     }
   },
@@ -584,7 +634,484 @@
       "beforePublished": "Collection cannot be before publication."
     }
   },
+  "art": {
+    "ctaTitle": "Create artwork for the post",
+    "ctaHint": "Colored background or a library photo, with text, in the right size for {network}.",
+    "open": "Create artwork",
+    "title": "Create artwork for {network}",
+    "subtitle": "The artwork is saved to the project library and chosen as the post image.",
+    "previewLabel": "Artwork preview ({size} px)",
+    "size": "Size",
+    "background": "Background",
+    "backgroundTypes": {
+      "color": "Color",
+      "image": "Library image"
+    },
+    "backgroundColor": "Background color",
+    "otherBackgroundColor": "Other background color",
+    "colorOption": "Color {color}",
+    "libraryImage": "Choose the image",
+    "imageOption": "Image {n}",
+    "libraryError": "Could not load the image library.",
+    "emptyLibrary": "The project library has no images yet.",
+    "goToLibrary": "Upload images",
+    "loadingImage": "Loading the image…",
+    "imageError": "Could not load this image. Try another one or reload the page.",
+    "dragHint": "The image is scaled to cover the whole artwork. Drag the preview or use the controls to choose the visible part.",
+    "zoom": "Zoom",
+    "horizontal": "Horizontal position",
+    "vertical": "Vertical position",
+    "darken": "Darken the image",
+    "text": "Artwork text",
+    "textPlaceholder": "E.g.: 5 mistakes when moving to the cloud",
+    "textHint": "Short phrases work best. If the text doesn't fit, the font shrinks automatically.",
+    "fontSize": "Font size",
+    "textColor": "Text color",
+    "otherTextColor": "Other text color",
+    "align": "Alignment",
+    "alignments": {
+      "left": "Left",
+      "center": "Center",
+      "right": "Right"
+    },
+    "position": "Text position",
+    "positions": {
+      "top": "Top",
+      "middle": "Middle",
+      "bottom": "Bottom"
+    },
+    "defaultDescription": "Artwork created in the editor",
+    "cancel": "Cancel",
+    "download": "Download image",
+    "downloading": "Preparing…",
+    "downloadError": "Could not generate the image to download. Please try again.",
+    "ctaTitleCarousel": "Create carousel slides",
+    "ctaHintCarousel": "Slides with a colored background or a library photo and text, in the size for {network}. {max} more fit.",
+    "carouselFull": "The carousel already has the maximum number of images. Remove one to create new slides.",
+    "titleCarousel": "Create carousel for {network}",
+    "subtitleCarousel": "All slides have the same size. They are saved to the library and added to the end of the carousel, in this order (up to {max}).",
+    "sizeCarousel": "Size (all slides)",
+    "slides": "Slides",
+    "slideN": "Slide {n}",
+    "slideCount": "Slide {n} of {total} (max {max})",
+    "addSlide": "New slide (same look, no text)",
+    "duplicateSlide": "Duplicate",
+    "removeSlide": "Remove",
+    "moveSlideLeft": "Earlier",
+    "moveSlideRight": "Later",
+    "slideText": "Slide {n} text",
+    "slideDescription": "Carousel slide {n}",
+    "downloadSlides": "Download slides ({count})",
+    "useSlides": "Use in post ({count})",
+    "savingSlides": "Saving {n} of {total}…",
+    "use": "Use in post",
+    "saving": "Saving…",
+    "saveError": "Could not save the artwork. Please try again."
+  },
   "modal": {
     "close": "Close"
+  },
+  "bestPractices": {
+    "title": "Best practices",
+    "metaDescription": "Formats, sizes, hashtags, metrics and references for Instagram, LinkedIn and X.",
+    "subtitle": "A quick guide to creating content for each network: formats, sizes, text, hashtags, metrics and where to find inspiration.",
+    "reviewed": "Reviewed in November 2026. Networks change limits and formats often: when in doubt, check each one's help center.",
+    "principlesTitle": "Principles for any network",
+    "principles": [
+      {
+        "title": "One idea per post",
+        "text": "Pick one main message. If you have more to say, turn it into a series, a carousel or a thread."
+      },
+      {
+        "title": "Hook at the start",
+        "text": "The first line (or first slide) decides whether people stop scrolling. Open with a problem, a number or a question."
+      },
+      {
+        "title": "Adapt to each network",
+        "text": "The same topic gets a different format, length and tone on Instagram, LinkedIn and X. Don't copy the same text."
+      },
+      {
+        "title": "Clear call to action",
+        "text": "Tell people what to do: save, comment, share or click. One action per post."
+      },
+      {
+        "title": "Accessibility",
+        "text": "Write alt text for images, use high contrast, large type and captions on videos."
+      },
+      {
+        "title": "Measure and adjust",
+        "text": "Record the metrics, compare by subject, day and time, and repeat what works. The PostPilot dashboard does this comparison."
+      }
+    ],
+    "tabsLabel": "Social networks",
+    "sections": {
+      "formats": "Formats and sizes",
+      "formatsHint": "Recommended sizes in pixels (width × height).",
+      "format": "Format",
+      "size": "Size",
+      "ratio": "Aspect ratio",
+      "notes": "Notes",
+      "text": "Text",
+      "limit": "Limit",
+      "limitValue": "{limit} characters",
+      "visible": "Before “see more”",
+      "ideal": "Ideal length",
+      "hashtags": "Hashtags",
+      "hashtagsCount": "How many to use",
+      "practices": "What works",
+      "timing": "When and how often to post",
+      "timingDashboard": "See the best day and time on the dashboard",
+      "metrics": "Metrics that matter",
+      "metricsFormula": "In PostPilot, engagement rate = (likes + comments + shares + clicks) ÷ impressions. Recommendations only appear with at least 5 posts per group.",
+      "inspiration": "Inspiration and references",
+      "inspirationGeneral": "For any network",
+      "agentIdeation": "Open the agent in Ideation mode"
+    },
+    "generalInspiration": [
+      {
+        "name": "Customer questions",
+        "description": "Comments, messages, support emails and sales calls: every frequent question becomes a post."
+      },
+      {
+        "name": "Google Trends",
+        "description": "Shows interest in a topic over time and by region, plus related rising topics."
+      },
+      {
+        "name": "AnswerThePublic",
+        "description": "Lists the questions people search for about a keyword."
+      },
+      {
+        "name": "Competitors and industry references",
+        "description": "Look at the formats and topics that spark conversation, to adapt to your own voice (never copy)."
+      },
+      {
+        "name": "Industry newsletters, podcasts and reports",
+        "description": "Recent data and news make authoritative posts. Cite the source."
+      },
+      {
+        "name": "Pinterest and Behance",
+        "description": "Visual references for layout, palette and typography in graphics and carousels."
+      }
+    ],
+    "networks": {
+      "instagram": {
+        "summary": "A visual network: the image or video stops the scroll; the caption goes deeper. Carousels drive saves and Reels extend reach to people who don't follow you.",
+        "formats": [
+          {
+            "name": "Single post (portrait)",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Recommended: takes up more space in the feed."
+          },
+          {
+            "name": "Single post (square)",
+            "size": "1080 × 1080",
+            "ratio": "1:1",
+            "note": "Good for graphics with centered text."
+          },
+          {
+            "name": "Grid-friendly vertical post",
+            "size": "1080 × 1440",
+            "ratio": "3:4",
+            "note": "Same ratio as the profile grid thumbnails. Keep the subject centered."
+          },
+          {
+            "name": "Carousel",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Up to 20 images or videos. The first slide sets the ratio for all of them."
+          },
+          {
+            "name": "Stories and Reels",
+            "size": "1080 × 1920",
+            "ratio": "9:16",
+            "note": "Leave about 250 px free at the top and bottom, where the interface buttons sit."
+          }
+        ],
+        "text": {
+          "visible": "about 125 characters",
+          "ideal": "Hook in the first line; 150 to 600 characters for most posts. Long captions work for educational content.",
+          "tips": [
+            "Use keywords in the caption: Instagram search reads the text, not just the hashtags.",
+            "Break the text into short paragraphs and use emojis sparingly, as bullets."
+          ]
+        },
+        "hashtags": {
+          "count": "3 to 5",
+          "tips": [
+            "Since December 2025 Instagram limits posts to 5 hashtags, counting the caption and comments together.",
+            "Prefer niche and brand hashtags over generic ones (#love, #instagood).",
+            "Put them at the end of the caption and vary them by topic instead of repeating the same block."
+          ]
+        },
+        "practices": [
+          "In carousels, one topic per slide, a large title and a call to action on the last slide.",
+          "Text on graphics readable on a phone: at least 24 px type on a 1080 px wide graphic.",
+          "Keep a visual identity (colors, fonts, style) so the profile is recognized in the feed.",
+          "Ask for saves and shares: they are strong value signals for the algorithm.",
+          "Reply to comments in the first hour after posting.",
+          "Write the image alt text (Advanced settings, before posting)."
+        ],
+        "timing": [
+          "3 to 5 feed posts per week, plus Stories almost every day, consistently.",
+          "Use the professional account Insights: they show the days and times your followers are online.",
+          "Test different times for a few weeks before settling on a schedule."
+        ],
+        "metrics": [
+          {
+            "name": "Views",
+            "description": "How many times the content was shown (Instagram replaced “impressions” with “views”)."
+          },
+          {
+            "name": "Reach",
+            "description": "Unique accounts that saw the post. Compare followers and non-followers."
+          },
+          {
+            "name": "Saves",
+            "description": "Signal useful content people want to revisit. Great for educational carousels."
+          },
+          {
+            "name": "Shares",
+            "description": "Take the post to people who don't follow you yet."
+          },
+          {
+            "name": "Comments and likes",
+            "description": "Show conversation and approval; comments weigh more."
+          },
+          {
+            "name": "Profile visits and new followers",
+            "description": "Show whether the content sparks interest in the brand."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Explore tab and Reels",
+            "description": "Shows what is trending for your interest profile."
+          },
+          {
+            "name": "Trending audio",
+            "description": "Songs and sounds with a trending arrow in Reels."
+          },
+          {
+            "name": "Saved collections",
+            "description": "Save reference posts into collections by theme (layout, caption, hook)."
+          },
+          {
+            "name": "Meta Ad Library",
+            "description": "Active ads from any brand on Instagram and Facebook."
+          }
+        ]
+      },
+      "linkedin": {
+        "summary": "A professional network: content that teaches, shares lessons or brings data. Text matters more than on Instagram, and personal profiles usually reach more people than company pages.",
+        "formats": [
+          {
+            "name": "Landscape image",
+            "size": "1200 × 627",
+            "ratio": "1.91:1",
+            "note": "Also the size of link previews."
+          },
+          {
+            "name": "Square image",
+            "size": "1200 × 1200",
+            "ratio": "1:1",
+            "note": "Works well on desktop and mobile."
+          },
+          {
+            "name": "Portrait image",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Takes up more space in the mobile feed."
+          },
+          {
+            "name": "Carousel (PDF document)",
+            "size": "1080 × 1350 per page",
+            "ratio": "4:5",
+            "note": "Up to 300 pages and 100 MB; 6 to 12 is ideal. All pages the same size."
+          },
+          {
+            "name": "Video",
+            "size": "1080 × 1920 or 1080 × 1350",
+            "ratio": "9:16",
+            "note": "Vertical or portrait; add captions, since many people watch without sound."
+          }
+        ],
+        "text": {
+          "visible": "about 210 characters (fewer on mobile)",
+          "ideal": "800 to 1,500 characters, with short sentences and a blank line between paragraphs.",
+          "tips": [
+            "The first two lines must make people click “see more”.",
+            "Tell a real story: context, what happened, what you learned and what the reader can apply."
+          ]
+        },
+        "hashtags": {
+          "count": "0 to 3",
+          "tips": [
+            "Hashtags carry little weight in LinkedIn's distribution; use only truly relevant ones.",
+            "Put them at the end of the text, never in the middle of sentences.",
+            "Tag people or companies only when they are part of the content."
+          ]
+        },
+        "practices": [
+          "PDF carousels for educational content: step by step, checklists, comparisons.",
+          "External links may reduce reach: try the link in the first comment and compare.",
+          "Reply to every comment with more than “thanks”: conversation increases distribution.",
+          "End with an open question to invite comments.",
+          "Post from the personal profile of whoever represents the brand and share it from the company page."
+        ],
+        "timing": [
+          "2 to 5 posts per week, on weekdays.",
+          "Early morning and lunchtime usually work; confirm with your own data.",
+          "Be available in the first hour to reply to comments."
+        ],
+        "metrics": [
+          {
+            "name": "Impressions",
+            "description": "How many times the post appeared in the feed."
+          },
+          {
+            "name": "Members reached",
+            "description": "Unique people who saw the post."
+          },
+          {
+            "name": "Reactions, comments and reposts",
+            "description": "Long comments and reposts with commentary are worth more than reactions."
+          },
+          {
+            "name": "Clicks and CTR",
+            "description": "Clicks divided by impressions: measures interest in learning more."
+          },
+          {
+            "name": "Demographics",
+            "description": "Job title, industry and company of viewers: confirms the post reached the right audience."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Top Voices and industry creators",
+            "description": "See how they structure hooks, stories and carousels."
+          },
+          {
+            "name": "LinkedIn newsletters",
+            "description": "Subscribe to the ones in your industry to follow topics and debates."
+          },
+          {
+            "name": "LinkedIn Ad Library",
+            "description": "Ads from any company, with their formats and messages."
+          },
+          {
+            "name": "Comments on popular posts",
+            "description": "The questions and opinions there become content ideas."
+          }
+        ]
+      },
+      "x": {
+        "summary": "A fast, conversational network: short and direct texts, opinions and joining trending topics. For long content, use threads.",
+        "formats": [
+          {
+            "name": "Landscape image",
+            "size": "1600 × 900",
+            "ratio": "16:9",
+            "note": "Default format; 1200 × 675 also works."
+          },
+          {
+            "name": "Square image",
+            "size": "1080 × 1080",
+            "ratio": "1:1",
+            "note": "Good for graphics with text."
+          },
+          {
+            "name": "Portrait image",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Shows in full in the app and takes up more space."
+          },
+          {
+            "name": "Multiple images",
+            "size": "up to 4 per post",
+            "ratio": "16:9",
+            "note": "There is no carousel; for a longer sequence, use a thread."
+          },
+          {
+            "name": "Video",
+            "size": "1920 × 1080 or 1080 × 1920",
+            "ratio": "16:9",
+            "note": "Landscape or vertical; add captions."
+          }
+        ],
+        "text": {
+          "visible": "the whole post (free accounts)",
+          "ideal": "70 to 200 characters. Premium accounts can post long texts, but short ones usually perform better.",
+          "tips": [
+            "Every link counts as 23 characters, whatever its length.",
+            "In a thread, the first post is the hook; number them (1/5) and close with a summary or a call to action."
+          ]
+        },
+        "hashtags": {
+          "count": "1 to 2",
+          "tips": [
+            "More than two hashtags looks like spam and lowers engagement.",
+            "Use event or trending hashtags only when the post is related to them.",
+            "Prefer writing the keywords in the text itself."
+          ]
+        },
+        "practices": [
+          "One idea per post, straight to the point; a well-argued opinion sparks conversation.",
+          "Images and videos stand out in the feed; write the alt text.",
+          "Take part: reply to other profiles and quote posts, don't just publish.",
+          "Pin the post that best introduces the brand to your profile."
+        ],
+        "timing": [
+          "The feed moves fast: 1 to 3 posts a day work better than one a week.",
+          "Follow events and trending topics in your industry and react while they are hot.",
+          "Repost your best content at another time, with a new angle."
+        ],
+        "metrics": [
+          {
+            "name": "Impressions",
+            "description": "How many times the post was shown."
+          },
+          {
+            "name": "Engagements and engagement rate",
+            "description": "All interactions divided by impressions."
+          },
+          {
+            "name": "Replies and reposts",
+            "description": "Measure conversation and reach beyond your followers."
+          },
+          {
+            "name": "Link clicks",
+            "description": "Essential when the goal is to drive traffic to the website."
+          },
+          {
+            "name": "Bookmarks and profile visits",
+            "description": "Show interest in coming back to the content and getting to know the brand."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Explore and Trending",
+            "description": "What is hot right now, overall and by topic."
+          },
+          {
+            "name": "Lists",
+            "description": "Build lists of experts and outlets in your industry to follow without noise."
+          },
+          {
+            "name": "Advanced search",
+            "description": "Filter posts by words, accounts, dates and a minimum number of likes."
+          },
+          {
+            "name": "Communities",
+            "description": "Topic groups where your audience's questions show up."
+          }
+        ]
+      }
+    }
+  },
+  "dateField": {
+    "placeholder": "mm/dd/yyyy",
+    "clear": "Clear date",
+    "open": "Open calendar"
   }
 }

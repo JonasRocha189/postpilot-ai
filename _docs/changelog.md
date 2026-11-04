@@ -12,10 +12,32 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-04
+
+### Adicionado
+
+- Frontend: **editor de arte** para post de imagem única (decisão 26). Abre pelo botão "Criar arte" do formulário do post, com a arte no tamanho da rede (Instagram 1080 × 1350 ou 1080 × 1080; LinkedIn 1200 × 1200, 1080 × 1350 ou 1200 × 627; X 1600 × 900 ou 1080 × 1080). O fundo pode ser uma cor ou uma imagem da biblioteca, recortada para cobrir a arte sem distorcer, com zoom, ajuste da parte visível (arrastando ou pelos controles) e escurecimento. O texto tem fonte, cor, alinhamento e posição fixa (topo, meio, base), e a fonte diminui sozinha quando o texto não cabe. "Usar no post" exporta a arte (PNG, ou JPEG quando o fundo é foto), envia para a biblioteca do projeto pelo fluxo de upload que já existia e a escolhe como imagem do post. Sem mudança no backend.
+- Frontend: **carrossel no editor de arte**. Com o formato carrossel, o editor cria vários slides no mesmo tamanho, cada um com o próprio fundo e texto: novo slide (mesmo visual, sem texto), duplicar, remover e mudar a ordem, com miniaturas. "Usar no post" envia os slides para a biblioteca, um a um e na ordem, e os coloca no fim do carrossel, respeitando o máximo da rede (20 no Instagram e no LinkedIn, 4 no X). Se um envio falhar, tentar de novo não reenvia os slides que já foram. "Baixar slides" baixa um arquivo numerado por slide.
+- Frontend: botão **Baixar imagem** no editor de arte, para quem só quer a imagem (publicar fora do PostPilot): baixa o arquivo (`postpilot-{rede}-{largura}x{altura}.png` ou `.jpg`) sem salvar nada na biblioteca.
+- Frontend: o envio de imagem aceita uma descrição. A arte é salva com o próprio texto, que vira o texto alternativo.
+- Testes: unidade dos cálculos da arte (quebra de linha, ajuste da fonte, recorte), integração do editor no formulário do post e aceite com o canvas de verdade (cores dos pixels, recorte da foto, exportação e upload), nos dois modos.
+
+### Alterado
+
+- Formulário do post: o texto do post (editor) passa a vir depois da imagem e do botão "Criar arte", já que a arte costuma ser feita primeiro.
+
+### Corrigido
+
+- Testes do frontend: limite de tempo por teste de 15 s. Os fluxos longos de formulário passavam dos 5 s padrão quando todos os arquivos rodavam em paralelo.
+
 ## 2026-11-03
 
 ### Adicionado
 
+- Post com rede e formato (decisão 25): `network` e `format` no post, carrossel com várias imagens em ordem (`post_images`, migration `post network, format and images`) e regras por rede validadas no backend e no formulário.
+- Frontend: formulário de post com escolha de rede e formato, editor de texto (emoji, marcador, hashtag, contador e prévia no feed), data no calendário (flatpickr, no formato do idioma) e seleção de várias imagens com reordenação. Lista e calendário mostram a rede e o formato.
+- Frontend: página `/best-practices` (menu "Boas práticas"), só leitura: princípios gerais e, para Instagram, LinkedIn e X, tamanhos de post único e carrossel, limites de texto, hashtags, boas práticas, frequência, métricas e fontes de inspiração (pt-BR e en). Revisada em novembro de 2026.
+- Frontend: teste de traduções confere também o tamanho das listas nos dois idiomas.
 - Testes do frontend (decisão 24, ver `testes.md`): 35 de unidade e 20 de integração (Vitest, Testing Library, MSW com API falsa) e 5 de aceite (Playwright, desktop e celular), rodando com a API fictícia ou contra a stack completa.
 - API: filtros `status`, `from` e `to` em `GET /posts`. O calendário busca só o mês visível e o filtro de status da lista de posts passa a funcionar com a API real.
 - Frontend: modais com `role="dialog"` e botão de fechar com rótulo (acessibilidade).

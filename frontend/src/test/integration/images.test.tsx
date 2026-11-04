@@ -16,7 +16,11 @@ describe("Image library (/images)", () => {
     const subject = fakeApi.addSubject(project.id);
     const usada = fakeApi.addImage(project.id, { description: "Nuvem" });
     fakeApi.addImage(project.id, { description: "Evento" });
-    fakeApi.addPost(subject.id, { image_id: usada.id });
+    fakeApi.addPost(subject.id, {
+      network: "instagram",
+      format: "single",
+      image_ids: [usada.id],
+    });
 
     renderPage(<Imagens />, { path: "/images" });
 
@@ -77,7 +81,11 @@ describe("Image library (/images)", () => {
     const subject = fakeApi.addSubject(project.id);
     const usada = fakeApi.addImage(project.id, { description: "Usada" });
     fakeApi.addImage(project.id, { description: "Livre" });
-    fakeApi.addPost(subject.id, { image_id: usada.id });
+    fakeApi.addPost(subject.id, {
+      network: "instagram",
+      format: "single",
+      image_ids: [usada.id],
+    });
     const { user } = renderPage(<Imagens />, { path: "/images" });
     await screen.findByAltText("Usada");
 

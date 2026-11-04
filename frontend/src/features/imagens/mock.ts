@@ -32,7 +32,7 @@ export const imagensMock: ImagensService = {
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
   },
 
-  async enviar(projetoId, arquivo, onProgress) {
+  async enviar(projetoId, arquivo, onProgress, descricao) {
     mockDb.projetos.encontrar(projetoId, "Projeto");
     if (!tipoDaImagem(arquivo))
       throw new ApiError(422, "Unsupported image type");
@@ -50,7 +50,7 @@ export const imagensMock: ImagensService = {
       id: crypto.randomUUID(),
       project_id: projetoId,
       content_type: arquivo.type,
-      description: null,
+      description: descricao?.trim() || null,
       url: await reduzir(arquivo),
       created_at: agora,
       updated_at: agora,
@@ -61,7 +61,7 @@ export const imagensMock: ImagensService = {
     await latencia();
     mockDb.imagens.encontrar(id, "Imagem");
     // Regra da API: não exclui imagem usada por algum post
-    if (mockDb.posts.todos().some((p) => p.image_id === id)) {
+    if (mockDb.posts.todos().some((p) => p.image_ids.includes(id))) {
       throw new ApiError(409, "Image is used by posts");
     }
     mockDb.imagens.remover(id);

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.deps import get_current_user_id
 from api.v1.routers.projects import get_owned_project
 from database.db import get_db
-from database.models import Image, Post
+from database.models import Image, PostImage
 from schemas.images import (
     EXTENSION_BY_CONTENT_TYPE,
     MAX_IMAGE_BYTES,
@@ -118,7 +118,9 @@ async def delete_image(
 ) -> Response:
     """Delete an image and its S3 object. 409 if a post still uses it."""
     image = await get_owned_image(image_id, user_id, db)
-    in_use = await db.scalar(select(Post.id).where(Post.image_id == image.id).limit(1))
+    in_use = await db.scalar(
+        select(PostImage.post_id).where(PostImage.image_id == image.id).limit(1)
+    )
     if in_use is not None:
         raise HTTPException(status_code=409, detail="Image is used by posts")
     key = image.key

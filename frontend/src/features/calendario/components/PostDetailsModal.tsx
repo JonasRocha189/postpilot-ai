@@ -1,7 +1,7 @@
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
-import { STATUS_POST_COR } from "@/lib/dominio";
+import { REDE_LABEL, STATUS_POST_COR } from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -48,6 +48,15 @@ export default function PostDetailsModal({
               </dt>
               <dd className="text-gray-800 dark:text-white/90">
                 {post.assunto}
+              </dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-28 shrink-0 text-gray-500 dark:text-gray-400">
+                {t("calendar.details.networks")}
+              </dt>
+              <dd className="text-gray-800 dark:text-white/90">
+                {REDE_LABEL[post.rede]} ·{" "}
+                {t(`posts.form.formats.${post.rede}.${post.formato}.label`)}
               </dd>
             </div>
             <div className="flex items-center gap-3">

@@ -42,7 +42,10 @@ function finalizar(exec: ExecucaoMock): ExecucaoMock {
       content: rascunho.texto,
       status: "draft", // o agente só salva rascunhos
       expected_date: null,
-      image_id: imagemId,
+      // O agente escreve para a primeira rede pedida, com a imagem gerada
+      network: rascunho.redes[0] ?? "linkedin",
+      format: "single",
+      image_ids: [imagemId],
       created_at: agora,
       updated_at: agora,
     });

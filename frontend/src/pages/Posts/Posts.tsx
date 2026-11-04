@@ -13,7 +13,12 @@ import { useExcluirPost, usePosts } from "@/features/posts/api";
 import type { Post, PostFiltros } from "@/features/posts/types";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
 import { PencilIcon, PlusIcon, TrashBinIcon } from "@/icons";
-import { STATUS_POST, STATUS_POST_COR, type StatusPost } from "@/lib/dominio";
+import {
+  REDE_LABEL,
+  STATUS_POST,
+  STATUS_POST_COR,
+  type StatusPost,
+} from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,6 +53,8 @@ export default function Posts() {
   const posts = usePosts(projetoAtual?.id, filtros);
   const nomeAssunto = (id: string) =>
     assuntos.data?.find((a) => a.id === id)?.name ?? "—";
+  const redeEFormato = (post: Post) =>
+    `${REDE_LABEL[post.network]} · ${t(`form.formats.${post.network}.${post.format}.label`)}`;
   const semAssuntos = assuntos.isSuccess && assuntos.data.length === 0;
 
   const setFiltro = (chave: "status" | "subject", valor: string) => {
@@ -164,6 +171,9 @@ export default function Posts() {
                       <th className={`${th} hidden md:table-cell`}>
                         {t("columns.subject")}
                       </th>
+                      <th className={`${th} hidden lg:table-cell`}>
+                        {t("columns.network")}
+                      </th>
                       <th className={`${th} hidden sm:table-cell`}>
                         {t("columns.date")}
                       </th>
@@ -190,9 +200,15 @@ export default function Posts() {
                           <p className="mt-0.5 text-theme-xs text-gray-500 md:hidden dark:text-gray-400">
                             {nomeAssunto(post.subject_id)}
                           </p>
+                          <p className="mt-0.5 text-theme-xs text-gray-500 lg:hidden dark:text-gray-400">
+                            {redeEFormato(post)}
+                          </p>
                         </td>
                         <td className={`${td} hidden md:table-cell`}>
                           {nomeAssunto(post.subject_id)}
+                        </td>
+                        <td className={`${td} hidden lg:table-cell`}>
+                          {redeEFormato(post)}
                         </td>
                         <td
                           className={`${td} hidden whitespace-nowrap sm:table-cell`}

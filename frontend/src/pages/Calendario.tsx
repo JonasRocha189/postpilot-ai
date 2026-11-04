@@ -31,6 +31,8 @@ export default function Calendario() {
         id: p.id,
         title: p.title,
         assunto: nomes.get(p.subject_id) ?? "—",
+        rede: p.network,
+        formato: p.format,
         status: p.status,
         dataPrevista: p.expected_date!,
       }));

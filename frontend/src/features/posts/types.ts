@@ -1,6 +1,6 @@
-import type { StatusPost } from "@/lib/dominio";
+import type { FormatoPost, Rede, StatusPost } from "@/lib/dominio";
 
-// Espelha o schema do backend (ver _docs/api.md). Sem variações por enquanto.
+// Espelha o schema do backend (ver _docs/api.md).
 
 export type Post = {
   id: string;
@@ -8,9 +8,12 @@ export type Post = {
   title: string;
   content: string | null;
   status: StatusPost;
+  /** Rede para a qual o post é escrito */
+  network: Rede;
+  format: FormatoPost;
   expected_date: string | null; // AAAA-MM-DD
-  /** Imagem da biblioteca do projeto (null = sem imagem) */
-  image_id: string | null;
+  /** Imagens da biblioteca do projeto, na ordem do carrossel */
+  image_ids: string[];
   created_at: string;
   updated_at: string;
 };
@@ -18,7 +21,14 @@ export type Post = {
 /** Corpo de POST /posts e PUT /posts/{id} */
 export type PostInput = Pick<
   Post,
-  "subject_id" | "title" | "content" | "status" | "expected_date" | "image_id"
+  | "subject_id"
+  | "title"
+  | "content"
+  | "status"
+  | "network"
+  | "format"
+  | "expected_date"
+  | "image_ids"
 >;
 
 /** Filtros de GET /posts (além do projeto) */

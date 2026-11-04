@@ -1,6 +1,6 @@
 // Espelha o schema do backend (tabela images; ver _docs/api.md).
-// A imagem pertence à biblioteca do projeto; o post aponta para uma delas
-// (Post.image_id).
+// A imagem pertence à biblioteca do projeto; o post aponta para elas
+// (Post.image_ids, na ordem do carrossel).
 
 export type TipoImagem = "png" | "jpeg" | "webp";
 
