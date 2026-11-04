@@ -8,6 +8,7 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import type {
+  DatesSetInfo,
   DayCellInfo,
   DayHeaderInfo,
   EventClickInfo,
@@ -22,6 +23,7 @@ import "@fullcalendar/react/skeleton.css";
 import themePlugin from "@fullcalendar/react/themes/classic";
 import "@fullcalendar/react/themes/classic/palette.css";
 import "@fullcalendar/react/themes/classic/theme.css";
+import { diaIso } from "@/lib/format";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { STATUS_NIVEL } from "../status";
@@ -43,9 +45,12 @@ function useIsMobile() {
 export default function PostsCalendar({
   posts,
   onSelect,
+  onRangeChange,
 }: {
   posts: PostAgendado[];
   onSelect: (post: PostAgendado) => void;
+  /** Período visível (inclusive, "AAAA-MM-DD"), para buscar só os posts dele */
+  onRangeChange?: (range: { from: string; to: string }) => void;
 }) {
   const { t } = useTranslation("app", { keyPrefix: "calendar" });
   const { language } = useLanguage();
@@ -59,6 +64,13 @@ export default function PostsCalendar({
     allDay: true,
     extendedProps: { calendar: STATUS_NIVEL[post.status] },
   }));
+
+  // O fim do FullCalendar é exclusivo: o último dia visível é o anterior
+  const handleDatesSet = (info: DatesSetInfo) => {
+    const ultimo = new Date(info.end);
+    ultimo.setDate(ultimo.getDate() - 1);
+    onRangeChange?.({ from: diaIso(info.start), to: diaIso(ultimo) });
+  };
 
   const handleEventClick = (info: EventClickInfo) => {
     const post = posts.find((p) => p.id === info.event.id);
@@ -173,6 +185,7 @@ export default function PostsCalendar({
           eventDisplay="block"
           events={events}
           eventClick={handleEventClick}
+          datesSet={handleDatesSet}
           eventContent={(eventInfo: EventDisplayInfo) => (
             <CalendarEventItem eventInfo={eventInfo} />
           )}

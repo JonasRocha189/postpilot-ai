@@ -16,6 +16,9 @@ Formato de cada entrada:
 
 ### Adicionado
 
+- Testes do frontend (decisão 24, ver `testes.md`): 35 de unidade e 20 de integração (Vitest, Testing Library, MSW com API falsa) e 5 de aceite (Playwright, desktop e celular), rodando com a API fictícia ou contra a stack completa.
+- API: filtros `status`, `from` e `to` em `GET /posts`. O calendário busca só o mês visível e o filtro de status da lista de posts passa a funcionar com a API real.
+- Frontend: modais com `role="dialog"` e botão de fechar com rótulo (acessibilidade).
 - API: biblioteca de imagens por projeto (`/api/v1/images`): URL pré-assinada de upload, registro depois do envio (confere chave, existência e tamanho no S3), listagem com URL de leitura e exclusão (`409` se algum post usa). Migration `image library per project`.
 - API: `image_id` no post (imagem da biblioteca do projeto do assunto, `422` caso contrário) e `409` ao excluir projeto com imagens.
 - Backend: cliente S3 (boto3) em `storage/s3.py` e variáveis `S3_*`; LocalStack no `docker-compose.yaml` como S3 local, com o bucket e o CORS criados por `infra/localstack/init-s3.sh` (decisão 23).
@@ -27,6 +30,10 @@ Formato de cada entrada:
 - Backend: FastAPI, conexão assíncrona com o PostgreSQL (SQLAlchemy + asyncpg), configuração por `.env` (pydantic-settings) e Alembic com a primeira migration (`projects`, `subjects`, `posts`, `images`).
 - API: CRUD de projetos (`/api/v1/projects`), filtrado pelo dono e com `409` ao excluir projeto com assuntos. Usuário fixo `dev-user` até a integração com o Auth0 (dependência `get_current_user_id`).
 - Ambiente local: Postgres do Docker na porta `5433`, para não conflitar com um PostgreSQL instalado no Windows.
+
+### Corrigido
+
+- Frontend: rótulos "Conteúdo" do formulário de post (estavam em `calendar.details`) e textos que ainda falavam de variações.
 
 ### Alterado
 

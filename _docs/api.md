@@ -27,7 +27,7 @@
 | PUT | `/subjects/{id}` | Atualiza |
 | DELETE | `/subjects/{id}` | Remove. `409` se ainda tiver posts |
 | **Posts** | | |
-| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), ordenados pelo título. Filtro: `subject_id`. **Planejado:** `status` e período (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, para o calendário) |
+| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), ordenados pelo título. Filtros: `subject_id`, `status` e período da `expected_date`, inclusivo (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, usado pelo calendário; com período, posts sem data ficam de fora) |
 | POST | `/posts` | Cria (corpo abaixo). `404` se o subject não for do usuário; `422` se a imagem não for da biblioteca do projeto do subject |
 | GET | `/posts/{id}` | Detalha |
 | PUT | `/posts/{id}` | Atualiza só os campos enviados. `image_id: null` tira a imagem do post; mesmas validações do `POST` |

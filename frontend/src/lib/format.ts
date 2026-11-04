@@ -10,6 +10,12 @@ export function parseData(value: Date | string): Date {
   return new Date(value);
 }
 
+/** Data local no formato "AAAA-MM-DD" (o mesmo da API para datas sem hora). */
+export function diaIso(data: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${data.getFullYear()}-${pad(data.getMonth() + 1)}-${pad(data.getDate())}`;
+}
+
 /** Formatadores de número e data no idioma atual da interface. */
 export function useFormat() {
   const { i18n } = useTranslation();

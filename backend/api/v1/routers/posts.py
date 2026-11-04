@@ -1,6 +1,7 @@
 import uuid
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +9,7 @@ from api.deps import get_current_user_id
 from api.v1.routers.projects import get_owned_project
 from api.v1.routers.subjects import get_owned_subject
 from database.db import get_db
-from database.models import Image, Post, Subject
+from database.models import Image, Post, PostStatus, Subject
 from schemas.posts import PostCreate, PostRead, PostUpdate
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -43,10 +44,18 @@ async def get_owned_post(post_id: uuid.UUID, user_id: str, db: AsyncSession) -> 
 async def list_posts(
     project_id: uuid.UUID,
     subject_id: uuid.UUID | None = None,
+    status: PostStatus | None = None,
+    date_from: date | None = Query(default=None, alias="from"),
+    date_to: date | None = Query(default=None, alias="to"),
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> list[Post]:
-    """List the posts of one of the user's projects, optionally filtered by subject."""
+    """List the posts of one of the user's projects, ordered by title.
+
+    Optional filters: subject, status and an inclusive expected_date range
+    (`?from=YYYY-MM-DD&to=YYYY-MM-DD`, used by the calendar). With a date range,
+    posts without expected_date are left out.
+    """
     await get_owned_project(project_id, user_id, db)
     query = (
         select(Post)
@@ -56,6 +65,12 @@ async def list_posts(
     )
     if subject_id is not None:
         query = query.where(Post.subject_id == subject_id)
+    if status is not None:
+        query = query.where(Post.status == status)
+    if date_from is not None:
+        query = query.where(Post.expected_date >= date_from)
+    if date_to is not None:
+        query = query.where(Post.expected_date <= date_to)
     result = await db.scalars(query)
     return list(result)
 

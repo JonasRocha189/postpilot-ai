@@ -242,8 +242,6 @@
     "more": "+{count} mais",
     "details": {
       "scheduledFor": "Previsto para",
-      "content": "Conteúdo",
-      "contentPlaceholder": "Escreva o texto do post",
       "subject": "Assunto",
       "networks": "Redes",
       "status": "Status",
@@ -309,7 +307,7 @@
   },
   "posts": {
     "title": "Posts",
-    "subtitle": "Posts do projeto {project}, com uma variação para cada rede.",
+    "subtitle": "Posts do projeto {project}.",
     "new": "Novo post",
     "newTitle": "Novo post",
     "editTitle": "Editar post",
@@ -343,7 +341,7 @@
     },
     "delete": {
       "title": "Excluir \"{name}\"?",
-      "message": "O post e todas as suas variações serão excluídos. Esta ação não pode ser desfeita.",
+      "message": "O post será excluído. A imagem continua na biblioteca. Esta ação não pode ser desfeita.",
       "confirm": "Excluir"
     },
     "form": {
@@ -356,6 +354,8 @@
       "status": "Status",
       "statusHint": "O agente sempre cria como rascunho; aprovar e publicar é com você.",
       "scheduledFor": "Data prevista",
+      "content": "Conteúdo",
+      "contentPlaceholder": "Escreva o texto do post",
       "variations": "Variações por rede",
       "variationsHint": "Um texto para cada rede, respeitando o formato e o limite de caracteres de cada uma.",
       "tabFilled": "(com variação)",
@@ -583,5 +583,8 @@
       "future": "Não pode ser no futuro.",
       "beforePublished": "A coleta não pode ser antes da publicação."
     }
+  },
+  "modal": {
+    "close": "Fechar"
   }
 }

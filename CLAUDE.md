@@ -101,11 +101,13 @@ uv run ruff check . && uv run ruff format . && uv run mypy app
 cd frontend
 npm ci
 npm run dev
-npm run test
+npm run test                             # unidade + integração (Vitest, MSW)
 npm run lint && npm run typecheck
 
-# Testes de aceite
-cd e2e && npx playwright test
+# Testes de aceite (ver _docs/testes.md)
+cd e2e && npm ci && npx playwright install chromium
+npx playwright test                                    # frontend com API fictícia
+E2E_BASE_URL=http://localhost:5173 npx playwright test # stack completa já rodando
 
 # Infra
 cd infra/terraform && terraform plan
