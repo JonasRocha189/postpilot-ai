@@ -115,7 +115,7 @@ npm run dev
 cd backend && uv run pytest tests/unit          # unidade
 cd backend && uv run pytest tests/integration   # integração (requer Docker)
 cd frontend && npm run test                     # frontend
-cd e2e && npx playwright test                   # aceite
+cd e2e && npx playwright test                   # aceite (ver _docs/testes.md)
 ```
 
 ## Entregas

@@ -42,7 +42,7 @@ Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 | `/posts/new` | Cadastro de post: título, assunto, status, data prevista, conteúdo e **imagem escolhida na biblioteca** do projeto | `POST /posts`, `GET /images` | CRUD |
 | `/posts/:id` | Edição do post (mesmo formulário) | `GET`, `PUT /posts/{id}` | CRUD |
 | `/images` | **Biblioteca de imagens do projeto**: envio direto para o S3 (vários arquivos, com progresso), ampliação com os posts que usam a imagem e exclusão (`409` se algum post a usa) | `GET /images`, `POST /images/upload-url`, `POST /images`, `DELETE /images/{id}` | |
-| `/calendar` | Posts no calendário pela `expected_date`, com cor por status. Clicar em um post abre um modal com link para `/posts/:id` | `GET /posts` | |
+| `/calendar` | Posts no calendário pela `expected_date`, com cor por status. Busca só o mês visível (`?from=…&to=…`) e mantém o mês anterior na tela enquanto carrega o próximo. Clicar em um post abre um modal com link para `/posts/:id` | `GET /posts?from&to` | |
 | `/documents` | Lista com status de processamento e upload na mesma tela | `/documents/*` | IA (RAG) |
 | `/agent` | Conversa com o agente, com troca de modo (`?mode=ideation` ou `creation`) | `POST /agent/runs` | IA |
 | `/agent/runs` | Histórico de execuções | `GET /agent/runs` | |

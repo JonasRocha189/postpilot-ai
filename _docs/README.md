@@ -9,6 +9,7 @@ Documentação técnica do projeto. A visão geral, como executar e os requisito
 | [Agente e RAG](agente-e-rag.md) | Loop do agente, tools, pipeline de documentos e busca híbrida |
 | [API](api.md) | Endpoints REST em `/api/v1` |
 | [Rotas do frontend](frontend-rotas.md) | Páginas, menu lateral e ordem de implementação |
+| [Testes](testes.md) | Unidade, integração e aceite: ferramentas, API falsa e como rodar |
 | [Implantação](implantacao.md) | Modelo de implantação, CI/CD e IaC |
 | [Decisões](decisoes.md) | Registro das decisões de arquitetura e o motivo de cada uma |
 | [Changelog](changelog.md) | Funcionalidades entregues, por data |

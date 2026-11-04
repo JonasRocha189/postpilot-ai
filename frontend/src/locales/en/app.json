@@ -242,8 +242,6 @@
     "more": "+{count} more",
     "details": {
       "scheduledFor": "Scheduled for",
-      "content": "Content",
-      "contentPlaceholder": "Write the post text",
       "subject": "Subject",
       "networks": "Networks",
       "status": "Status",
@@ -309,7 +307,7 @@
   },
   "posts": {
     "title": "Posts",
-    "subtitle": "Posts for the {project} project, with one variation per network.",
+    "subtitle": "Posts of the {project} project.",
     "new": "New post",
     "newTitle": "New post",
     "editTitle": "Edit post",
@@ -343,7 +341,7 @@
     },
     "delete": {
       "title": "Delete \"{name}\"?",
-      "message": "The post and all its variations will be deleted. This can't be undone.",
+      "message": "The post will be deleted. Its image stays in the library. This can't be undone.",
       "confirm": "Delete"
     },
     "form": {
@@ -356,6 +354,8 @@
       "status": "Status",
       "statusHint": "The agent always creates drafts; approving and publishing is up to you.",
       "scheduledFor": "Planned date",
+      "content": "Content",
+      "contentPlaceholder": "Write the post text",
       "variations": "Variations by network",
       "variationsHint": "One text per network, following each network's format and character limit.",
       "tabFilled": "(has variation)",
@@ -583,5 +583,8 @@
       "future": "Cannot be in the future.",
       "beforePublished": "Collection cannot be before publication."
     }
+  },
+  "modal": {
+    "close": "Close"
   }
 }

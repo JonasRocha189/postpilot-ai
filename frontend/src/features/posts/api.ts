@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { imagensKeys } from "@/features/imagens/api";
 import { metricasKeys } from "@/features/metricas/api";
 import { postsService } from "./service";
@@ -19,6 +24,8 @@ export function usePosts(
     queryKey: postsKeys.list(projetoId ?? "", filtros),
     queryFn: () => postsService.listar(projetoId!, filtros),
     enabled: Boolean(projetoId),
+    // Ao trocar filtro ou mês do calendário, mantém a lista anterior até chegar a nova
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -16,9 +16,11 @@ export default function Calendario() {
   const { projetoAtual } = useProjetoAtual();
   const [selecionado, setSelecionado] = useState<PostAgendado | null>(null);
 
-  // Todos os posts do projeto; o calendário só mostra os que têm data prevista.
-  // TODO: buscar só o período visível (?de=…&ate=…) quando houver muitos posts.
-  const posts = usePosts(projetoAtual?.id);
+  // Busca só os posts do período visível (o calendário avisa ao trocar de mês)
+  const [periodo, setPeriodo] = useState<{ from: string; to: string } | null>(
+    null,
+  );
+  const posts = usePosts(periodo ? projetoAtual?.id : undefined, periodo ?? {});
   const assuntos = useAssuntos(projetoAtual?.id);
 
   const agendados = useMemo<PostAgendado[]>(() => {
@@ -64,13 +66,15 @@ export default function Calendario() {
         <p role="alert" className="text-sm text-error-600">
           {t("posts.loadError")}
         </p>
-      ) : posts.isLoading ? (
-        <div
-          aria-hidden
-          className="h-[600px] animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
-        />
       ) : (
-        <PostsCalendar posts={agendados} onSelect={setSelecionado} />
+        // Fica montado enquanto carrega: é o calendário que informa o período
+        <div aria-busy={!periodo || posts.isFetching}>
+          <PostsCalendar
+            posts={agendados}
+            onSelect={setSelecionado}
+            onRangeChange={setPeriodo}
+          />
+        </div>
       )}
       <PostDetailsModal
         post={selecionado}
