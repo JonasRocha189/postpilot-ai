@@ -27,7 +27,7 @@ export default function MetricasVariacao({
   dataPrevista,
 }: {
   variacaoId: string;
-  /** Status salvo do post é "publicado" */
+  /** Status salvo do post é "published" */
   publicado: boolean;
   dataPrevista: string | null;
 }) {

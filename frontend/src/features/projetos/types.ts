@@ -1,16 +1,16 @@
 // Espelha o schema do backend (ver docs/modelo-de-dados.md e docs/api.md)
 export type Projeto = {
   id: string;
-  nome: string;
-  descricao: string | null;
-  publico_alvo: string | null;
-  tom_de_voz: string | null;
-  criado_em: string; // ISO
-  atualizado_em: string; // ISO
+  name: string;
+  description: string | null;
+  target_audience: string | null;
+  voice_tone: string | null;
+  created_at: string; // ISO
+  updated_at: string; // ISO
 };
 
-/** Corpo de POST /projetos e PUT /projetos/{id} */
+/** Corpo de POST /projects e PUT /projects/{id} */
 export type ProjetoInput = Pick<
   Projeto,
-  "nome" | "descricao" | "publico_alvo" | "tom_de_voz"
+  "name" | "description" | "target_audience" | "voice_tone"
 >;

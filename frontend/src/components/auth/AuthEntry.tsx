@@ -9,7 +9,7 @@ import LoadingScreen from "./LoadingScreen";
 type Mode = "login" | "signup";
 
 const SWITCH_TO: Record<Mode, string> = {
-  login: "/cadastro",
+  login: "/signup",
   signup: "/login",
 };
 
@@ -24,7 +24,7 @@ function errorUrl(error: Error): string {
     error: code ?? "auth_error",
     error_description: description ?? error.message,
   });
-  return `/erro?${params}`;
+  return `/error?${params}`;
 }
 
 export default function AuthEntry({ mode }: { mode: Mode }) {

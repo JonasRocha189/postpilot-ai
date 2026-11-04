@@ -24,7 +24,7 @@ export interface DocumentosService {
 const documentosHttp: DocumentosService = {
   listar: (projetoId) =>
     apiFetch<Documento[]>(
-      `/documentos?${new URLSearchParams({ projeto_id: projetoId })}`,
+      `/documents?${new URLSearchParams({ project_id: projetoId })}`,
     ),
 
   async enviar(projetoId, arquivo, onProgress) {
@@ -32,24 +32,24 @@ const documentosHttp: DocumentosService = {
     if (!tipo) throw new ApiError(422, "Tipo de arquivo não aceito");
 
     const { documento, upload_url } = await apiFetch<UploadUrlResponse>(
-      "/documentos/upload-url",
+      "/documents/upload-url",
       {
         method: "POST",
         body: JSON.stringify({
-          projeto_id: projetoId,
-          nome: arquivo.name,
+          project_id: projetoId,
+          name: arquivo.name,
           tipo,
           tamanho_bytes: arquivo.size,
         }),
       },
     );
     await putNoS3(upload_url, arquivo, MIME_POR_TIPO[tipo], onProgress);
-    return apiFetch<Documento>(`/documentos/${documento.id}/processar`, {
+    return apiFetch<Documento>(`/documents/${documento.id}/process`, {
       method: "POST",
     });
   },
 
-  excluir: (id) => apiFetch<void>(`/documentos/${id}`, { method: "DELETE" }),
+  excluir: (id) => apiFetch<void>(`/documents/${id}`, { method: "DELETE" }),
 };
 
 export const documentosService: DocumentosService =

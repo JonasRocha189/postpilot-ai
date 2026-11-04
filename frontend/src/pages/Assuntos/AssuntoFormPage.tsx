@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
-/** /assuntos/novo (sem id) e /assuntos/:id (edição) */
+/** /subjects/new (sem id) e /subjects/:id (edição) */
 export default function AssuntoFormPage() {
   const { id } = useParams();
   const { t } = useTranslation("app", { keyPrefix: "subjects" });
@@ -31,7 +31,7 @@ export default function AssuntoFormPage() {
   const titulo = isEdicao ? t("editTitle") : t("newTitle");
   // Na edição, a voz herdada é a do projeto do assunto
   const projeto =
-    (assunto.data && projetos.find((p) => p.id === assunto.data.projeto_id)) || projetoAtual;
+    (assunto.data && projetos.find((p) => p.id === assunto.data.project_id)) || projetoAtual;
 
   const onSubmit = async (values: AssuntoFormValues) => {
     setSubmitError(null);
@@ -41,7 +41,7 @@ export default function AssuntoFormPage() {
       } else {
         await criar.mutateAsync({ projetoId: projetoAtual!.id, input: toAssuntoInput(values) });
       }
-      navigate("/assuntos");
+      navigate("/subjects");
     } catch {
       setSubmitError(t("saveError"));
     }

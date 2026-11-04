@@ -1,6 +1,6 @@
 // API FICTÍCIA de documentos (ver lib/api/mockDb.ts). Não guarda o arquivo:
 // só simula o envio e o processamento (pendente → processando → pronto/erro).
-// Arquivos vazios ou com "erro" no nome terminam com status "erro".
+// Arquivos vazios ou com "error" no nome terminam com status "error".
 import { ApiError } from "@/lib/api/http";
 import { agoraIso, latencia, mockDb, type DocumentoMock } from "@/lib/api/mockDb";
 import type { DocumentosService } from "./service";
@@ -11,17 +11,17 @@ const TEMPO_PROCESSAMENTO_MS = 3500;
 
 /** Avança o status conforme o tempo passa, como o backend faria em segundo plano. */
 function atualizar(doc: DocumentoMock): DocumentoMock {
-  if (doc.status !== "processando" || !doc.processamento_iniciado_em) return doc;
+  if (doc.status !== "processing" || !doc.processamento_iniciado_em) return doc;
   const decorrido = Date.now() - new Date(doc.processamento_iniciado_em).getTime();
   if (decorrido < TEMPO_PROCESSAMENTO_MS) return doc;
 
-  const falhou = doc.tamanho_bytes === 0 || doc.nome.toLowerCase().includes("erro");
+  const falhou = doc.tamanho_bytes === 0 || doc.name.toLowerCase().includes("error");
   return mockDb.documentos.substituir({
     ...doc,
-    status: falhou ? "erro" : "pronto",
+    status: falhou ? "error" : "ready",
     mensagem_erro: falhou ? "Não foi possível extrair texto do arquivo" : null,
     total_chunks: falhou ? null : Math.max(1, Math.round(doc.tamanho_bytes / 30_000)),
-    atualizado_em: agoraIso(),
+    updated_at: agoraIso(),
   });
 }
 
@@ -36,10 +36,10 @@ export const documentosMock: DocumentosService = {
     mockDb.projetos.encontrar(projetoId, "Projeto");
     return mockDb.documentos
       .todos()
-      .filter((d) => d.projeto_id === projetoId)
+      .filter((d) => d.project_id === projetoId)
       .map(atualizar)
       .map(publico)
-      .sort((a, b) => b.criado_em.localeCompare(a.criado_em));
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
   },
 
   async enviar(projetoId, arquivo, onProgress) {
@@ -57,15 +57,15 @@ export const documentosMock: DocumentosService = {
     const agora = agoraIso();
     const doc = mockDb.documentos.inserir({
       id: crypto.randomUUID(),
-      projeto_id: projetoId,
-      nome: arquivo.name,
+      project_id: projetoId,
+      name: arquivo.name,
       tipo,
       tamanho_bytes: arquivo.size,
-      status: "processando",
+      status: "processing",
       mensagem_erro: null,
       total_chunks: null,
-      criado_em: agora,
-      atualizado_em: agora,
+      created_at: agora,
+      updated_at: agora,
       processamento_iniciado_em: agora,
     });
     return publico(doc);

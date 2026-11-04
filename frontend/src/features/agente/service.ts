@@ -4,7 +4,7 @@ import type { ExecucaoAgente, ExecucaoInput } from "./types";
 
 export interface AgenteService {
   /**
-   * Inicia uma execução. Responde logo (202) com status "executando";
+   * Inicia uma execução. Responde logo (202) com status "running";
    * o progresso é acompanhado com `obter` até o status final.
    */
   executar(input: ExecucaoInput): Promise<ExecucaoAgente>;
@@ -14,15 +14,15 @@ export interface AgenteService {
 
 const agenteHttp: AgenteService = {
   executar: (input) =>
-    apiFetch<ExecucaoAgente>("/agente/execucoes", {
+    apiFetch<ExecucaoAgente>("/agent/runs", {
       method: "POST",
       body: JSON.stringify(input),
     }),
   listar: (projetoId) =>
     apiFetch<ExecucaoAgente[]>(
-      `/agente/execucoes?${new URLSearchParams({ projeto_id: projetoId })}`,
+      `/agent/runs?${new URLSearchParams({ project_id: projetoId })}`,
     ),
-  obter: (id) => apiFetch<ExecucaoAgente>(`/agente/execucoes/${id}`),
+  obter: (id) => apiFetch<ExecucaoAgente>(`/agent/runs/${id}`),
 };
 
 export const agenteService: AgenteService = apiMode === "mock" ? agenteMock : agenteHttp;

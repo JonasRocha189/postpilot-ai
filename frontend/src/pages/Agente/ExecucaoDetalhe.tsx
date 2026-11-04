@@ -59,7 +59,7 @@ export default function ExecucaoDetalhe() {
                 {execucao.pedido}
               </p>
 
-              {execucao.status === "concluida" && execucao.resposta && (
+              {execucao.status === "completed" && execucao.resposta && (
                 <>
                   <h3 className="mt-6 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">
                     {t("detail.answer")}
@@ -69,10 +69,10 @@ export default function ExecucaoDetalhe() {
                   </p>
                 </>
               )}
-              {execucao.status === "erro" && (
+              {execucao.status === "error" && (
                 <p className="mt-6 text-sm text-error-600 dark:text-error-400">{t("failed")}</p>
               )}
-              {execucao.status === "limite_atingido" && (
+              {execucao.status === "limit_reached" && (
                 <p className="mt-6 text-sm text-warning-600 dark:text-orange-400">
                   {t("limitReached", { max: MAX_ITERACOES })}
                 </p>
@@ -93,12 +93,12 @@ export default function ExecucaoDetalhe() {
                 {t("detail.steps")}
               </h3>
               <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">{t("detail.stepsHint")}</p>
-              {execucao.passos.length === 0 && execucao.status !== "executando" ? (
+              {execucao.passos.length === 0 && execucao.status !== "running" ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t("detail.noSteps")}</p>
               ) : (
                 <PassosLista
                   passos={execucao.passos}
-                  executando={execucao.status === "executando"}
+                  executando={execucao.status === "running"}
                   detalhado
                 />
               )}
@@ -133,7 +133,7 @@ export default function ExecucaoDetalhe() {
               </Info>
             </dl>
             <Link
-              to="/agente/execucoes"
+              to="/agent/runs"
               className="mt-6 inline-block text-sm text-brand-500 hover:underline dark:text-brand-400"
             >
               {t("detail.back")}

@@ -2,49 +2,52 @@
 
 > Status: **em implementação**. Atualize esta página sempre que uma rota for criada, alterada ou removida.
 >
-> **Implementadas:** todas as rotas planejadas. `/login`, `/cadastro`, `/erro`, `/`, `/projetos`, `/assuntos` e `/posts` (lista, novo e edição; posts com o mestre-detalhe das variações), o seletor de projeto no cabeçalho, `/calendario` (com os posts), `/documentos` (upload e status), `/agente`, `/agente/execucoes` e `/agente/execucoes/:id` (passos ao vivo), `/dashboard` (ainda com dados de exemplo), `/perfil` e `*`.
+> **Implementadas:** `/login`, `/signup`, `/error`, `/`, `/projects`, `/subjects` e `/posts` (lista, novo e edição), `/images` (biblioteca de imagens do projeto), o seletor de projeto no cabeçalho, `/calendar`, `/documents`, `/agent`, `/agent/runs` e `/agent/runs/:id`, `/dashboard` (ainda com dados de exemplo), `/profile` e `*`.
 >
-> **Dados de exemplo:** sem `VITE_API_URL`, o `npm run dev` usa uma API fictícia no navegador (`lib/api/mockDb.ts`, guardada no `localStorage`), com as mesmas regras da API real (`404`, `409`). Com `VITE_API_URL`, as mesmas telas chamam o backend.
+> **Ligadas à API real:** projetos, assuntos, posts e imagens. Documentos, agente e dashboard ainda usam a API fictícia.
+>
+> **Dados de exemplo:** sem `VITE_API_URL`, o `npm run dev` usa uma API fictícia no navegador (`lib/api/mockDb.ts`, guardada no `localStorage`), com as mesmas regras da API real (`404`, `409`, `422`). Com `VITE_API_URL`, as mesmas telas chamam o backend.
 >
 > Todas as telas estão em **português e inglês**. O seletor de idioma fica no cabeçalho (entre o tema e o usuário) e no rodapé das telas de login e cadastro.
 > As páginas de demonstração do TailAdmin ficam em `/template/*` só como referência visual e devem ser removidas antes da entrega.
 
-Roteamento com React Router. As URLs do frontend ficam em português, porque o usuário as vê; as rotas da API (coluna "API usada") ficam em inglês (ver [decisão 20](decisoes.md)). Páginas carregadas sob demanda (`React.lazy`) para reduzir o bundle inicial.
+Roteamento com React Router. **As URLs das páginas ficam em inglês**, como as rotas da API (ver [decisão 21](decisoes.md), que revê a decisão 20); só os textos da interface ficam em português (e inglês, via i18n). Páginas carregadas sob demanda (`lazy`) para reduzir o bundle inicial.
 
 ## Públicas
 
 | Rota | Página | Observação |
 | --- | --- | --- |
-| `/login` | Tela de entrada com o botão **Entrar** e link para `/cadastro` | Redireciona para o Auth0 (Universal Login) e é também o `redirect_uri` de volta do Auth0 |
-| `/cadastro` | Tela de cadastro com o botão **Criar conta** | Abre o Auth0 direto na tela de cadastro (`screen_hint=signup`). Mantida como garantia, mesmo que o fluxo principal comece em `/login` |
-| `/erro` | Página de erro com botão "tentar novamente" | Recebe erros do Auth0 (`?error=…&error_description=…`, ex.: acesso negado). O mesmo componente é o `errorElement` do roteador, exibido em falhas inesperadas |
-| `*` | Página não encontrada (404) | Reaproveita o `NotFound` do template. Renderizada na própria URL digitada, sem redirecionar |
+| `/login` | Tela de entrada com o botão **Entrar** e link para `/signup` | Redireciona para o Auth0 (Universal Login) e é também o `redirect_uri` de volta do Auth0 |
+| `/signup` | Tela de cadastro com o botão **Criar conta** | Abre o Auth0 direto na tela de cadastro (`screen_hint=signup`) |
+| `/error` | Página de erro com botão "tentar novamente" | Recebe erros do Auth0 (`?error=…&error_description=…`, ex.: acesso negado). O mesmo componente é o `errorElement` do roteador, exibido em falhas inesperadas |
+| `*` | Página não encontrada (404) | Renderizada na própria URL digitada, sem redirecionar |
 
 ## Protegidas
 
 Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 
-**Projeto atual:** um seletor no cabeçalho (no lugar da busca do template) define o projeto em que o usuário está trabalhando (como em Vercel ou Linear). As rotas de conteúdo não mudam; elas mostram só os dados do projeto selecionado, e as chamadas à API enviam o `project_id`. A escolha fica salva no navegador. Sem nenhum projeto cadastrado, as telas de conteúdo mostram um convite para criar o primeiro projeto.
+**Projeto atual:** um seletor no cabeçalho define o projeto em que o usuário está trabalhando (como em Vercel ou Linear). As rotas de conteúdo mostram só os dados do projeto selecionado, e as chamadas à API enviam o `project_id`. A escolha fica salva no navegador. Sem nenhum projeto cadastrado, as telas de conteúdo mostram um convite para criar o primeiro projeto.
 
 | Rota | Página | API usada | Requisito do TCC |
 | --- | --- | --- | --- |
 | `/` | Redireciona para `/dashboard` | | |
-| `/projetos` | Lista de projetos (marca própria ou clientes) | `GET /projects`, `DELETE /projects/{id}` | CRUD |
-| `/projetos/novo` | Cadastro de projeto: nome, descrição, público-alvo e tom de voz padrão | `POST /projects` | CRUD |
-| `/projetos/:id` | Edição de projeto | `GET`, `PUT /projects/{id}` | CRUD |
-| `/dashboard` | Posts por status, próximos posts previstos, últimas execuções do agente e **todas as métricas de desempenho** (impressões e engajamento por assunto, rede, dia e horário) | `GET /posts`, `GET /agent/runs`, `GET /reports/performance` | Relatório de desempenho |
-| `/assuntos` | Lista de assuntos | `GET /subjects`, `DELETE /subjects/{id}` | CRUD |
-| `/assuntos/novo` | Cadastro de assunto | `POST /subjects` | CRUD |
-| `/assuntos/:id` | Edição de assunto | `GET`, `PUT /subjects/{id}` | CRUD |
-| `/posts` | Lista de posts, com filtros na URL (`?status=rascunho&assunto=…`) | `GET /posts`, `DELETE /posts/{id}` | CRUD |
-| `/posts/novo` | Cadastro de post com suas variações. Depois de criar, abre `/posts/:id` para adicionar imagens | `POST /posts` | CRUD + mestre-detalhe |
-| `/posts/:id` | **Mestre-detalhe**: dados do post no topo e uma aba por rede (LinkedIn, Instagram, X) com texto, hashtags e contador de caracteres pelo limite da rede, mais as **imagens** (envio direto para o S3; as geradas pelo agente mostram o prompt) e as **métricas** da variação (resumo, histórico de coletas e registro, só com o post publicado). Imagens e métricas são gravadas na hora e aparecem quando a variação já está salva | `GET`, `PUT /posts/{id}`, `/variations/{id}/images`, `/variations/{id}/metrics` | Mestre-detalhe |
-| `/calendario` | Posts no calendário pela `expected_date`, com cor por status. Clicar em um post abre um modal de detalhes com link para `/posts/:id` | `GET /posts` | |
-| `/documentos` | Lista com status de processamento e upload na mesma tela | `/documents/*` | IA (RAG) |
-| `/agente` | Conversa com o agente, com troca de modo (`?modo=ideacao` ou `criacao`) | `POST /agent/runs` | IA |
-| `/agente/execucoes` | Histórico de execuções | `GET /agent/runs` | |
-| `/agente/execucoes/:id` | Uma execução com seus passos (tool, argumentos, duração, erro) | `GET /agent/runs/{id}` | |
-| `/perfil` | Dados do usuário (Auth0) e botão de alterar senha | Auth0 | Ciclo de vida do usuário |
+| `/dashboard` | Posts por status, próximos posts previstos, últimas execuções do agente e métricas de desempenho (por assunto, rede, dia e horário) | `GET /posts`, `GET /agent/runs`, `GET /reports/performance` | Relatório de desempenho |
+| `/projects` | Lista de projetos (marca própria ou clientes) | `GET /projects`, `DELETE /projects/{id}` | CRUD |
+| `/projects/new` | Cadastro de projeto: nome, descrição, público-alvo e tom de voz padrão | `POST /projects` | CRUD |
+| `/projects/:id` | Edição de projeto | `GET`, `PUT /projects/{id}` | CRUD |
+| `/subjects` | Lista de assuntos | `GET /subjects`, `DELETE /subjects/{id}` | CRUD |
+| `/subjects/new` | Cadastro de assunto | `POST /subjects` | CRUD |
+| `/subjects/:id` | Edição de assunto | `GET`, `PUT /subjects/{id}` | CRUD |
+| `/posts` | Lista de posts, com filtros na URL (`?status=draft&subject=…`) | `GET /posts`, `DELETE /posts/{id}` | CRUD |
+| `/posts/new` | Cadastro de post: título, assunto, status, data prevista, conteúdo e **imagem escolhida na biblioteca** do projeto | `POST /posts`, `GET /images` | CRUD |
+| `/posts/:id` | Edição do post (mesmo formulário) | `GET`, `PUT /posts/{id}` | CRUD |
+| `/images` | **Biblioteca de imagens do projeto**: envio direto para o S3 (vários arquivos, com progresso), ampliação com os posts que usam a imagem e exclusão (`409` se algum post a usa) | `GET /images`, `POST /images/upload-url`, `POST /images`, `DELETE /images/{id}` | |
+| `/calendar` | Posts no calendário pela `expected_date`, com cor por status. Clicar em um post abre um modal com link para `/posts/:id` | `GET /posts` | |
+| `/documents` | Lista com status de processamento e upload na mesma tela | `/documents/*` | IA (RAG) |
+| `/agent` | Conversa com o agente, com troca de modo (`?mode=ideation` ou `creation`) | `POST /agent/runs` | IA |
+| `/agent/runs` | Histórico de execuções | `GET /agent/runs` | |
+| `/agent/runs/:id` | Uma execução com seus passos (tool, argumentos, duração, erro) | `GET /agent/runs/{id}` | |
+| `/profile` | Dados do usuário (Auth0) e botão de alterar senha | Auth0 | Ciclo de vida do usuário |
 
 ## Menu lateral
 
@@ -52,35 +55,38 @@ Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 [Projeto atual ▾]   ← seletor no cabeçalho
 Dashboard
 Projetos
-Conteúdo
-  ├─ Posts
-  ├─ Calendário
-  ├─ Assuntos
-  └─ Documentos
-Agente
-  ├─ Nova conversa
-  └─ Histórico
+Assuntos
+Posts
+Imagens
+Calendário
 ─────────
-Perfil · Sair
+Documentos
+Agente
+Execuções
+─────────
+Perfil
 ```
+
+Os divisores vêm da propriedade `divider` dos itens em `layout/AppSidebar.tsx`.
 
 ## Decisões
 
-- **Sem formulários próprios de login e cadastro.** As páginas `/signin` e `/signup` do template saíram; `/login` e `/cadastro` só levam ao Auth0, que hospeda login, cadastro e redefinição de senha.
+- **Sem formulários próprios de login e cadastro.** `/login` e `/signup` só levam ao Auth0, que hospeda login, cadastro e redefinição de senha.
 - **Modo de desenvolvimento sem Auth0.** Sem `VITE_AUTH0_DOMAIN` e `VITE_AUTH0_CLIENT_ID`, o `npm run dev` entra com um usuário fictício (ver `frontend/.env.example`). No build de produção isso nunca acontece: sem configuração, o login fica indisponível.
 - **Roteador com data router** (`createBrowserRouter`), necessário para o `errorElement` e para o carregamento sob demanda (`lazy`) de cada página.
-- **Imagens e métricas ficam no detalhe do post**, na aba de cada variação, pois pertencem a uma variação. São gravadas na hora (não esperam o "Salvar" do post), e os modais delas são renderizados fora do `<form>` do post (`components/common/Portal.tsx`). Remover uma variação salva que tem imagens ou métricas pede confirmação.
-- **"Novo" e "editar" usam o mesmo formulário**: `/novo` começa vazio e `/:id` carrega os dados. Um schema Zod por entidade.
+- **Imagens numa biblioteca por projeto** ([decisão 22](decisoes.md)). O post aponta para uma imagem da biblioteca (`image_id`); o seletor do formulário abre a biblioteca num modal renderizado fora do `<form>` (`components/common/Portal.tsx`).
+- **Posts sem variações por rede, por enquanto.** O backend ainda não tem `post_variations`; o post tem um único `content`. As telas de variações e métricas por variação voltam quando o backend as tiver.
+- **"Novo" e "editar" usam o mesmo formulário**: `/new` começa vazio e `/:id` carrega os dados. Um schema Zod por entidade.
 - **Filtros na query string**, não em estado do componente: links compartilháveis, botão voltar funciona e os testes Playwright abrem a lista já filtrada.
-- **Calendário reaproveita o do template** (FullCalendar, já instalado). Mostra os posts no mês, com cor por status; não cria eventos próprios. Clicar num post abre um modal com os detalhes e o botão "Abrir post", que leva a `/posts/:id`.
-- **Sem rota `/404`.** O `*` mostra o 404 na URL que o usuário digitou, preservando o endereço e o histórico. Erros de verdade (Auth0, falhas inesperadas) vão para `/erro`.
-- **Sem rota `/relatorio`.** Desde 2026-10-27, todas as métricas de desempenho ficam no `/dashboard` (por enquanto). As métricas de cada variação continuam sendo registradas no detalhe do post.
+- **Calendário reaproveita o do template** (FullCalendar). Mostra os posts como eventos de dia inteiro (a `expected_date` é só a data), com cor por status.
+- **Sem rota `/404`.** O `*` mostra o 404 na URL que o usuário digitou. Erros de verdade (Auth0, falhas inesperadas) vão para `/error`.
+- **Sem rota `/relatorio`.** As métricas de desempenho ficam no `/dashboard` (por enquanto).
 
 ## Ordem de implementação
 
-1. Auth0 + layout protegido + `/login` + `/perfil`
-2. `/projetos` e o seletor de projeto no cabeçalho
-3. `/assuntos`
-4. `/posts` e `/posts/:id`, depois `/calendario`
-5. `/documentos` e `/agente`
+1. Auth0 + layout protegido + `/login` + `/profile`
+2. `/projects` e o seletor de projeto no cabeçalho
+3. `/subjects`
+4. `/posts` e `/posts/:id`, `/images`, depois `/calendar`
+5. `/documents` e `/agent`
 6. `/dashboard`

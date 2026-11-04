@@ -68,7 +68,7 @@ export default function UserDropdown() {
             <DropdownItem
               onItemClick={closeDropdown}
               tag="a"
-              to="/perfil"
+              to="/profile"
               className={itemClass}
             >
               <svg

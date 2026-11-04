@@ -6,17 +6,17 @@ export type TipoDocumento = "pdf" | "docx" | "txt";
 
 export type Documento = {
   id: string;
-  projeto_id: string;
-  nome: string;
+  project_id: string;
+  name: string;
   tipo: TipoDocumento;
   tamanho_bytes: number;
   status: StatusDocumento;
-  /** Preenchido quando status = "erro" */
+  /** Preenchido quando status = "error" */
   mensagem_erro: string | null;
   /** Quantos trechos foram indexados para o RAG (quando pronto) */
   total_chunks: number | null;
-  criado_em: string;
-  atualizado_em: string;
+  created_at: string;
+  updated_at: string;
 };
 
 /** Resposta de POST /documentos/upload-url */

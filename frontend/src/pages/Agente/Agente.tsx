@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router";
 
-const MODOS: ModoAgente[] = ["ideacao", "criacao"];
+const MODOS: ModoAgente[] = ["ideation", "creation"];
 const MAX_PEDIDO = 2000;
 
 export default function Agente() {
@@ -20,7 +20,7 @@ export default function Agente() {
   const { t: tApp } = useTranslation("app");
   const { projetoAtual } = useProjetoAtual();
   const [params, setParams] = useSearchParams();
-  const modo: ModoAgente = params.get("modo") === "criacao" ? "criacao" : "ideacao";
+  const modo: ModoAgente = params.get("mode") === "creation" ? "creation" : "ideation";
 
   // Execuções feitas nesta visita, por projeto (cada pedido é independente)
   const [conversa, setConversa] = useState<{ id: string; projetoId: string }[]>([]);
@@ -30,7 +30,7 @@ export default function Agente() {
 
   const doProjeto = conversa.filter((c) => c.projetoId === projetoAtual?.id);
   const ultima = useExecucao(doProjeto.at(-1)?.id);
-  const ocupado = executar.isPending || ultima.data?.status === "executando";
+  const ocupado = executar.isPending || ultima.data?.status === "running";
 
   // Rola até a última mensagem quando a conversa ou os passos mudam
   // (não rola ao abrir a página, com a conversa vazia)
@@ -45,10 +45,10 @@ export default function Agente() {
     const texto = pedido.trim();
     if (!texto || ocupado || !projetoAtual) return;
     executar.mutate(
-      { projeto_id: projetoAtual.id, modo, pedido: texto },
+      { project_id: projetoAtual.id, modo, pedido: texto },
       {
         onSuccess: (execucao) => {
-          setConversa((atual) => [...atual, { id: execucao.id, projetoId: execucao.projeto_id }]);
+          setConversa((atual) => [...atual, { id: execucao.id, projetoId: execucao.project_id }]);
           setPedido("");
         },
       },
@@ -62,7 +62,7 @@ export default function Agente() {
       <PageMeta title={`${t("title")} | PostPilot`} description={t("subtitle")} />
       <PageHeader
         title={t("title")}
-        subtitle={t("subtitle", { project: projetoAtual?.nome })}
+        subtitle={t("subtitle", { project: projetoAtual?.name })}
         action={
           <div
             role="radiogroup"
@@ -75,7 +75,7 @@ export default function Agente() {
                 type="button"
                 role="radio"
                 aria-checked={modo === m}
-                onClick={() => setParams({ modo: m }, { replace: true })}
+                onClick={() => setParams({ mode: m }, { replace: true })}
                 className={cn(
                   "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                   modo === m
@@ -152,7 +152,7 @@ export default function Agente() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-2 pt-3 dark:border-gray-800">
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
               {t("draftOnly")}{" "}
-              <Link to="/agente/execucoes" className="text-brand-500 hover:underline dark:text-brand-400">
+              <Link to="/agent/runs" className="text-brand-500 hover:underline dark:text-brand-400">
                 {t("history")}
               </Link>
             </p>

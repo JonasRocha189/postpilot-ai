@@ -40,8 +40,8 @@ const router = createBrowserRouter([
     children: [
       // Públicas
       { path: "/login", ...page(() => import("@/pages/AuthPages/Login")) },
-      { path: "/cadastro", ...page(() => import("@/pages/AuthPages/Cadastro")) },
-      { path: "/erro", element: <Erro /> },
+      { path: "/signup", ...page(() => import("@/pages/AuthPages/Cadastro")) },
+      { path: "/error", element: <Erro /> },
 
       // Protegidas
       {
@@ -51,10 +51,10 @@ const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { index: true, element: <Navigate to="/dashboard" replace /> },
-              { path: "/projetos", ...page(() => import("@/pages/Projetos/Projetos")) },
-              { path: "/projetos/novo", ...page(() => import("@/pages/Projetos/ProjetoFormPage")) },
-              { path: "/projetos/:id", ...page(() => import("@/pages/Projetos/ProjetoFormPage")) },
-              { path: "/perfil", ...page(() => import("@/pages/Perfil")) },
+              { path: "/projects", ...page(() => import("@/pages/Projetos/Projetos")) },
+              { path: "/projects/new", ...page(() => import("@/pages/Projetos/ProjetoFormPage")) },
+              { path: "/projects/:id", ...page(() => import("@/pages/Projetos/ProjetoFormPage")) },
+              { path: "/profile", ...page(() => import("@/pages/Perfil")) },
 
               // Conteúdo: exige um projeto selecionado
               {
@@ -62,16 +62,17 @@ const router = createBrowserRouter([
                 children: [
                   { path: "/dashboard", ...page(() => import("@/pages/Dashboard/Dashboard")) },
                   { path: "/posts", ...page(() => import("@/pages/Posts/Posts")) },
-                  { path: "/posts/novo", ...page(() => import("@/pages/Posts/PostFormPage")) },
+                  { path: "/posts/new", ...page(() => import("@/pages/Posts/PostFormPage")) },
                   { path: "/posts/:id", ...page(() => import("@/pages/Posts/PostFormPage")) },
-                  { path: "/calendario", ...page(() => import("@/pages/Calendario")) },
-                  { path: "/assuntos", ...page(() => import("@/pages/Assuntos/Assuntos")) },
-                  { path: "/assuntos/novo", ...page(() => import("@/pages/Assuntos/AssuntoFormPage")) },
-                  { path: "/assuntos/:id", ...page(() => import("@/pages/Assuntos/AssuntoFormPage")) },
-                  { path: "/documentos", ...page(() => import("@/pages/Documentos")) },
-                  { path: "/agente", ...page(() => import("@/pages/Agente/Agente")) },
-                  { path: "/agente/execucoes", ...page(() => import("@/pages/Agente/Execucoes")) },
-                  { path: "/agente/execucoes/:id", ...page(() => import("@/pages/Agente/ExecucaoDetalhe")) },
+                  { path: "/images", ...page(() => import("@/pages/Imagens")) },
+                  { path: "/calendar", ...page(() => import("@/pages/Calendario")) },
+                  { path: "/subjects", ...page(() => import("@/pages/Assuntos/Assuntos")) },
+                  { path: "/subjects/new", ...page(() => import("@/pages/Assuntos/AssuntoFormPage")) },
+                  { path: "/subjects/:id", ...page(() => import("@/pages/Assuntos/AssuntoFormPage")) },
+                  { path: "/documents", ...page(() => import("@/pages/Documentos")) },
+                  { path: "/agent", ...page(() => import("@/pages/Agente/Agente")) },
+                  { path: "/agent/runs", ...page(() => import("@/pages/Agente/Execucoes")) },
+                  { path: "/agent/runs/:id", ...page(() => import("@/pages/Agente/ExecucaoDetalhe")) },
                 ],
               },
               ...templateRoutes,

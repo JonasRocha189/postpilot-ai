@@ -13,7 +13,7 @@ export function useDocumentos(projetoId: string | undefined) {
     enabled: Boolean(projetoId),
     // Enquanto algum documento estiver em processamento, consulta de novo
     refetchInterval: (query) =>
-      query.state.data?.some((d) => d.status === "pendente" || d.status === "processando")
+      query.state.data?.some((d) => d.status === "pending" || d.status === "processing")
         ? 1500
         : false,
   });

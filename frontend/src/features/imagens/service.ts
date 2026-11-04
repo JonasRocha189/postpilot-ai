@@ -1,50 +1,60 @@
 import { ApiError, apiFetch, apiMode } from "@/lib/api/http";
 import { putNoS3, type Progresso } from "@/lib/api/s3";
-import { formatoMaisProximo, MIME_POR_TIPO, tipoDaImagem } from "./arquivo";
+import { MIME_POR_TIPO, tipoDaImagem } from "./arquivo";
 import { imagensMock } from "./mock";
 import type { Imagem, ImagemUploadUrlResponse } from "./types";
 
 export interface ImagensService {
-  listar(variacaoId: string): Promise<Imagem[]>;
+  /** Biblioteca de imagens do projeto, das mais recentes para as mais antigas. */
+  listar(projetoId: string): Promise<Imagem[]>;
   /**
    * Fluxo completo de envio: pede a URL pré-assinada, envia o arquivo
-   * direto para o S3 e registra a imagem na variação.
+   * direto para o S3 e registra a imagem na biblioteca do projeto.
    */
   enviar(
-    variacaoId: string,
+    projetoId: string,
     arquivo: File,
     onProgress?: Progresso,
   ): Promise<Imagem>;
-  /** Remove a imagem e o objeto no S3. */
+  /** Remove a imagem e o objeto no S3. Rejeita com 409 se algum post a usa. */
   excluir(id: string): Promise<void>;
 }
 
 const imagensHttp: ImagensService = {
-  listar: (variacaoId) =>
-    apiFetch<Imagem[]>(`/variacoes/${variacaoId}/imagens`),
+  listar: (projetoId) =>
+    apiFetch<Imagem[]>(
+      `/images?${new URLSearchParams({ project_id: projetoId })}`,
+    ),
 
-  async enviar(variacaoId, arquivo, onProgress) {
+  async enviar(projetoId, arquivo, onProgress) {
     const tipo = tipoDaImagem(arquivo);
-    if (!tipo) throw new ApiError(422, "Tipo de imagem não aceito");
-    const bitmap = await createImageBitmap(arquivo);
-    const formato = formatoMaisProximo(bitmap.width, bitmap.height);
-    bitmap.close();
+    if (!tipo) throw new ApiError(422, "Unsupported image type");
+    const content_type = MIME_POR_TIPO[tipo];
 
-    const { chave, upload_url } = await apiFetch<ImagemUploadUrlResponse>(
-      `/variacoes/${variacaoId}/imagens/upload-url`,
+    const { key, upload_url } = await apiFetch<ImagemUploadUrlResponse>(
+      "/images/upload-url",
       {
         method: "POST",
-        body: JSON.stringify({ tipo, tamanho_bytes: arquivo.size }),
+        body: JSON.stringify({
+          project_id: projetoId,
+          content_type,
+          size_bytes: arquivo.size,
+        }),
       },
     );
-    await putNoS3(upload_url, arquivo, MIME_POR_TIPO[tipo], onProgress);
-    return apiFetch<Imagem>(`/variacoes/${variacaoId}/imagens`, {
+    await putNoS3(upload_url, arquivo, content_type, onProgress);
+    return apiFetch<Imagem>("/images", {
       method: "POST",
-      body: JSON.stringify({ chave, formato }),
+      body: JSON.stringify({
+        project_id: projetoId,
+        key,
+        content_type,
+        description: null,
+      }),
     });
   },
 
-  excluir: (id) => apiFetch<void>(`/imagens/${id}`, { method: "DELETE" }),
+  excluir: (id) => apiFetch<void>(`/images/${id}`, { method: "DELETE" }),
 };
 
 export const imagensService: ImagensService =

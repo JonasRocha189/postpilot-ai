@@ -15,7 +15,7 @@ export function useExecutarAgente() {
     mutationFn: (input: ExecucaoInput) => agenteService.executar(input),
     onSuccess: (execucao) => {
       queryClient.setQueryData(execucoesKeys.detail(execucao.id), execucao);
-      void queryClient.invalidateQueries({ queryKey: execucoesKeys.list(execucao.projeto_id) });
+      void queryClient.invalidateQueries({ queryKey: execucoesKeys.list(execucao.project_id) });
     },
   });
 }
@@ -26,11 +26,11 @@ export function useExecucoes(projetoId: string | undefined) {
     queryFn: () => agenteService.listar(projetoId!),
     enabled: Boolean(projetoId),
     refetchInterval: (query) =>
-      query.state.data?.some((e) => e.status === "executando") ? 2000 : false,
+      query.state.data?.some((e) => e.status === "running") ? 2000 : false,
   });
 }
 
-/** Acompanha uma execução: consulta a cada ~0,7 s enquanto está "executando". */
+/** Acompanha uma execução: consulta a cada ~0,7 s enquanto está "running". */
 export function useExecucao(id: string | undefined) {
   const queryClient = useQueryClient();
   return useQuery({
@@ -39,13 +39,13 @@ export function useExecucao(id: string | undefined) {
       const anterior = queryClient.getQueryData<ExecucaoAgente>(execucoesKeys.detail(id!));
       const execucao = await agenteService.obter(id!);
       // Ao terminar, atualiza o histórico e os posts (pode ter um rascunho novo)
-      if (anterior?.status === "executando" && execucao.status !== "executando") {
-        void queryClient.invalidateQueries({ queryKey: execucoesKeys.list(execucao.projeto_id) });
+      if (anterior?.status === "running" && execucao.status !== "running") {
+        void queryClient.invalidateQueries({ queryKey: execucoesKeys.list(execucao.project_id) });
         void queryClient.invalidateQueries({ queryKey: postsKeys.all });
       }
       return execucao;
     },
     enabled: Boolean(id),
-    refetchInterval: (query) => (query.state.data?.status === "executando" ? 700 : false),
+    refetchInterval: (query) => (query.state.data?.status === "running" ? 700 : false),
   });
 }

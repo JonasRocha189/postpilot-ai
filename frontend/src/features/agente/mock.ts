@@ -2,7 +2,6 @@
 // Os passos do roteiro "aparecem" um a um conforme o tempo passa, imitando
 // o backend que roda o agente em segundo plano e grava cada PassoAgente.
 import { imagemFicticia } from "@/features/imagens/ficticia";
-import { contarCaracteres } from "@/features/posts/redes";
 import {
   agoraIso,
   latencia,
@@ -23,42 +22,30 @@ function finalizar(exec: ExecucaoMock): ExecucaoMock {
   if (rascunho && !postId) {
     const agora = agoraIso();
     postId = crypto.randomUUID();
-    mockDb.posts.inserir({
-      id: postId,
-      assunto_id: rascunho.assunto_id,
-      titulo: rascunho.titulo,
-      status: "rascunho", // o agente só salva rascunhos
-      data_prevista: null,
-      criado_em: agora,
-      atualizado_em: agora,
-      variacoes: rascunho.redes.map((rede) => {
-        const hashtags = ["postpilot"];
-        return {
-          id: `${postId}-${rede}`,
-          rede,
-          texto: rascunho.texto,
-          hashtags,
-          contagem_caracteres: contarCaracteres(rascunho.texto, hashtags),
-        };
-      }),
-    });
-  }
-  if (rascunho && postId && postId !== exec.post_id) {
-    // A imagem gerada pelo agente fica em cada variação do rascunho
+    // A imagem gerada pelo agente entra na biblioteca do projeto e no rascunho
     const prompt = exec.roteiro.passos.find((p) => p.tool === "gerar_imagem")
       ?.argumentos.prompt;
-    for (const rede of rascunho.redes) {
-      const variacaoId = `${postId}-${rede}`;
-      const formato = rede === "instagram" ? "4:5" : "1:1";
-      mockDb.imagens.inserir({
-        id: crypto.randomUUID(),
-        variacao_id: variacaoId,
-        formato,
-        prompt: typeof prompt === "string" ? prompt : null,
-        url: imagemFicticia(variacaoId, formato),
-        criado_em: agoraIso(),
-      });
-    }
+    const imagemId = crypto.randomUUID();
+    mockDb.imagens.inserir({
+      id: imagemId,
+      project_id: exec.project_id,
+      content_type: "image/svg+xml",
+      description: typeof prompt === "string" ? prompt : null,
+      url: imagemFicticia(imagemId),
+      created_at: agora,
+      updated_at: agora,
+    });
+    mockDb.posts.inserir({
+      id: postId,
+      subject_id: rascunho.subject_id,
+      title: rascunho.title,
+      content: rascunho.texto,
+      status: "draft", // o agente só salva rascunhos
+      expected_date: null,
+      image_id: imagemId,
+      created_at: agora,
+      updated_at: agora,
+    });
   }
   return mockDb.execucoes.substituir({
     ...exec,
@@ -92,10 +79,10 @@ function materializar(registro: ExecucaoMock): ExecucaoAgente {
 
   return {
     id: exec.id,
-    projeto_id: exec.projeto_id,
+    project_id: exec.project_id,
     modo: exec.modo,
     pedido: exec.pedido,
-    status: exec.finalizada ? exec.roteiro.statusFinal : "executando",
+    status: exec.finalizada ? exec.roteiro.statusFinal : "running",
     resposta: exec.finalizada ? exec.roteiro.resposta : null,
     post_id: exec.finalizada ? exec.post_id : null,
     iteracoes,
@@ -118,27 +105,27 @@ function materializar(registro: ExecucaoMock): ExecucaoAgente {
 }
 
 export const agenteMock: AgenteService = {
-  async executar({ projeto_id, modo, pedido }) {
+  async executar({ project_id, modo, pedido }) {
     await latencia();
-    const projeto = mockDb.projetos.encontrar(projeto_id, "Projeto");
+    const projeto = mockDb.projetos.encontrar(project_id, "Projeto");
     const assuntos = mockDb.assuntos
       .todos()
-      .filter((a) => a.projeto_id === projeto_id);
+      .filter((a) => a.project_id === project_id);
     // Usa o assunto citado no pedido; senão, o primeiro do projeto
     const assunto =
       assuntos.find((a) =>
-        pedido.toLowerCase().includes(a.nome.toLowerCase()),
+        pedido.toLowerCase().includes(a.name.toLowerCase()),
       ) ??
       assuntos[0] ??
       null;
     const documentos = mockDb.documentos
       .todos()
-      .filter((d) => d.projeto_id === projeto_id && d.status === "pronto")
-      .map((d) => d.nome);
+      .filter((d) => d.project_id === project_id && d.status === "ready")
+      .map((d) => d.name);
 
     const registro = mockDb.execucoes.inserir({
       id: crypto.randomUUID(),
-      projeto_id,
+      project_id,
       modo,
       pedido,
       iniciada_em: agoraIso(),
@@ -146,7 +133,7 @@ export const agenteMock: AgenteService = {
         modo,
         pedido,
         projeto,
-        assunto: assunto && { id: assunto.id, nome: assunto.nome },
+        assunto: assunto && { id: assunto.id, name: assunto.name },
         documentos,
       }),
       post_id: null,
@@ -159,7 +146,7 @@ export const agenteMock: AgenteService = {
     await latencia();
     return mockDb.execucoes
       .todos()
-      .filter((e) => e.projeto_id === projetoId)
+      .filter((e) => e.project_id === projetoId)
       .map(materializar)
       .sort((a, b) => b.iniciada_em.localeCompare(a.iniciada_em));
   },

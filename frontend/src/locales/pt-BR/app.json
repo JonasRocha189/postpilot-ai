@@ -15,6 +15,7 @@
     "toggleSidebar": "Abrir ou fechar o menu",
     "moreOptions": "Mais opções",
     "posts": "Posts",
+    "images": "Imagens",
     "subjects": "Assuntos",
     "documents": "Documentos",
     "agent": "Agente",
@@ -66,7 +67,7 @@
       "title": "Excluir \"{name}\"?",
       "message": "Esta ação não pode ser desfeita. Só é possível excluir projetos sem assuntos e documentos.",
       "confirm": "Excluir",
-      "hasContent": "Este projeto ainda tem assuntos ou documentos. Exclua-os antes de excluir o projeto."
+      "hasContent": "Este projeto ainda tem assuntos, documentos ou imagens. Exclua-os antes de excluir o projeto."
     }
   },
   "language": {
@@ -156,27 +157,28 @@
   },
   "domain": {
     "postStatus": {
-      "rascunho": "Rascunho",
-      "aprovado": "Aprovado",
-      "publicado": "Publicado"
+      "draft": "Rascunho",
+      "review": "Em revisão",
+      "approved": "Aprovado",
+      "published": "Publicado"
     },
     "agentMode": {
-      "ideacao": "Ideação",
-      "criacao": "Criação"
+      "ideation": "Ideação",
+      "creation": "Criação"
     },
     "runStatus": {
-      "concluida": "Concluída",
-      "erro": "Erro",
-      "limite_atingido": "Limite atingido",
-      "executando": "Executando"
+      "completed": "Concluída",
+      "error": "Erro",
+      "limit_reached": "Limite atingido",
+      "running": "Executando"
     },
     "posts_one": "{count} post",
     "posts_other": "{count} posts",
     "docStatus": {
-      "pendente": "Pendente",
-      "processando": "Processando",
-      "pronto": "Pronto",
-      "erro": "Erro"
+      "pending": "Pendente",
+      "processing": "Processando",
+      "ready": "Pronto",
+      "error": "Erro"
     }
   },
   "dashboard": {
@@ -240,6 +242,8 @@
     "more": "+{count} mais",
     "details": {
       "scheduledFor": "Previsto para",
+      "content": "Conteúdo",
+      "contentPlaceholder": "Escreva o texto do post",
       "subject": "Assunto",
       "networks": "Redes",
       "status": "Status",
@@ -380,7 +384,22 @@
       "metrics": "Métricas",
       "removeTitle": "Remover a variação do {network}?",
       "removeMessage": "Ela tem {images} imagem(ns) e {metrics} registro(s) de métricas, que serão excluídos quando você salvar o post.",
-      "created": "Post criado. Agora você pode adicionar imagens a cada variação."
+      "created": "Post criado. Agora você pode adicionar imagens a cada variação.",
+      "image": {
+        "label": "Imagem",
+        "none": "Nenhuma imagem escolhida.",
+        "selected": "Imagem escolhida",
+        "loading": "Carregando…",
+        "choose": "Escolher da biblioteca",
+        "change": "Trocar imagem",
+        "remove": "Remover",
+        "dialogTitle": "Escolha a imagem do post",
+        "loadError": "Não foi possível carregar a biblioteca.",
+        "emptyLibrary": "A biblioteca do projeto ainda não tem imagens.",
+        "goToLibrary": "Enviar imagens para a biblioteca",
+        "uploadMore": "Enviar mais imagens",
+        "option": "Imagem {n}"
+      }
     }
   },
   "documents": {
@@ -421,26 +440,26 @@
     "modeLabel": "Modo do agente",
     "inputLabel": "Seu pedido para o agente",
     "placeholder": {
-      "ideacao": "Ex.: Sugira 5 temas para a próxima semana",
-      "criacao": "Ex.: Escreva um post para LinkedIn e X sobre o checklist de segurança"
+      "ideation": "Ex.: Sugira 5 temas para a próxima semana",
+      "creation": "Ex.: Escreva um post para LinkedIn e X sobre o checklist de segurança"
     },
     "intro": {
-      "ideacao": {
+      "ideation": {
         "title": "Vamos achar o próximo tema",
         "message": "No modo Ideação, o agente pesquisa na web, olha seus posts anteriores e o que teve melhor desempenho para sugerir temas."
       },
-      "criacao": {
+      "creation": {
         "title": "Vamos escrever um post",
         "message": "No modo Criação, o agente usa seus documentos e o estilo dos posts aprovados, adapta o texto para cada rede, gera a imagem e salva tudo como rascunho."
       }
     },
     "suggestions": {
-      "ideacao": [
+      "ideation": [
         "Sugira 5 temas para a próxima semana",
         "O que está funcionando melhor nas minhas redes?",
         "Ideias de posts sobre tendências do setor"
       ],
-      "criacao": [
+      "creation": [
         "Escreva um post para LinkedIn e X com base nos documentos",
         "Crie um carrossel para Instagram sobre bastidores",
         "Transforme o tema mais recente em um post"
@@ -501,25 +520,30 @@
     }
   },
   "images": {
-    "add": "Adicionar imagem",
+    "title": "Imagens",
+    "metaDescription": "Biblioteca de imagens do projeto.",
+    "subtitle": "Biblioteca de imagens de {project}. Escolha a imagem de cada post no formulário do post.",
+    "add": "Adicionar imagens",
     "drop": "Solte para enviar",
     "hint": "PNG, JPG ou WebP até {max} MB",
     "inputLabel": "Enviar imagens",
     "tooLarge": "Imagem maior que {max} MB.",
     "invalidType": "Formato não aceito. Envie PNG, JPG ou WebP.",
-    "tooMany": "Cada variação aceita no máximo {max} imagens.",
     "failed": "Não foi possível enviar a imagem. Tente novamente.",
     "progress": "Enviando {name}",
     "dismiss": "Dispensar",
-    "empty": "Nenhuma imagem ainda. Envie uma ou peça ao agente para gerar.",
+    "empty": "A biblioteca está vazia. Envie a primeira imagem.",
     "loadError": "Não foi possível carregar as imagens.",
     "open": "Ampliar imagem {n}",
     "deleteLabel": "Excluir imagem {n}",
-    "generated": "Gerada pelo agente",
-    "uploaded": "Enviada por você",
-    "prompt": "Prompt",
+    "usedIn_one": "Em {count} post",
+    "usedIn_other": "Em {count} posts",
+    "usedBy": "Usada nos posts:",
+    "notUsed": "Nenhum post usa esta imagem.",
+    "uploadedOn": "Enviada em {date}",
     "deleteTitle": "Excluir esta imagem?",
-    "deleteMessage": "A imagem será removida da variação e do armazenamento. Esta ação não pode ser desfeita."
+    "deleteMessage": "A imagem será removida da biblioteca e do armazenamento. Esta ação não pode ser desfeita.",
+    "deleteConflict": "Esta imagem é usada por algum post. Troque ou remova a imagem desses posts antes de excluir."
   },
   "metrics": {
     "fields": {

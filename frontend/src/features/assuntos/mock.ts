@@ -11,8 +11,8 @@ export const assuntosMock: AssuntosService = {
     mockDb.projetos.encontrar(projetoId, "Projeto");
     return mockDb.assuntos
       .todos()
-      .filter((a) => a.projeto_id === projetoId)
-      .sort((a, b) => a.nome.localeCompare(b.nome));
+      .filter((a) => a.project_id === projetoId)
+      .sort((a, b) => a.name.localeCompare(b.name));
   },
 
   async obter(id) {
@@ -27,23 +27,23 @@ export const assuntosMock: AssuntosService = {
     return mockDb.assuntos.inserir({
       ...input,
       id: crypto.randomUUID(),
-      projeto_id: projetoId,
-      criado_em: agora,
-      atualizado_em: agora,
+      project_id: projetoId,
+      created_at: agora,
+      updated_at: agora,
     });
   },
 
   async atualizar(id, input) {
     await latencia();
     const atual = mockDb.assuntos.encontrar(id, NOME);
-    return mockDb.assuntos.substituir({ ...atual, ...input, atualizado_em: agoraIso() });
+    return mockDb.assuntos.substituir({ ...atual, ...input, updated_at: agoraIso() });
   },
 
   async excluir(id) {
     await latencia();
     mockDb.assuntos.encontrar(id, NOME);
     // Regra da API: só exclui assunto sem posts
-    if (mockDb.posts.todos().some((p) => p.assunto_id === id)) {
+    if (mockDb.posts.todos().some((p) => p.subject_id === id)) {
       throw new ApiError(409, "O assunto ainda tem posts");
     }
     mockDb.assuntos.remover(id);

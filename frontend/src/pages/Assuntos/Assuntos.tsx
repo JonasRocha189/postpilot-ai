@@ -39,9 +39,9 @@ export default function Assuntos() {
       <PageMeta title={`${t("title")} | PostPilot`} description={t("subtitle")} />
       <PageHeader
         title={t("title")}
-        subtitle={t("subtitle", { project: projetoAtual?.nome })}
+        subtitle={t("subtitle", { project: projetoAtual?.name })}
         action={
-          <Link to="/assuntos/novo" className={primaryLinkClass}>
+          <Link to="/subjects/new" className={primaryLinkClass}>
             <PlusIcon className="size-5" />
             {t("new")}
           </Link>
@@ -62,7 +62,7 @@ export default function Assuntos() {
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
             {t("empty.message")}
           </p>
-          <Link to="/assuntos/novo" className={`${primaryLinkClass} mt-6`}>
+          <Link to="/subjects/new" className={`${primaryLinkClass} mt-6`}>
             <PlusIcon className="size-5" />
             {t("new")}
           </Link>
@@ -86,27 +86,27 @@ export default function Assuntos() {
                   <tr key={assunto.id}>
                     <td className={td}>
                       <Link
-                        to={`/assuntos/${assunto.id}`}
+                        to={`/subjects/${assunto.id}`}
                         className="font-medium text-gray-800 hover:text-brand-500 dark:text-white/90 dark:hover:text-brand-400"
                       >
-                        {assunto.nome}
+                        {assunto.name}
                       </Link>
-                      {assunto.descricao && (
-                        <p className="mt-1 line-clamp-2 max-w-md">{assunto.descricao}</p>
+                      {assunto.description && (
+                        <p className="mt-1 line-clamp-2 max-w-md">{assunto.description}</p>
                       )}
                     </td>
                     <td className={`${td} hidden max-w-xs md:table-cell`}>
-                      {voz(assunto.publico_alvo)}
+                      {voz(assunto.target_audience)}
                     </td>
                     <td className={`${td} hidden max-w-xs lg:table-cell`}>
-                      {voz(assunto.tom_de_voz)}
+                      {voz(assunto.voice_tone)}
                     </td>
                     <td className={td}>
                       <div className="flex justify-end gap-2">
                         <Link
-                          to={`/assuntos/${assunto.id}`}
+                          to={`/subjects/${assunto.id}`}
                           className={iconButtonClass}
-                          aria-label={t("editLabel", { name: assunto.nome })}
+                          aria-label={t("editLabel", { name: assunto.name })}
                           title={t("edit")}
                         >
                           <PencilIcon className="size-4" />
@@ -115,7 +115,7 @@ export default function Assuntos() {
                           type="button"
                           onClick={() => setParaExcluir(assunto)}
                           className={iconButtonDangerClass}
-                          aria-label={t("deleteLabel", { name: assunto.nome })}
+                          aria-label={t("deleteLabel", { name: assunto.name })}
                           title={t("delete.confirm")}
                         >
                           <TrashBinIcon className="size-4" />
@@ -132,7 +132,7 @@ export default function Assuntos() {
 
       <ConfirmarExclusaoModal
         isOpen={paraExcluir !== null}
-        title={t("delete.title", { name: paraExcluir?.nome })}
+        title={t("delete.title", { name: paraExcluir?.name })}
         message={t("delete.message")}
         conflictMessage={t("delete.hasPosts")}
         onConfirm={() => excluir.mutateAsync(paraExcluir!.id)}

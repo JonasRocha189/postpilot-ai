@@ -18,7 +18,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
-/** /projetos/novo (sem id) e /projetos/:id (edição) */
+/** /projects/new (sem id) e /projects/:id (edição) */
 export default function ProjetoFormPage() {
   const { id } = useParams();
   const { t } = useTranslation("app", { keyPrefix: "projects" });
@@ -43,7 +43,7 @@ export default function ProjetoFormPage() {
         // Quem cria um projeto quer trabalhar nele
         selecionar(novo.id);
       }
-      navigate("/projetos");
+      navigate("/projects");
     } catch {
       setSubmitError(t("form.saveError"));
     }

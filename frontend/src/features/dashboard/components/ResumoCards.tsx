@@ -27,19 +27,19 @@ export default function ResumoCards({
   const cards: Card[] = [
     {
       label: t("drafts"),
-      value: fmt.number(postsPorStatus.rascunho),
+      value: fmt.number(postsPorStatus.draft),
       hint: t("draftsHint"),
       Icon: PencilIcon,
     },
     {
       label: t("approved"),
-      value: fmt.number(postsPorStatus.aprovado),
+      value: fmt.number(postsPorStatus.approved),
       hint: t("approvedHint"),
       Icon: CheckCircleIcon,
     },
     {
       label: t("published"),
-      value: fmt.number(postsPorStatus.publicado),
+      value: fmt.number(postsPorStatus.published),
       hint: t("impressions", { count: fmt.number(total.impressoes) }),
       Icon: PaperPlaneIcon,
     },

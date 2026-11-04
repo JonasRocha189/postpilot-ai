@@ -29,7 +29,7 @@ export default function ProjetoSelector() {
   if (!projetoAtual) {
     return (
       <Link
-        to="/projetos/novo"
+        to="/projects/new"
         className="inline-flex h-11 items-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
       >
         <PlusIcon className="size-5" />
@@ -45,7 +45,7 @@ export default function ProjetoSelector() {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-label={t("selectorLabel", { name: projetoAtual.nome })}
+        aria-label={t("selectorLabel", { name: projetoAtual.name })}
         className="dropdown-toggle flex h-11 max-w-[60vw] min-w-0 items-center gap-2.5 rounded-lg border border-gray-200 bg-white ps-1.5 pe-3 text-start transition-colors hover:bg-gray-50 sm:max-w-72 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-white/3"
       >
         <ProjetoAvatar projeto={projetoAtual} />
@@ -54,7 +54,7 @@ export default function ProjetoSelector() {
             {t("current")}
           </span>
           <span className="block truncate text-sm leading-tight font-semibold text-gray-800 dark:text-white/90">
-            {projetoAtual.nome}
+            {projetoAtual.name}
           </span>
         </span>
         <ChevronDownIcon
@@ -94,7 +94,7 @@ export default function ProjetoSelector() {
                   )}
                 >
                   <ProjetoAvatar projeto={projeto} className="size-7 text-xs" />
-                  <span className="flex-1 truncate">{projeto.nome}</span>
+                  <span className="flex-1 truncate">{projeto.name}</span>
                   {isSelected && (
                     <CheckLineIcon className="size-4 shrink-0 text-brand-500" />
                   )}
@@ -104,11 +104,11 @@ export default function ProjetoSelector() {
           })}
         </ul>
         <div className="mt-2 flex flex-col gap-1 border-t border-gray-200 pt-2 dark:border-gray-800">
-          <Link to="/projetos/novo" onClick={close} className={linkClass}>
+          <Link to="/projects/new" onClick={close} className={linkClass}>
             <PlusIcon className="size-5 text-gray-500 dark:text-gray-400" />
             {t("new")}
           </Link>
-          <Link to="/projetos" onClick={close} className={linkClass}>
+          <Link to="/projects" onClick={close} className={linkClass}>
             <SettingsAltIcon className="size-5 text-gray-500 dark:text-gray-400" />
             {t("manage")}
           </Link>

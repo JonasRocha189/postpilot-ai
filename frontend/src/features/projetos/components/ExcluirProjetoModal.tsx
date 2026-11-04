@@ -16,7 +16,7 @@ export default function ExcluirProjetoModal({
   return (
     <ConfirmarExclusaoModal
       isOpen={projeto !== null}
-      title={t("title", { name: projeto?.nome })}
+      title={t("title", { name: projeto?.name })}
       message={t("message")}
       conflictMessage={t("hasContent")}
       onConfirm={() => excluir.mutateAsync(projeto!.id)}

@@ -121,9 +121,9 @@ Nomes em inglês (classe / tabela). Detalhes e glossário em `_docs/modelo-de-da
 
 - **Project** / `projects`: name, description, target_audience, voice_tone (padrão). CRUD completo. Topo da hierarquia: a marca do usuário ou um cliente. Exclusão só sem subjects e documents (`409`).
 - **Subject** / `subjects`: project_id, name, description, target_audience e voice_tone **opcionais** (vazios = valem os do projeto). CRUD completo.
-- **Post** / `posts`: title, subject_id, status (`draft`, `review`, `approved`, `published`), expected_date. CRUD completo. Sem `project_id`: o projeto vem do subject.
+- **Post** / `posts`: title, subject_id, content, status (`draft`, `review`, `approved`, `published`), expected_date, image_id (opcional, da biblioteca do projeto). CRUD completo. Sem `project_id`: o projeto vem do subject.
 - **PostVariation** / `post_variations`: post_id, network (`linkedin`, `instagram`, `x`), text, hashtags, char_count. **Detalhe de Post** (tela mestre-detalhe).
-- **Image** / `images`: variation_id, s3_key, prompt, format.
+- **Image** / `images`: project_id, key, content_type, description. **Biblioteca de imagens do projeto**; o post escolhe uma (`posts.image_id`). Exclusão só se nenhum post usa (`409`).
 - **Metric** / `metrics`: variation_id, published_at, impressions, likes, comments, shares, clicks, collected_at.
 - **Document** / `documents`: project_id, name, s3_key, type, status (`pending`, `processing`, `ready`, `error`).
 - **Chunk** / `chunks`: document_id, content, embedding (`vector`), search_vector (`tsvector`). `ON DELETE CASCADE` a partir de Document.
@@ -167,7 +167,7 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
 
 ## Convenções
 
-- **Idioma:** código, banco e API em **inglês**: classes, tabelas, colunas, valores de enum, rotas e campos da API (`/api/v1/subjects`, `subject_id`), nomes de tools e comentários. **Português** só no que o usuário vê no frontend: textos da interface (via i18n) e URLs das páginas (`/assuntos`, `/posts/novo`). A documentação em `_docs/` fica em português, citando os identificadores em inglês. Ver decisão 20 em `_docs/decisoes.md`.
+- **Idioma:** código, banco e API em **inglês**: classes, tabelas, colunas, valores de enum, rotas e campos da API (`/api/v1/subjects`, `subject_id`), nomes de tools e comentários. URLs das páginas também em inglês (`/subjects`, `/posts/new`). **Português** só nos textos da interface (via i18n). A documentação em `_docs/` fica em português, citando os identificadores em inglês. Ver decisões 20 e 21 em `_docs/decisoes.md`.
 - **Interface multilíngue (pt-BR e en):** i18next. Nenhum texto de interface fica fixo no componente: todo texto novo entra em `frontend/src/locales/pt-BR/app.json` **e** `frontend/src/locales/en/app.json` (namespace `app`), e é lido com `useTranslation("app")`. Números e datas usam `useFormat()` (`src/lib/format.ts`). pt-BR é o idioma padrão.
 - **Backend:** routers finos, regra de negócio em `services/`, acesso a dados em `repositories/`. Tipagem completa (mypy sem erros). Funções assíncronas para I/O.
 - **API:** REST, prefixo `/api/v1`, erros no formato `{"detail": ...}`. Documentação via OpenAPI do FastAPI.

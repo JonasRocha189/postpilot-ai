@@ -6,7 +6,7 @@ import type {
 } from "@/lib/dominio";
 
 // Formato provisório da resposta do dashboard. Ajustar quando a API existir
-// (GET /posts, GET /agente/execucoes e GET /relatorio/desempenho).
+// (GET /posts, GET /agent/runs e GET /reports/performance).
 
 export type Interacoes = {
   curtidas: number;
@@ -33,7 +33,7 @@ export type CelulaDiaHorario = Interacoes & {
 
 export type ProximoPost = {
   id: string;
-  titulo: string;
+  title: string;
   assunto: string;
   redes: Rede[];
   status: StatusPost;

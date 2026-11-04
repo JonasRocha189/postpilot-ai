@@ -12,6 +12,7 @@ import {
   FileIcon,
   FolderIcon,
   GridIcon,
+  ImageIcon,
   HorizontaLDots,
   ListIcon,
   PageIcon,
@@ -31,6 +32,8 @@ type NavItem = {
   key?: string;
   icon: React.ReactNode;
   path?: string;
+  /** Desenha uma linha antes do item, separando grupos do menu */
+  divider?: boolean;
   new?: boolean;
   target?: string;
   subItems?: {
@@ -55,7 +58,13 @@ const navItems: NavItem[] = [
     icon: <FolderIcon fontSize={24} />,
     name: "Projetos",
     appKey: "nav.projects",
-    path: "/projetos",
+    path: "/projects",
+  },
+  {
+    icon: <TaskIcon fontSize={24} />,
+    name: "Assuntos",
+    appKey: "nav.subjects",
+    path: "/subjects",
   },
   {
     icon: <DocsIcon fontSize={24} />,
@@ -64,40 +73,44 @@ const navItems: NavItem[] = [
     path: "/posts",
   },
   {
+    icon: <ImageIcon fontSize={24} />,
+    name: "Imagens",
+    appKey: "nav.images",
+    path: "/images",
+  },
+  {
     icon: <CalenderIcon fontSize={24} />,
     name: "Calendário",
     appKey: "nav.calendar",
-    path: "/calendario",
+    path: "/calendar",
   },
-  {
-    icon: <TaskIcon fontSize={24} />,
-    name: "Assuntos",
-    appKey: "nav.subjects",
-    path: "/assuntos",
-  },
+  // Divisor: IA e base de conhecimento
   {
     icon: <FileIcon fontSize={24} />,
     name: "Documentos",
     appKey: "nav.documents",
-    path: "/documentos",
+    path: "/documents",
+    divider: true,
   },
   {
     icon: <AiIcon fontSize={24} />,
     name: "Agente",
     appKey: "nav.agent",
-    path: "/agente",
+    path: "/agent",
   },
   {
     icon: <TimeIcon fontSize={24} />,
     name: "Execuções",
     appKey: "nav.agentRuns",
-    path: "/agente/execucoes",
+    path: "/agent/runs",
   },
+  // Divisor: conta
   {
     icon: <UserCircleIcon fontSize={24} />,
     name: "Perfil",
     appKey: "nav.profile",
-    path: "/perfil",
+    path: "/profile",
+    divider: true,
   },
 ];
 
@@ -216,8 +229,8 @@ const AppSidebar: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Ativo também nas subpáginas (ex.: /projetos/novo destaca "Projetos"),
-  // mas só o item mais específico (/agente/execucoes não destaca "Agente")
+  // Ativo também nas subpáginas (ex.: /projects/new destaca "Projetos"),
+  // mas só o item mais específico (/agent/runs não destaca "Agente")
   const isActive = useCallback(
     (path: string) => {
       const casa = (p: string) =>
@@ -256,7 +269,14 @@ const AppSidebar: React.FC = () => {
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-1">
       {items.map((nav, index) => (
-        <li key={nav.name}>
+        <li
+          key={nav.name}
+          className={
+            nav.divider
+              ? "mt-2 border-t border-gray-200 pt-3 dark:border-gray-800"
+              : undefined
+          }
+        >
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}

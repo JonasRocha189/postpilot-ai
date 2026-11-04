@@ -45,16 +45,16 @@ export default function ProjetoForm({
         placeholder={t("projects.form.namePlaceholder")}
         required
         autoFocus
-        maxLength={LIMITES.nome}
-        error={erro("nome")}
-        {...register("nome")}
+        maxLength={LIMITES.name}
+        error={erro("name")}
+        {...register("name")}
       />
       <FormTextArea
         id="projeto-descricao"
         label={t("projects.form.description")}
         placeholder={t("projects.form.descriptionPlaceholder")}
-        error={erro("descricao")}
-        {...register("descricao")}
+        error={erro("description")}
+        {...register("description")}
       />
 
       <fieldset className="space-y-6 rounded-xl border border-gray-200 p-4 sm:p-5 dark:border-gray-800">
@@ -69,16 +69,16 @@ export default function ProjetoForm({
           label={t("projects.form.audience")}
           placeholder={t("projects.form.audiencePlaceholder")}
           rows={2}
-          error={erro("publico_alvo")}
-          {...register("publico_alvo")}
+          error={erro("target_audience")}
+          {...register("target_audience")}
         />
         <FormTextArea
           id="projeto-tom"
           label={t("projects.form.tone")}
           placeholder={t("projects.form.tonePlaceholder")}
           rows={2}
-          error={erro("tom_de_voz")}
-          {...register("tom_de_voz")}
+          error={erro("voice_tone")}
+          {...register("voice_tone")}
         />
       </fieldset>
 
@@ -93,7 +93,7 @@ export default function ProjetoForm({
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Link
-          to="/projetos"
+          to="/projects"
           className="inline-flex items-center justify-center rounded-lg px-5 py-3.5 text-sm font-medium text-gray-700 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/3"
         >
           {t("projects.form.cancel")}

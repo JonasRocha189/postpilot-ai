@@ -1,11 +1,10 @@
-import type { Rede, StatusPost } from "@/lib/dominio";
+import type { StatusPost } from "@/lib/dominio";
 
-// Formato provisório; virá de GET /posts?de=…&ate=… (ver docs/api.md)
+// Post com data prevista, no formato usado pelo calendário
 export type PostAgendado = {
   id: string;
-  titulo: string;
+  title: string;
   assunto: string;
-  redes: Rede[];
   status: StatusPost;
-  dataPrevista: string; // ISO
+  dataPrevista: string; // AAAA-MM-DD
 };

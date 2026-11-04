@@ -19,24 +19,24 @@
 | POST | `/projects` | Cria |
 | GET | `/projects/{id}` | Detalha |
 | PUT | `/projects/{id}` | Atualiza |
-| DELETE | `/projects/{id}` | Remove. `409` se ainda tiver subjects ou documents |
+| DELETE | `/projects/{id}` | Remove. `409` se ainda tiver subjects, documents ou images |
 | **Subjects** | | |
 | GET | `/subjects` 🅿 | Lista os assuntos do projeto |
 | POST | `/subjects` | Cria (com `project_id`) |
 | GET | `/subjects/{id}` | Detalha |
 | PUT | `/subjects/{id}` | Atualiza |
 | DELETE | `/subjects/{id}` | Remove. `409` se ainda tiver posts |
-| **Posts (mestre-detalhe)** | | |
-| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), já com as variações, ordenados pela `expected_date` (mais recentes primeiro). Filtros: `subject_id`, `status` e período (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, usado pelo calendário) |
-| POST | `/posts` | Cria o post com suas variações (corpo abaixo). `422` se o subject não for de um projeto do usuário |
-| GET | `/posts/{id}` | Detalha o post com as variações |
-| PUT | `/posts/{id}` | Atualiza o post e **substitui** as variações pelas enviadas. A variação de uma rede que continua **mantém o `id`** (e as imagens e métricas); a de uma rede que não vier é removida junto com as imagens e métricas |
-| DELETE | `/posts/{id}` | Remove o post, as variações, as imagens (e os objetos no S3) e as métricas |
-| **Images** | | |
-| GET | `/variations/{id}/images` | Imagens da variação (mais antigas primeiro), cada uma com `url`: URL pré-assinada de leitura que expira em 15 minutos |
-| POST | `/variations/{id}/images/upload-url` | Corpo `{type, size_bytes}` (`png`, `jpeg` ou `webp`, até 5 MB). `422` se inválido ou se a variação já tiver 10 imagens. Responde `{key, upload_url}`; ainda não cria registro |
-| POST | `/variations/{id}/images` | Corpo `{key, format}`, depois do PUT no S3. Confere se a chave é desta variação e se o objeto existe, e cria a Image (`prompt: null`) |
-| DELETE | `/images/{id}` | Remove a imagem e o objeto no S3 |
+| **Posts** | | |
+| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), ordenados pelo título. Filtro: `subject_id`. **Planejado:** `status` e período (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, para o calendário) |
+| POST | `/posts` | Cria (corpo abaixo). `404` se o subject não for do usuário; `422` se a imagem não for da biblioteca do projeto do subject |
+| GET | `/posts/{id}` | Detalha |
+| PUT | `/posts/{id}` | Atualiza só os campos enviados. `image_id: null` tira a imagem do post; mesmas validações do `POST` |
+| DELETE | `/posts/{id}` | Remove o post. A imagem continua na biblioteca |
+| **Images (biblioteca do projeto)** | | |
+| GET | `/images` 🅿 | Imagens do projeto, das mais recentes para as mais antigas, cada uma com `url`: URL pré-assinada de leitura que expira em 15 minutos |
+| POST | `/images/upload-url` | Corpo `{project_id, content_type, size_bytes}` (`image/png`, `image/jpeg` ou `image/webp`, até 5 MB; `422` se inválido). Responde `{key, upload_url}`; ainda não cria registro. A URL pré-assinada exige o mesmo `Content-Type` no PUT |
+| POST | `/images` | Corpo `{project_id, key, content_type, description}`, depois do PUT no S3. `422` se a chave não for da biblioteca deste projeto, se o arquivo não foi enviado ou se passou de 5 MB (o objeto é apagado). Responde `201` com a Image |
+| DELETE | `/images/{id}` | Remove a imagem e o objeto no S3. `409` se algum post ainda usa a imagem |
 | **Metrics e relatório** | | |
 | GET | `/variations/{id}/metrics` | Coletas da variação, da mais recente para a mais antiga |
 | POST | `/variations/{id}/metrics` | Registra uma coleta (corpo abaixo). `422` se o post não estiver `published`, se algum número for negativo, se `collected_at` for antes de `published_at` ou se alguma data estiver no futuro |
@@ -58,38 +58,46 @@
 {
   "subject_id": "uuid",
   "title": "5 erros ao migrar para a nuvem",
+  "content": "Texto do post…",
   "status": "draft",
-  "expected_date": "2026-11-03T12:00:00.000Z",
-  "variations": [
-    { "network": "linkedin", "text": "…", "hashtags": ["nuvem", "pme"] },
-    { "network": "x", "text": "…", "hashtags": ["nuvem"] }
-  ]
+  "expected_date": "2026-11-20",
+  "image_id": "uuid"
 }
 ```
 
-- No máximo uma variação por rede (`linkedin`, `instagram`, `x`) e pelo menos uma.
-- `hashtags` sem o `#`. O backend calcula `char_count` do texto final (texto, linha em branco e hashtags com `#`) e responde `422` se passar do limite da rede: LinkedIn 3000, Instagram 2200, X 280. O frontend usa a mesma regra (`features/posts/redes.ts`).
+- `status`: `draft`, `review`, `approved` ou `published` (padrão `draft`).
+- `expected_date` é só a data (`AAAA-MM-DD`).
+- `image_id` é opcional e precisa ser de uma imagem da biblioteca do projeto do subject.
+- No `PUT`, só os campos enviados mudam; `title`, `status` e `subject_id` não aceitam `null`.
+- **Planejado:** variações por rede (`variations`), com limite de caracteres por rede (LinkedIn 3000, Instagram 2200, X 280).
 
-## Imagens e métricas
+## Imagens
 
-Ficam na aba de cada variação do post e são gravadas na hora, fora do `PUT /posts/{id}` (dependem do `id` da variação já salva).
+Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); o post aponta para uma delas com `image_id`. O envio vai direto do navegador para o S3:
 
-**Image** (item de `GET /variations/{id}/images`):
+1. `POST /images/upload-url` → `{key, upload_url}`
+2. `PUT upload_url` com o arquivo e o mesmo `Content-Type`
+3. `POST /images` com a `key` → cria o registro
+
+**Image** (item de `GET /images`):
 
 ```json
 {
   "id": "uuid",
-  "variation_id": "uuid",
-  "format": "4:5",
-  "prompt": "ilustração sobre checklist de segurança, sem texto",
-  "url": "https://bucket.s3.amazonaws.com/users/…?X-Amz-Signature=…",
-  "created_at": "2026-10-28T12:00:00Z"
+  "project_id": "uuid",
+  "content_type": "image/png",
+  "description": "Checklist de segurança",
+  "url": "http://localhost:4566/postpilot-dev/users/…?X-Amz-Signature=…",
+  "created_at": "2026-11-03T12:00:00Z",
+  "updated_at": "2026-11-03T12:00:00Z"
 }
 ```
 
-- `format`: `1:1`, `4:5` ou `16:9`. No envio, o frontend escolhe o mais próximo das dimensões da imagem.
-- `prompt` é preenchido quando a imagem foi gerada pelo agente (`generate_image`) e fica `null` quando o usuário enviou.
-- O banco guarda só a chave S3 (`s3_key`); a `url` é gerada a cada listagem.
+- O banco guarda só a chave S3 (`users/{user_id}/projects/{project_id}/images/{uuid}.png`); a `url` é gerada a cada listagem e a chave nunca sai na API.
+
+## Métricas (planejado)
+
+Dependem das variações por rede, que ainda não existem no backend.
 
 **Corpo de `POST /variations/{id}/metrics`:**
 

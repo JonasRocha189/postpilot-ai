@@ -53,8 +53,10 @@ classDiagram
         +str user_id
         +UUID subject_id
         +str title
+        +str? content
         +PostStatus status
-        +date expected_date
+        +date? expected_date
+        +UUID? image_id
     }
 
     class PostVariation {
@@ -68,10 +70,11 @@ classDiagram
 
     class Image {
         +UUID id
-        +UUID variation_id
-        +str s3_key
-        +str? prompt
-        +ImageFormat format
+        +str user_id
+        +UUID project_id
+        +str key
+        +str content_type
+        +str? description
     }
 
     class Metric {
@@ -182,7 +185,8 @@ classDiagram
     Project "1" --> "*" AgentRun
     Subject "1" --> "*" Post
     Post "1" *-- "*" PostVariation : mestre-detalhe
-    PostVariation "1" *-- "*" Image
+    Project "1" --> "*" Image : biblioteca
+    Post "*" --> "0..1" Image : image_id
     PostVariation "1" *-- "*" Metric
     Document "1" *-- "*" Chunk : ON DELETE CASCADE
     AgentRun "1" *-- "*" AgentStep
@@ -192,11 +196,11 @@ classDiagram
 
 | Entidade | Regra |
 | --- | --- |
-| Project | CRUD completo. Define o público-alvo e o tom de voz padrão. Só pode ser excluído quando não tem subjects nem documents (a API responde `409` caso contrário), para evitar apagar conteúdo e arquivos no S3 por engano. |
+| Project | CRUD completo. Define o público-alvo e o tom de voz padrão. Só pode ser excluído quando não tem subjects, documents nem images (a API responde `409` caso contrário), para evitar apagar conteúdo e arquivos no S3 por engano. |
 | Subject | CRUD completo (requisito do TCC). Pertence a um projeto. `target_audience` e `voice_tone` são opcionais: quando vazios, valem os do projeto. Só pode ser excluído sem posts (`409` caso contrário). |
 | Post | CRUD completo. Status: `draft` → `review` (aguardando revisão) → `approved` → `published`, guardado como enum nativo do Postgres (`post_status`). O agente só cria com status `draft`; enviar para revisão, aprovar e publicar é ação do usuário. Não tem `project_id`: o projeto vem do subject (`post → subject → project`), evitando dados duplicados que podem ficar inconsistentes. |
 | PostVariation | Editada na mesma tela do Post (mestre-detalhe, requisito do TCC). No máximo uma variação por rede em cada post, e pelo menos uma. Ao salvar o post, a variação de uma rede que continua mantém o `id` (as imagens e métricas ficam ligadas a ele). `char_count` conta texto + hashtags e não pode passar do limite da rede (LinkedIn 3000, Instagram 2200, X 280). |
-| Image | Guarda só a chave S3 (ex.: `users/{id}/projects/{id}/posts/{id}/{uuid}.png`), nunca a URL. `prompt` preenchido quando gerada pelo agente, `null` quando enviada pelo usuário. PNG, JPEG ou WebP até 5 MB; no máximo 10 por variação. Apagada (com o objeto no S3) junto com a variação. |
+| Image | Biblioteca de imagens do **projeto** ([decisão 22](decisoes.md)); o post escolhe uma delas (`posts.image_id`, opcional). Guarda só a chave S3 (`users/{user_id}/projects/{project_id}/images/{uuid}.png`), nunca a URL. PNG, JPEG ou WebP até 5 MB. Só pode ser excluída quando nenhum post a usa (`409`); a exclusão apaga também o objeto no S3. |
 | Metric | Uma coleta registrada manualmente pelo usuário, só com o post `published`. Os números são totais acumulados no momento da coleta; a mais recente é a que vale. `collected_at` não pode ser antes de `published_at` nem no futuro. Taxa de engajamento = (likes + comments + shares + clicks) ÷ impressions. Apagada junto com a variação. |
 | Document | Pertence a um projeto e só é usado pelo RAG desse projeto. O status acompanha o processamento: `pending` → `processing` → `ready` ou `error`. Chave S3: `users/{id}/projects/{id}/documents/{uuid}.{ext}`. |
 | Chunk | Apagado em cascata com o Document. A dimensão do `embedding` vem da configuração; trocar o modelo de embeddings exige reprocessar tudo. Índices: HNSW no `embedding` e GIN no `search_vector`. |

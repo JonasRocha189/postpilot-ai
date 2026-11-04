@@ -12,17 +12,17 @@ export type PassoRoteiro = Omit<PassoAgente, "id" | "ordem"> & {
 
 export type Roteiro = {
   passos: PassoRoteiro[];
-  statusFinal: Exclude<StatusExecucao, "executando">;
+  statusFinal: Exclude<StatusExecucao, "running">;
   resposta: string | null;
   /** Em criação: dados do rascunho que o agente salva no final */
-  rascunho: { titulo: string; assunto_id: string; redes: Rede[]; texto: string } | null;
+  rascunho: { title: string; subject_id: string; redes: Rede[]; texto: string } | null;
 };
 
 export type ContextoRoteiro = {
   modo: ModoAgente;
   pedido: string;
-  projeto: { nome: string; tom_de_voz: string | null; publico_alvo: string | null };
-  assunto: { id: string; nome: string } | null;
+  projeto: { name: string; voice_tone: string | null; target_audience: string | null };
+  assunto: { id: string; name: string } | null;
   documentos: string[];
 };
 
@@ -47,7 +47,7 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
     passo(
       "obter_projeto",
       {},
-      `${ctx.projeto.nome} · tom: ${ctx.projeto.tom_de_voz ?? "não definido"}`,
+      `${ctx.projeto.name} · tom: ${ctx.projeto.voice_tone ?? "não definido"}`,
       110,
     ),
   ];
@@ -62,13 +62,13 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
     }
     return {
       passos,
-      statusFinal: "limite_atingido",
+      statusFinal: "limit_reached",
       resposta: null,
       rascunho: null,
     };
   }
 
-  if (ctx.modo === "ideacao") {
+  if (ctx.modo === "ideation") {
     const passos: PassoRoteiro[] = [
       ...inicio,
       passo(
@@ -79,7 +79,7 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
       ),
       passo(
         "buscar_posts_anteriores",
-        { assunto: ctx.assunto?.nome ?? "todos" },
+        { assunto: ctx.assunto?.name ?? "todos" },
         "3 posts aprovados como referência de estilo",
         150,
       ),
@@ -87,13 +87,13 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
         ? { ...passo("pesquisar_web", { query: consulta }, "", 1800), resultado_resumo: null, erro: "Tempo esgotado ao consultar o serviço de busca" }
         : passo("pesquisar_web", { query: consulta }, "6 fontes: blogs do setor, notícias da semana e um relatório de mercado", 1300),
     ];
-    if (comErro) return { passos, statusFinal: "erro", resposta: null, rascunho: null };
+    if (comErro) return { passos, statusFinal: "error", resposta: null, rascunho: null };
     return {
       passos,
-      statusFinal: "concluida",
+      statusFinal: "completed",
       rascunho: null,
       resposta: [
-        `Aqui estão 5 ideias para o projeto ${ctx.projeto.nome}:`,
+        `Aqui estão 5 ideias para o projeto ${ctx.projeto.name}:`,
         "",
         "1. Os 3 erros mais comuns ao começar — formato de lista, bom para LinkedIn.",
         "2. Bastidores: como o time resolve um problema real — carrossel no Instagram.",
@@ -114,7 +114,7 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
         ...inicio,
         { ...passo("listar_assuntos", {}, "", 80), resultado_resumo: null, erro: "O projeto não tem assuntos cadastrados" },
       ],
-      statusFinal: "erro",
+      statusFinal: "error",
       resposta: null,
       rascunho: null,
     };
@@ -128,14 +128,14 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
 
   const passos: PassoRoteiro[] = [
     ...inicio,
-    passo("obter_assunto", { id: ctx.assunto.id }, `${ctx.assunto.nome} · voz do projeto`, 90),
+    passo("obter_assunto", { id: ctx.assunto.id }, `${ctx.assunto.name} · voz do projeto`, 90),
     passo(
       "buscar_documentos",
       { query: consulta },
       doc ? `4 trechos relevantes de ${doc}` : "Nenhum documento pronto no projeto; seguindo sem RAG",
       380,
     ),
-    passo("buscar_posts_anteriores", { assunto: ctx.assunto.nome }, "3 posts aprovados como referência de estilo", 140),
+    passo("buscar_posts_anteriores", { assunto: ctx.assunto.name }, "3 posts aprovados como referência de estilo", 140),
     // O LLM pede a adaptação para todas as redes de uma vez (mesma iteração)
     ...redes.map((rede, i) => ({
       ...passo("adaptar_para_rede", { rede }, rede === "x" ? "264 caracteres (limite 280)" : "1.180 caracteres", 60),
@@ -145,18 +145,18 @@ export function criarRoteiro(ctx: ContextoRoteiro): Roteiro {
       ? { ...passo("gerar_imagem", { formato: "1:1" }, "", 4100), resultado_resumo: null, erro: "O provedor de imagem recusou o prompt" }
       : passo("gerar_imagem", { formato: "1:1", prompt: `ilustração sobre ${consulta}, sem texto` }, "Imagem 1080×1080 salva", 4100),
   ];
-  if (comErro) return { passos, statusFinal: "erro", resposta: null, rascunho: null };
+  if (comErro) return { passos, statusFinal: "error", resposta: null, rascunho: null };
 
   passos.push(passo("salvar_rascunho", { titulo }, "Post salvo como rascunho", 70));
 
   return {
     passos,
-    statusFinal: "concluida",
+    statusFinal: "completed",
     rascunho: {
-      titulo,
-      assunto_id: ctx.assunto.id,
+      title: titulo,
+      subject_id: ctx.assunto.id,
       redes,
-      texto: `${titulo}.\n\nTexto gerado pelo agente${doc ? ` com base em ${doc}` : ""}, no tom "${ctx.projeto.tom_de_voz ?? "padrão"}".`,
+      texto: `${titulo}.\n\nTexto gerado pelo agente${doc ? ` com base em ${doc}` : ""}, no tom "${ctx.projeto.voice_tone ?? "padrão"}".`,
     },
     resposta: [
       `Pronto! Escrevi o post "${titulo}" para ${redes.map((r) => (r === "x" ? "X" : r === "linkedin" ? "LinkedIn" : "Instagram")).join(" e ")}.`,
