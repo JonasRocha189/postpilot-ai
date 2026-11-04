@@ -17,6 +17,9 @@ class PostBase(BaseModel):
     expected_date: date | None = Field(
         default=None, description="The date the post is expected to be published."
     )
+    image_id: uuid.UUID | None = Field(
+        default=None, description="Image from the project's library (null = none)."
+    )
 
 
 class PostCreate(PostBase):
@@ -37,6 +40,7 @@ class PostUpdate(BaseModel):
     expected_date: date | None = Field(
         default=None, description="The date the post is expected to be published."
     )
+    image_id: uuid.UUID | None = None
 
     @field_validator("subject_id", "title", "status")
     @classmethod

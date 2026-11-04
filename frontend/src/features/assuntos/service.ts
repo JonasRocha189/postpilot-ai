@@ -13,16 +13,16 @@ export interface AssuntosService {
 
 const assuntosHttp: AssuntosService = {
   listar: (projetoId) =>
-    apiFetch<Assunto[]>(`/assuntos?${new URLSearchParams({ projeto_id: projetoId })}`),
-  obter: (id) => apiFetch<Assunto>(`/assuntos/${id}`),
+    apiFetch<Assunto[]>(`/subjects?${new URLSearchParams({ project_id: projetoId })}`),
+  obter: (id) => apiFetch<Assunto>(`/subjects/${id}`),
   criar: (projetoId, input) =>
-    apiFetch<Assunto>("/assuntos", {
+    apiFetch<Assunto>("/subjects", {
       method: "POST",
-      body: JSON.stringify({ ...input, projeto_id: projetoId }),
+      body: JSON.stringify({ ...input, project_id: projetoId }),
     }),
   atualizar: (id, input) =>
-    apiFetch<Assunto>(`/assuntos/${id}`, { method: "PUT", body: JSON.stringify(input) }),
-  excluir: (id) => apiFetch<void>(`/assuntos/${id}`, { method: "DELETE" }),
+    apiFetch<Assunto>(`/subjects/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+  excluir: (id) => apiFetch<void>(`/subjects/${id}`, { method: "DELETE" }),
 };
 
 export const assuntosService: AssuntosService =

@@ -1,104 +1,47 @@
-import type { Rede, StatusPost } from "@/lib/dominio";
+import { STATUS_POST, type StatusPost } from "@/lib/dominio";
 import { z } from "zod";
-import {
-  contarCaracteres,
-  LIMITE_CARACTERES,
-  parseHashtags,
-  formatarHashtags,
-  REDES,
-} from "./redes";
 import type { Post, PostInput } from "./types";
 
 // As mensagens são chaves de tradução (namespace "app")
 
-const STATUS: readonly StatusPost[] = ["rascunho", "aprovado", "publicado"];
-
-const variacaoSchema = z
-  .object({
-    rede: z.enum(REDES as [Rede, ...Rede[]]),
-    texto: z
-      .string()
-      .trim()
-      .min(1, { message: "posts.form.errors.textRequired" }),
-    hashtags: z.string(),
-  })
-  .superRefine((v, ctx) => {
-    if (
-      contarCaracteres(v.texto, parseHashtags(v.hashtags)) >
-      LIMITE_CARACTERES[v.rede]
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["texto"],
-        message: "posts.form.errors.tooLongForNetwork",
-      });
-    }
-    if (parseHashtags(v.hashtags).length > 30) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["hashtags"],
-        message: "posts.form.errors.tooManyHashtags",
-      });
-    }
-  });
-
 export const postFormSchema = z.object({
-  titulo: z
+  title: z
     .string()
     .trim()
     .min(1, { message: "posts.form.errors.titleRequired" })
     .max(200, { message: "form.errors.tooLong" }),
-  assunto_id: z
+  subject_id: z
     .string()
     .min(1, { message: "posts.form.errors.subjectRequired" }),
-  status: z.enum(STATUS as [StatusPost, ...StatusPost[]]),
-  /** valor de <input type="datetime-local"> ou "" */
-  data_prevista: z.string(),
-  variacoes: z
-    .array(variacaoSchema)
-    .min(1, { message: "posts.form.errors.variationRequired" }),
+  status: z.enum(STATUS_POST as [StatusPost, ...StatusPost[]]),
+  /** valor de <input type="date"> ("AAAA-MM-DD") ou "" */
+  expected_date: z.string(),
+  content: z.string(),
+  /** id da imagem da biblioteca ou "" */
+  image_id: z.string(),
 });
 
 export type PostFormValues = z.infer<typeof postFormSchema>;
-export type VariacaoFormValues = PostFormValues["variacoes"][number];
-
-// <input type="datetime-local"> trabalha com hora local, sem fuso: "2026-10-28T09:00"
-function isoParaLocal(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function toPostInput(values: PostFormValues): PostInput {
+  const content = values.content.trim();
   return {
-    titulo: values.titulo,
-    assunto_id: values.assunto_id,
+    title: values.title,
+    subject_id: values.subject_id,
     status: values.status,
-    data_prevista: values.data_prevista
-      ? new Date(values.data_prevista).toISOString()
-      : null,
-    variacoes: values.variacoes.map((v) => ({
-      rede: v.rede,
-      texto: v.texto.trim(),
-      hashtags: parseHashtags(v.hashtags),
-    })),
+    expected_date: values.expected_date || null,
+    content: content || null,
+    image_id: values.image_id || null,
   };
 }
 
 export function toFormValues(post?: Post, assuntoPadrao = ""): PostFormValues {
   return {
-    titulo: post?.titulo ?? "",
-    assunto_id: post?.assunto_id ?? assuntoPadrao,
-    status: post?.status ?? "rascunho",
-    data_prevista: isoParaLocal(post?.data_prevista ?? null),
-    variacoes: post?.variacoes
-      .slice()
-      .sort((a, b) => REDES.indexOf(a.rede) - REDES.indexOf(b.rede))
-      .map((v) => ({
-        rede: v.rede,
-        texto: v.texto,
-        hashtags: formatarHashtags(v.hashtags),
-      })) ?? [{ rede: "linkedin", texto: "", hashtags: "" }],
+    title: post?.title ?? "",
+    subject_id: post?.subject_id ?? assuntoPadrao,
+    status: post?.status ?? "draft",
+    expected_date: post?.expected_date ?? "",
+    content: post?.content ?? "",
+    image_id: post?.image_id ?? "",
   };
 }

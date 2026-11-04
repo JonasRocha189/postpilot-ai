@@ -35,7 +35,7 @@ export default function ExigeProjeto({ children }: { children?: ReactNode }) {
           {t("empty.message")}
         </p>
         <Link
-          to="/projetos/novo"
+          to="/projects/new"
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600"
         >
           <PlusIcon className="size-5" />

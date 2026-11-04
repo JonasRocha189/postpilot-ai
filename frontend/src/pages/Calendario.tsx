@@ -7,7 +7,7 @@ import { NIVEL_COR, STATUS_NIVEL } from "@/features/calendario/status";
 import type { PostAgendado } from "@/features/calendario/types";
 import { usePosts } from "@/features/posts/api";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
-import type { StatusPost } from "@/lib/dominio";
+import { STATUS_POST } from "@/lib/dominio";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -22,16 +22,15 @@ export default function Calendario() {
   const assuntos = useAssuntos(projetoAtual?.id);
 
   const agendados = useMemo<PostAgendado[]>(() => {
-    const nomes = new Map(assuntos.data?.map((a) => [a.id, a.nome]));
+    const nomes = new Map(assuntos.data?.map((a) => [a.id, a.name]));
     return (posts.data ?? [])
-      .filter((p) => p.data_prevista)
+      .filter((p) => p.expected_date)
       .map((p) => ({
         id: p.id,
-        titulo: p.titulo,
-        assunto: nomes.get(p.assunto_id) ?? "—",
-        redes: p.variacoes.map((v) => v.rede),
+        title: p.title,
+        assunto: nomes.get(p.subject_id) ?? "—",
         status: p.status,
-        dataPrevista: p.data_prevista!,
+        dataPrevista: p.expected_date!,
       }));
   }, [posts.data, assuntos.data]);
 
@@ -46,12 +45,14 @@ export default function Calendario() {
         subtitle={t("calendar.subtitle")}
         action={
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {(Object.keys(STATUS_NIVEL) as StatusPost[]).map((status) => (
+            {STATUS_POST.map((status) => (
               <li
                 key={status}
                 className="flex items-center gap-1.5 text-theme-xs text-gray-600 dark:text-gray-400"
               >
-                <span className={`size-2.5 rounded-full ${NIVEL_COR[STATUS_NIVEL[status]]}`} />
+                <span
+                  className={`size-2.5 rounded-full ${NIVEL_COR[STATUS_NIVEL[status]]}`}
+                />
                 {t(`domain.postStatus.${status}`)}
               </li>
             ))}
@@ -64,11 +65,17 @@ export default function Calendario() {
           {t("posts.loadError")}
         </p>
       ) : posts.isLoading ? (
-        <div aria-hidden className="h-[600px] animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
+        <div
+          aria-hidden
+          className="h-[600px] animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
+        />
       ) : (
         <PostsCalendar posts={agendados} onSelect={setSelecionado} />
       )}
-      <PostDetailsModal post={selecionado} onClose={() => setSelecionado(null)} />
+      <PostDetailsModal
+        post={selecionado}
+        onClose={() => setSelecionado(null)}
+      />
     </>
   );
 }

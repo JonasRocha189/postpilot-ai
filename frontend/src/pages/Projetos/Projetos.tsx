@@ -40,7 +40,7 @@ export default function Projetos() {
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
         </div>
-        <Link to="/projetos/novo" className={primaryLink}>
+        <Link to="/projects/new" className={primaryLink}>
           <PlusIcon className="size-5" />
           {t("new")}
         </Link>
@@ -71,7 +71,7 @@ export default function Projetos() {
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
             {t("empty.message")}
           </p>
-          <Link to="/projetos/novo" className={`${primaryLink} mt-6`}>
+          <Link to="/projects/new" className={`${primaryLink} mt-6`}>
             <PlusIcon className="size-5" />
             {t("createFirst")}
           </Link>
@@ -89,7 +89,7 @@ export default function Projetos() {
                   <ProjetoAvatar projeto={projeto} className="size-10 text-base" />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-semibold text-gray-800 dark:text-white/90">
-                      {projeto.nome}
+                      {projeto.name}
                     </h3>
                     {isAtual && (
                       <span className="mt-1 inline-block">
@@ -101,9 +101,9 @@ export default function Projetos() {
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <Link
-                      to={`/projetos/${projeto.id}`}
+                      to={`/projects/${projeto.id}`}
                       className={iconButton}
-                      aria-label={t("editLabel", { name: projeto.nome })}
+                      aria-label={t("editLabel", { name: projeto.name })}
                       title={t("edit")}
                     >
                       <PencilIcon className="size-4" />
@@ -112,7 +112,7 @@ export default function Projetos() {
                       type="button"
                       onClick={() => setParaExcluir(projeto)}
                       className={`${iconButton} hover:text-error-500! dark:hover:text-error-400!`}
-                      aria-label={t("deleteLabel", { name: projeto.nome })}
+                      aria-label={t("deleteLabel", { name: projeto.name })}
                       title={t("delete.confirm")}
                     >
                       <TrashBinIcon className="size-4" />
@@ -120,15 +120,15 @@ export default function Projetos() {
                   </div>
                 </div>
 
-                {projeto.descricao && (
+                {projeto.description && (
                   <p className="mt-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                    {projeto.descricao}
+                    {projeto.description}
                   </p>
                 )}
 
                 <dl className="mt-4 space-y-3">
-                  <Campo label={t("form.audience")} value={projeto.publico_alvo} />
-                  <Campo label={t("form.tone")} value={projeto.tom_de_voz} />
+                  <Campo label={t("form.audience")} value={projeto.target_audience} />
+                  <Campo label={t("form.tone")} value={projeto.voice_tone} />
                 </dl>
 
                 <div className="mt-auto pt-5">

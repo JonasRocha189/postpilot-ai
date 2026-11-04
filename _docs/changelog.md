@@ -16,12 +16,22 @@ Formato de cada entrada:
 
 ### Adicionado
 
+- API: biblioteca de imagens por projeto (`/api/v1/images`): URL pré-assinada de upload, registro depois do envio (confere chave, existência e tamanho no S3), listagem com URL de leitura e exclusão (`409` se algum post usa). Migration `image library per project`.
+- API: `image_id` no post (imagem da biblioteca do projeto do assunto, `422` caso contrário) e `409` ao excluir projeto com imagens.
+- Backend: cliente S3 (boto3) em `storage/s3.py` e variáveis `S3_*`; LocalStack no `docker-compose.yaml` como S3 local, com o bucket e o CORS criados por `infra/localstack/init-s3.sh` (decisão 23).
+- Backend: CORS configurável (`CORS_ORIGINS`) para o Vite em desenvolvimento.
+- Frontend: projetos, assuntos, posts e imagens ligados à API real (com `VITE_API_URL`).
+- Frontend: página `/images` (biblioteca do projeto) e seletor de imagem no formulário do post (decisão 22). Status `review` nos posts.
+- Frontend: menu reordenado (Dashboard, Projetos, Assuntos, Posts, Imagens, Calendário | Documentos, Agente, Execuções | Perfil).
+
 - Backend: FastAPI, conexão assíncrona com o PostgreSQL (SQLAlchemy + asyncpg), configuração por `.env` (pydantic-settings) e Alembic com a primeira migration (`projects`, `subjects`, `posts`, `images`).
 - API: CRUD de projetos (`/api/v1/projects`), filtrado pelo dono e com `409` ao excluir projeto com assuntos. Usuário fixo `dev-user` até a integração com o Auth0 (dependência `get_current_user_id`).
 - Ambiente local: Postgres do Docker na porta `5433`, para não conflitar com um PostgreSQL instalado no Windows.
 
 ### Alterado
 
+- Frontend: URLs das páginas em inglês (`/projects`, `/subjects`, `/images`, `/calendar`, `/documents`, `/agent/runs`, `/profile`, `/signup`, `/error`) e campos, valores de enum e rotas da API em inglês, como o backend (decisão 21).
+- Frontend: post sem variações por rede por enquanto (um `content` por post); imagens e métricas por variação saíram da tela do post.
 - Código, banco e API em inglês; português só na interface (decisão 20). `modelo-de-dados.md`, `api.md`, `agente-e-rag.md`, `arquitetura.md`, `frontend-rotas.md` e `implantacao.md` atualizados com os novos nomes, e glossário domínio ↔ código no modelo de dados.
 - Documentação movida de `docs/` para `_docs/`.
 - Post ganhou o status `review` (aguardando revisão), entre `draft` e `approved`, como enum do Postgres (`post_status`). IDs passam a ser UUID.

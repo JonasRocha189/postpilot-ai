@@ -4,14 +4,14 @@ import { imagensService } from "./service";
 
 export const imagensKeys = {
   all: ["imagens"] as const,
-  list: (variacaoId: string) => ["imagens", "list", variacaoId] as const,
+  list: (projetoId: string) => ["imagens", "list", projetoId] as const,
 };
 
-export function useImagens(variacaoId: string | undefined) {
+export function useImagens(projetoId: string | undefined) {
   return useQuery({
-    queryKey: imagensKeys.list(variacaoId ?? ""),
-    queryFn: () => imagensService.listar(variacaoId!),
-    enabled: Boolean(variacaoId),
+    queryKey: imagensKeys.list(projetoId ?? ""),
+    queryFn: () => imagensService.listar(projetoId!),
+    enabled: Boolean(projetoId),
     // As URLs de leitura do S3 expiram em 15 minutos: busca de novo antes disso
     staleTime: 5 * 60_000,
     refetchInterval: 10 * 60_000,
@@ -22,16 +22,16 @@ export function useEnviarImagem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      variacaoId,
+      projetoId,
       arquivo,
       onProgress,
     }: {
-      variacaoId: string;
+      projetoId: string;
       arquivo: File;
       onProgress?: Progresso;
-    }) => imagensService.enviar(variacaoId, arquivo, onProgress),
-    onSuccess: (_, { variacaoId }) =>
-      queryClient.invalidateQueries({ queryKey: imagensKeys.list(variacaoId) }),
+    }) => imagensService.enviar(projetoId, arquivo, onProgress),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: imagensKeys.all }),
   });
 }
 

@@ -21,7 +21,7 @@ export default function ExecucaoCard({ id }: { id: string }) {
   }
   if (!execucao) return null;
 
-  const executando = execucao.status === "executando";
+  const executando = execucao.status === "running";
 
   return (
     <article className="space-y-4" aria-busy={executando}>
@@ -49,17 +49,17 @@ export default function ExecucaoCard({ id }: { id: string }) {
 
           <PassosLista passos={execucao.passos} executando={executando} />
 
-          {execucao.status === "concluida" && execucao.resposta && (
+          {execucao.status === "completed" && execucao.resposta && (
             <div className="mt-4 border-t border-gray-100 pt-4 text-sm whitespace-pre-line text-gray-800 dark:border-gray-800 dark:text-white/90">
               {execucao.resposta}
             </div>
           )}
-          {execucao.status === "erro" && (
+          {execucao.status === "error" && (
             <p className="mt-4 border-t border-gray-100 pt-4 text-sm text-error-600 dark:border-gray-800 dark:text-error-400">
               {t("agent.failed")}
             </p>
           )}
-          {execucao.status === "limite_atingido" && (
+          {execucao.status === "limit_reached" && (
             <p className="mt-4 border-t border-gray-100 pt-4 text-sm text-warning-600 dark:border-gray-800 dark:text-orange-400">
               {t("agent.limitReached", { max: MAX_ITERACOES })}
             </p>
@@ -77,7 +77,7 @@ export default function ExecucaoCard({ id }: { id: string }) {
                 </Link>
               )}
               <Link
-                to={`/agente/execucoes/${execucao.id}`}
+                to={`/agent/runs/${execucao.id}`}
                 className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 ring-1 ring-gray-200 ring-inset hover:bg-gray-50 dark:text-gray-400 dark:ring-gray-800 dark:hover:bg-white/5"
               >
                 {t("agent.viewDetails")}

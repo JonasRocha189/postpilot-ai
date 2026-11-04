@@ -14,5 +14,21 @@ services:
       interval: 5s
       retries: 10
 
+  # Local S3 (LocalStack). Endpoint http://localhost:4566, credentials test/test.
+  # Production uses the real AWS bucket through the same S3_* variables.
+  s3:
+    image: localstack/localstack:4.4
+    environment:
+      SERVICES: s3
+    ports:
+      - "4566:4566"
+    volumes:
+      # Creates the bucket (with CORS for the Vite dev server) on startup
+      - ./infra/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3api head-bucket --bucket postpilot-dev"]
+      interval: 5s
+      retries: 20
+
 volumes:
   pgdata:

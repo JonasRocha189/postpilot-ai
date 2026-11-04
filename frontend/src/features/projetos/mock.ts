@@ -9,12 +9,12 @@ const NOME = "Projeto";
 // Devolve só os campos públicos (dados antigos do mock podiam ter campos extras)
 const publico = (p: Projeto): Projeto => ({
   id: p.id,
-  nome: p.nome,
-  descricao: p.descricao,
-  publico_alvo: p.publico_alvo,
-  tom_de_voz: p.tom_de_voz,
-  criado_em: p.criado_em,
-  atualizado_em: p.atualizado_em,
+  name: p.name,
+  description: p.description,
+  target_audience: p.target_audience,
+  voice_tone: p.voice_tone,
+  created_at: p.created_at,
+  updated_at: p.updated_at,
 });
 
 export const projetosMock: ProjetosService = {
@@ -23,7 +23,7 @@ export const projetosMock: ProjetosService = {
     return mockDb.projetos
       .todos()
       .map(publico)
-      .sort((a, b) => a.nome.localeCompare(b.nome));
+      .sort((a, b) => a.name.localeCompare(b.name));
   },
 
   async obter(id) {
@@ -38,8 +38,8 @@ export const projetosMock: ProjetosService = {
       mockDb.projetos.inserir({
         ...input,
         id: crypto.randomUUID(),
-        criado_em: agora,
-        atualizado_em: agora,
+        created_at: agora,
+        updated_at: agora,
       }),
     );
   },
@@ -48,19 +48,20 @@ export const projetosMock: ProjetosService = {
     await latencia();
     const atual = mockDb.projetos.encontrar(id, NOME);
     return publico(
-      mockDb.projetos.substituir({ ...atual, ...input, atualizado_em: agoraIso() }),
+      mockDb.projetos.substituir({ ...atual, ...input, updated_at: agoraIso() }),
     );
   },
 
   async excluir(id) {
     await latencia();
     mockDb.projetos.encontrar(id, NOME);
-    // Regra da API: só exclui projeto sem assuntos nem documentos
+    // Regra da API: só exclui projeto sem assuntos, documentos nem imagens
     if (
-      mockDb.assuntos.todos().some((a) => a.projeto_id === id) ||
-      mockDb.documentos.todos().some((d) => d.projeto_id === id)
+      mockDb.assuntos.todos().some((a) => a.project_id === id) ||
+      mockDb.documentos.todos().some((d) => d.project_id === id) ||
+      mockDb.imagens.todos().some((i) => i.project_id === id)
     ) {
-      throw new ApiError(409, "O projeto ainda tem assuntos ou documentos");
+      throw new ApiError(409, "Project has subjects, documents or images");
     }
     mockDb.projetos.remover(id);
   },

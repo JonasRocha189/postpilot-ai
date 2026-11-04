@@ -4,9 +4,6 @@ import type { TipoImagem } from "./types";
 /** Tamanho máximo por imagem. O backend valida de novo ao gerar a URL de upload. */
 export const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5 MB
 
-/** Imagens por variação (carrossel do Instagram, por exemplo). */
-export const MAXIMO_POR_VARIACAO = 10;
-
 export const MIME_POR_TIPO: Record<TipoImagem, string> = {
   png: "image/png",
   jpeg: "image/jpeg",

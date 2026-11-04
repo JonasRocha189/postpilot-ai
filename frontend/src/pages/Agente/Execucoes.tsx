@@ -22,7 +22,7 @@ export default function Execucoes() {
   const { data: execucoes = [], isLoading, isError } = useExecucoes(projetoAtual?.id);
 
   const novoLink = (
-    <Link to="/agente" className={primaryLinkClass}>
+    <Link to="/agent" className={primaryLinkClass}>
       <AiIcon className="size-5" />
       {t("new")}
     </Link>
@@ -33,7 +33,7 @@ export default function Execucoes() {
       <PageMeta title={`${t("title")} | PostPilot`} description={t("subtitle")} />
       <PageHeader
         title={t("title")}
-        subtitle={t("subtitle", { project: projetoAtual?.nome })}
+        subtitle={t("subtitle", { project: projetoAtual?.name })}
         action={novoLink}
       />
 
@@ -66,7 +66,7 @@ export default function Execucoes() {
                   <tr key={e.id}>
                     <td className={td}>
                       <Link
-                        to={`/agente/execucoes/${e.id}`}
+                        to={`/agent/runs/${e.id}`}
                         className="line-clamp-2 font-medium text-gray-800 hover:text-brand-500 dark:text-white/90 dark:hover:text-brand-400"
                       >
                         {e.pedido}

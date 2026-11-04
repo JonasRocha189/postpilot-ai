@@ -39,7 +39,7 @@ export default function ProximosPosts({ posts }: { posts: ProximoPost[] }) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                  {post.titulo}
+                  {post.title}
                 </p>
                 <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
                   {post.assunto} ·{" "}

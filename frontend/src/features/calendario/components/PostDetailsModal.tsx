@@ -1,7 +1,7 @@
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
-import { REDE_LABEL, STATUS_POST_COR } from "@/lib/dominio";
+import { STATUS_POST_COR } from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -18,11 +18,15 @@ export default function PostDetailsModal({
   const fmt = useFormat();
 
   return (
-    <Modal isOpen={post !== null} onClose={onClose} className="m-4 max-w-[480px] p-6 sm:p-8">
+    <Modal
+      isOpen={post !== null}
+      onClose={onClose}
+      className="m-4 max-w-[480px] p-6 sm:p-8"
+    >
       {post && (
         <div>
           <h3 className="pe-8 text-lg font-semibold text-gray-800 dark:text-white/90">
-            {post.titulo}
+            {post.title}
           </h3>
 
           <dl className="mt-5 space-y-3 text-sm">
@@ -35,8 +39,6 @@ export default function PostDetailsModal({
                   weekday: "long",
                   day: "numeric",
                   month: "long",
-                  hour: "2-digit",
-                  minute: "2-digit",
                 })}
               </dd>
             </div>
@@ -44,14 +46,8 @@ export default function PostDetailsModal({
               <dt className="w-28 shrink-0 text-gray-500 dark:text-gray-400">
                 {t("calendar.details.subject")}
               </dt>
-              <dd className="text-gray-800 dark:text-white/90">{post.assunto}</dd>
-            </div>
-            <div className="flex gap-3">
-              <dt className="w-28 shrink-0 text-gray-500 dark:text-gray-400">
-                {t("calendar.details.networks")}
-              </dt>
               <dd className="text-gray-800 dark:text-white/90">
-                {post.redes.map((r) => REDE_LABEL[r]).join(", ")}
+                {post.assunto}
               </dd>
             </div>
             <div className="flex items-center gap-3">

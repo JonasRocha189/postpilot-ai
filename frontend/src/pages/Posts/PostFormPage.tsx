@@ -20,7 +20,7 @@ import {
   useSearchParams,
 } from "react-router";
 
-/** /posts/novo (sem id) e /posts/:id (edição): tela mestre-detalhe. */
+/** /posts/new (sem id) e /posts/:id (edição). */
 export default function PostFormPage() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -35,9 +35,9 @@ export default function PostFormPage() {
   const isEdicao = Boolean(id);
   const post = usePost(id);
   // Na edição, os assuntos oferecidos são os do projeto do post
-  const assuntoDoPost = useAssunto(post.data?.assunto_id);
+  const assuntoDoPost = useAssunto(post.data?.subject_id);
   const projetoId = isEdicao
-    ? assuntoDoPost.data?.projeto_id
+    ? assuntoDoPost.data?.project_id
     : projetoAtual?.id;
   const assuntos = useAssuntos(projetoId);
 
@@ -52,12 +52,8 @@ export default function PostFormPage() {
         await atualizar.mutateAsync({ id, input: toPostInput(values) });
         navigate("/posts");
       } else {
-        // Abre o post criado: imagens e métricas só existem nas variações salvas
-        const novo = await criar.mutateAsync(toPostInput(values));
-        navigate(`/posts/${novo.id}`, {
-          replace: true,
-          state: { criado: true },
-        });
+        await criar.mutateAsync(toPostInput(values));
+        navigate("/posts");
       }
     } catch {
       setSubmitError(t("saveError"));
@@ -73,8 +69,8 @@ export default function PostFormPage() {
     assuntos.isLoading ||
     !assuntos.data;
   const erro = (isEdicao && post.isError) || assuntos.isError;
-  // ?assunto=… pré-seleciona o assunto (ex.: vindo da lista filtrada)
-  const assuntoPadrao = params.get("assunto") ?? "";
+  // ?subject=… pré-seleciona o assunto (ex.: vindo da lista filtrada)
+  const assuntoPadrao = params.get("subject") ?? "";
 
   return (
     <>
@@ -89,7 +85,6 @@ export default function PostFormPage() {
         ) : carregando ? (
           <div className="space-y-6" aria-hidden>
             <div className="h-56 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
-            <div className="h-80 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
           </div>
         ) : (
           <>
@@ -102,8 +97,8 @@ export default function PostFormPage() {
               </p>
             )}
             <PostForm
+              projetoId={projetoId!}
               key={post.data?.id ?? "novo"}
-              post={post.data}
               assuntos={assuntos.data ?? []}
               defaultValues={toFormValues(post.data, assuntoPadrao)}
               onSubmit={onSubmit}

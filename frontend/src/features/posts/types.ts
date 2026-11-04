@@ -1,40 +1,30 @@
-import type { Rede, StatusPost } from "@/lib/dominio";
+import type { StatusPost } from "@/lib/dominio";
 
-// Espelha o schema do backend (ver docs/modelo-de-dados.md e docs/api.md)
-
-export type Variacao = {
-  id: string;
-  rede: Rede;
-  texto: string;
-  hashtags: string[];
-  /** Calculada pelo backend: texto + hashtags */
-  contagem_caracteres: number;
-};
+// Espelha o schema do backend (ver _docs/api.md). Sem variações por enquanto.
 
 export type Post = {
   id: string;
-  assunto_id: string;
-  titulo: string;
+  subject_id: string;
+  title: string;
+  content: string | null;
   status: StatusPost;
-  data_prevista: string | null; // ISO
-  variacoes: Variacao[];
-  criado_em: string;
-  atualizado_em: string;
+  expected_date: string | null; // AAAA-MM-DD
+  /** Imagem da biblioteca do projeto (null = sem imagem) */
+  image_id: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
-/** Corpo de POST /posts e PUT /posts/{id}: o post e todas as suas variações. */
-export type PostInput = {
-  assunto_id: string;
-  titulo: string;
-  status: StatusPost;
-  data_prevista: string | null;
-  variacoes: Pick<Variacao, "rede" | "texto" | "hashtags">[];
-};
+/** Corpo de POST /posts e PUT /posts/{id} */
+export type PostInput = Pick<
+  Post,
+  "subject_id" | "title" | "content" | "status" | "expected_date" | "image_id"
+>;
 
 /** Filtros de GET /posts (além do projeto) */
 export type PostFiltros = {
   status?: StatusPost;
-  assunto_id?: string;
-  de?: string; // AAAA-MM-DD
-  ate?: string;
+  subject_id?: string;
+  from?: string; // AAAA-MM-DD
+  to?: string;
 };

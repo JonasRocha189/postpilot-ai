@@ -12,13 +12,13 @@ export interface MetricasService {
 
 const metricasHttp: MetricasService = {
   listar: (variacaoId) =>
-    apiFetch<Metrica[]>(`/variacoes/${variacaoId}/metricas`),
+    apiFetch<Metrica[]>(`/variations/${variacaoId}/metrics`),
   registrar: (variacaoId, input) =>
-    apiFetch<Metrica>(`/variacoes/${variacaoId}/metricas`, {
+    apiFetch<Metrica>(`/variations/${variacaoId}/metrics`, {
       method: "POST",
       body: JSON.stringify(input),
     }),
-  excluir: (id) => apiFetch<void>(`/metricas/${id}`, { method: "DELETE" }),
+  excluir: (id) => apiFetch<void>(`/metrics/${id}`, { method: "DELETE" }),
 };
 
 export const metricasService: MetricasService =

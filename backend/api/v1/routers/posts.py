@@ -8,10 +8,27 @@ from api.deps import get_current_user_id
 from api.v1.routers.projects import get_owned_project
 from api.v1.routers.subjects import get_owned_subject
 from database.db import get_db
-from database.models import Post, Subject
+from database.models import Image, Post, Subject
 from schemas.posts import PostCreate, PostRead, PostUpdate
 
 router = APIRouter(prefix="/posts", tags=["posts"])
+
+
+async def check_image(
+    image_id: uuid.UUID | None, subject: Subject, user_id: str, db: AsyncSession
+) -> None:
+    """422 unless the image is in the library of the subject's project."""
+    if image_id is None:
+        return
+    image = await db.scalar(
+        select(Image).where(
+            Image.id == image_id,
+            Image.user_id == user_id,
+            Image.project_id == subject.project_id,
+        )
+    )
+    if image is None:
+        raise HTTPException(status_code=422, detail="Image is not in this project's library")
 
 
 async def get_owned_post(post_id: uuid.UUID, user_id: str, db: AsyncSession) -> Post:
@@ -50,7 +67,8 @@ async def create_post(
     db: AsyncSession = Depends(get_db),
 ) -> Post:
     """Create a post under one of the user's subjects. 404 if the subject is not theirs."""
-    await get_owned_subject(body.subject_id, user_id, db)
+    subject = await get_owned_subject(body.subject_id, user_id, db)
+    await check_image(body.image_id, subject, user_id, db)
     post = Post(**body.model_dump(), user_id=user_id)
     db.add(post)
     await db.commit()
@@ -78,8 +96,10 @@ async def update_post(
     """Partially update a post: only the fields sent in the body are changed."""
     post = await get_owned_post(post_id, user_id, db)
     changes = body.model_dump(exclude_unset=True)
-    if "subject_id" in changes:
-        await get_owned_subject(changes["subject_id"], user_id, db)
+    if "subject_id" in changes or changes.get("image_id") is not None:
+        # The image must stay in the project of the (possibly new) subject
+        subject = await get_owned_subject(changes.get("subject_id", post.subject_id), user_id, db)
+        await check_image(changes.get("image_id", post.image_id), subject, user_id, db)
     for field, value in changes.items():
         setattr(post, field, value)
     await db.commit()
@@ -93,7 +113,7 @@ async def delete_post(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    """Delete a post (its images are deleted with it)."""
+    """Delete a post. Its image stays in the project's library."""
     post = await get_owned_post(post_id, user_id, db)
     await db.delete(post)
     await db.commit()

@@ -12,7 +12,7 @@ export interface PostsService {
 }
 
 function query(projetoId: string, filtros: PostFiltros = {}) {
-  const params = new URLSearchParams({ projeto_id: projetoId });
+  const params = new URLSearchParams({ project_id: projetoId });
   for (const [chave, valor] of Object.entries(filtros)) {
     if (valor) params.set(chave, valor);
   }

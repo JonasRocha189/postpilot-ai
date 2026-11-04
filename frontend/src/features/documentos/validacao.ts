@@ -17,8 +17,8 @@ export const ACCEPT = {
   [MIME_POR_TIPO.txt]: [".txt"],
 };
 
-export function tipoDoArquivo(nome: string): TipoDocumento | null {
-  const extensao = nome.split(".").pop()?.toLowerCase();
+export function tipoDoArquivo(name: string): TipoDocumento | null {
+  const extensao = name.split(".").pop()?.toLowerCase();
   return extensao === "pdf" || extensao === "docx" || extensao === "txt"
     ? extensao
     : null;

@@ -15,6 +15,7 @@
     "toggleSidebar": "Toggle menu",
     "moreOptions": "More options",
     "posts": "Posts",
+    "images": "Images",
     "subjects": "Subjects",
     "documents": "Documents",
     "agent": "Agent",
@@ -66,7 +67,7 @@
       "title": "Delete \"{name}\"?",
       "message": "This can't be undone. Only projects without subjects and documents can be deleted.",
       "confirm": "Delete",
-      "hasContent": "This project still has subjects or documents. Delete them before deleting the project."
+      "hasContent": "This project still has subjects, documents or images. Delete them before deleting the project."
     }
   },
   "language": {
@@ -156,27 +157,28 @@
   },
   "domain": {
     "postStatus": {
-      "rascunho": "Draft",
-      "aprovado": "Approved",
-      "publicado": "Published"
+      "draft": "Draft",
+      "review": "In review",
+      "approved": "Approved",
+      "published": "Published"
     },
     "agentMode": {
-      "ideacao": "Ideation",
-      "criacao": "Creation"
+      "ideation": "Ideation",
+      "creation": "Creation"
     },
     "runStatus": {
-      "concluida": "Completed",
-      "erro": "Error",
-      "limite_atingido": "Limit reached",
-      "executando": "Running"
+      "completed": "Completed",
+      "error": "Error",
+      "limit_reached": "Limit reached",
+      "running": "Running"
     },
     "posts_one": "{count} post",
     "posts_other": "{count} posts",
     "docStatus": {
-      "pendente": "Pending",
-      "processando": "Processing",
-      "pronto": "Ready",
-      "erro": "Error"
+      "pending": "Pending",
+      "processing": "Processing",
+      "ready": "Ready",
+      "error": "Error"
     }
   },
   "dashboard": {
@@ -240,6 +242,8 @@
     "more": "+{count} more",
     "details": {
       "scheduledFor": "Scheduled for",
+      "content": "Content",
+      "contentPlaceholder": "Write the post text",
       "subject": "Subject",
       "networks": "Networks",
       "status": "Status",
@@ -380,7 +384,22 @@
       "metrics": "Metrics",
       "removeTitle": "Remove the {network} variation?",
       "removeMessage": "It has {images} image(s) and {metrics} metrics record(s), which will be deleted when you save the post.",
-      "created": "Post created. You can now add images to each variation."
+      "created": "Post created. You can now add images to each variation.",
+      "image": {
+        "label": "Image",
+        "none": "No image chosen.",
+        "selected": "Chosen image",
+        "loading": "Loading…",
+        "choose": "Choose from library",
+        "change": "Change image",
+        "remove": "Remove",
+        "dialogTitle": "Choose the post's image",
+        "loadError": "Couldn't load the library.",
+        "emptyLibrary": "The project's library has no images yet.",
+        "goToLibrary": "Upload images to the library",
+        "uploadMore": "Upload more images",
+        "option": "Image {n}"
+      }
     }
   },
   "documents": {
@@ -421,26 +440,26 @@
     "modeLabel": "Agent mode",
     "inputLabel": "Your request to the agent",
     "placeholder": {
-      "ideacao": "e.g. Suggest 5 topics for next week",
-      "criacao": "e.g. Write a LinkedIn and X post about the security checklist"
+      "ideation": "e.g. Suggest 5 topics for next week",
+      "creation": "e.g. Write a LinkedIn and X post about the security checklist"
     },
     "intro": {
-      "ideacao": {
+      "ideation": {
         "title": "Let's find your next topic",
         "message": "In Ideation mode, the agent searches the web, looks at your past posts and what performed best to suggest topics."
       },
-      "criacao": {
+      "creation": {
         "title": "Let's write a post",
         "message": "In Creation mode, the agent uses your documents and the style of approved posts, adapts the text for each network, generates the image and saves everything as a draft."
       }
     },
     "suggestions": {
-      "ideacao": [
+      "ideation": [
         "Suggest 5 topics for next week",
         "What is working best on my networks?",
         "Post ideas about industry trends"
       ],
-      "criacao": [
+      "creation": [
         "Write a LinkedIn and X post based on the documents",
         "Create an Instagram carousel about behind the scenes",
         "Turn the latest topic into a post"
@@ -501,25 +520,30 @@
     }
   },
   "images": {
-    "add": "Add image",
+    "title": "Images",
+    "metaDescription": "The project's image library.",
+    "subtitle": "{project}'s image library. Choose each post's image in the post form.",
+    "add": "Add images",
     "drop": "Drop to upload",
     "hint": "PNG, JPG or WebP up to {max} MB",
     "inputLabel": "Upload images",
     "tooLarge": "Image larger than {max} MB.",
-    "invalidType": "Format not accepted. Upload PNG, JPG or WebP.",
-    "tooMany": "Each variation accepts at most {max} images.",
-    "failed": "Could not upload the image. Please try again.",
+    "invalidType": "Unsupported format. Upload PNG, JPG or WebP.",
+    "failed": "Couldn't upload the image. Please try again.",
     "progress": "Uploading {name}",
     "dismiss": "Dismiss",
-    "empty": "No images yet. Upload one or ask the agent to generate it.",
-    "loadError": "Could not load the images.",
+    "empty": "The library is empty. Upload the first image.",
+    "loadError": "Couldn't load the images.",
     "open": "Enlarge image {n}",
     "deleteLabel": "Delete image {n}",
-    "generated": "Generated by the agent",
-    "uploaded": "Uploaded by you",
-    "prompt": "Prompt",
+    "usedIn_one": "In {count} post",
+    "usedIn_other": "In {count} posts",
+    "usedBy": "Used by these posts:",
+    "notUsed": "No post uses this image.",
+    "uploadedOn": "Uploaded on {date}",
     "deleteTitle": "Delete this image?",
-    "deleteMessage": "The image will be removed from the variation and from storage. This cannot be undone."
+    "deleteMessage": "The image will be removed from the library and from storage. This can't be undone.",
+    "deleteConflict": "This image is used by a post. Change or remove the image on those posts before deleting it."
   },
   "metrics": {
     "fields": {

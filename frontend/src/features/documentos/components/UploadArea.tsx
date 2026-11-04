@@ -9,7 +9,7 @@ import { ACCEPT, TAMANHO_MAXIMO } from "../validacao";
 
 type Envio = {
   chave: string;
-  nome: string;
+  name: string;
   progresso: number;
   erro: string | null;
 };
@@ -35,10 +35,10 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
 
   const onDrop = (aceitos: File[], rejeitados: FileRejection[]) => {
     const novos: Envio[] = [
-      ...aceitos.map((f) => ({ chave: crypto.randomUUID(), nome: f.name, progresso: 0, erro: null })),
+      ...aceitos.map((f) => ({ chave: crypto.randomUUID(), name: f.name, progresso: 0, erro: null })),
       ...rejeitados.map((r) => ({
         chave: crypto.randomUUID(),
-        nome: r.file.name,
+        name: r.file.name,
         progresso: 0,
         erro: motivo(r),
       })),
@@ -50,7 +50,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
       enviar.mutate(
         { projetoId, arquivo, onProgress: (p) => atualizar(chave, { progresso: p }) },
         {
-          // Enviado: some daqui e aparece na lista, já "processando"
+          // Enviado: some daqui e aparece na lista, já "processing"
           onSuccess: () => remover(chave),
           onError: () => atualizar(chave, { erro: t("failed") }),
         },
@@ -103,7 +103,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-800 dark:text-white/90">
-                  {envio.nome}
+                  {envio.name}
                 </p>
                 {envio.erro ? (
                   <p className="text-theme-xs text-error-600 dark:text-error-400">{envio.erro}</p>
@@ -111,7 +111,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
                   <div
                     className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
                     role="progressbar"
-                    aria-label={t("progress", { name: envio.nome })}
+                    aria-label={t("progress", { name: envio.name })}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(envio.progresso * 100)}

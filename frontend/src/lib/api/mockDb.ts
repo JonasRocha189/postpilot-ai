@@ -7,10 +7,10 @@ import type { Documento } from "@/features/documentos/types";
 import { imagemFicticia } from "@/features/imagens/ficticia";
 import type { Imagem } from "@/features/imagens/types";
 import type { Metrica } from "@/features/metricas/types";
-import type { ModoAgente } from "@/lib/dominio";
+import type { ModoAgente, Rede } from "@/lib/dominio";
+import { parseData } from "@/lib/format";
 import type { Post } from "@/features/posts/types";
 import type { Projeto } from "@/features/projetos/types";
-import { contarCaracteres } from "@/features/posts/redes";
 import { ApiError } from "./http";
 
 /** Documento no banco fictício: guarda quando o processamento começou. */
@@ -24,7 +24,7 @@ export type DocumentoMock = Documento & {
  */
 export type ExecucaoMock = {
   id: string;
-  projeto_id: string;
+  project_id: string;
   modo: ModoAgente;
   pedido: string;
   iniciada_em: string;
@@ -60,9 +60,9 @@ function colecao<T extends Entidade>(key: string, seed: () => T[]) {
 
   return {
     todos: ler,
-    encontrar(id: string, nome = "Registro"): T {
+    encontrar(id: string, name = "Registro"): T {
       const item = ler().find((i) => i.id === id);
-      if (!item) throw new ApiError(404, `${nome} não encontrado`);
+      if (!item) throw new ApiError(404, `${name} não encontrado`);
       return item;
     },
     inserir(item: T) {
@@ -97,22 +97,22 @@ function seedProjetos(): Projeto[] {
   return [
     {
       id: PROJ_MARCA,
-      nome: "Minha marca",
-      descricao:
+      name: "Minha marca",
+      description:
         "Conteúdo da minha consultoria de tecnologia para pequenas empresas.",
-      publico_alvo: "Donos e gestores de pequenas e médias empresas",
-      tom_de_voz: "Próximo, didático e sem jargão técnico",
-      criado_em: agora,
-      atualizado_em: agora,
+      target_audience: "Donos e gestores de pequenas e médias empresas",
+      voice_tone: "Próximo, didático e sem jargão técnico",
+      created_at: agora,
+      updated_at: agora,
     },
     {
       id: PROJ_ACME,
-      nome: "Acme Cloud",
-      descricao: "Cliente: provedor de nuvem focado em segurança.",
-      publico_alvo: "Gestores de TI e CTOs",
-      tom_de_voz: "Profissional, confiante e direto",
-      criado_em: agora,
-      atualizado_em: agora,
+      name: "Acme Cloud",
+      description: "Cliente: provedor de nuvem focado em segurança.",
+      target_audience: "Gestores de TI e CTOs",
+      voice_tone: "Profissional, confiante e direto",
+      created_at: agora,
+      updated_at: agora,
     },
   ];
 }
@@ -121,19 +121,19 @@ function seedAssuntos(): Assunto[] {
   const agora = agoraIso();
   const assunto = (
     id: string,
-    projeto_id: string,
-    nome: string,
-    descricao: string,
-    voz: Partial<Pick<Assunto, "publico_alvo" | "tom_de_voz">> = {},
+    project_id: string,
+    name: string,
+    description: string,
+    voz: Partial<Pick<Assunto, "target_audience" | "voice_tone">> = {},
   ): Assunto => ({
     id,
-    projeto_id,
-    nome,
-    descricao,
-    publico_alvo: voz.publico_alvo ?? null,
-    tom_de_voz: voz.tom_de_voz ?? null,
-    criado_em: agora,
-    atualizado_em: agora,
+    project_id,
+    name,
+    description,
+    target_audience: voz.target_audience ?? null,
+    voice_tone: voz.voice_tone ?? null,
+    created_at: agora,
+    updated_at: agora,
   });
   return [
     assunto(
@@ -148,7 +148,7 @@ function seedAssuntos(): Assunto[] {
       "Cultura da empresa",
       "Bastidores, time e jeito de trabalhar.",
       {
-        tom_de_voz: "Leve, humano e bem-humorado",
+        voice_tone: "Leve, humano e bem-humorado",
       },
     ),
     assunto(
@@ -163,7 +163,7 @@ function seedAssuntos(): Assunto[] {
       "Segurança da informação",
       "Ameaças, prevenção e conformidade.",
       {
-        publico_alvo: "Equipes de segurança e compliance",
+        target_audience: "Equipes de segurança e compliance",
       },
     ),
     assunto(
@@ -175,82 +175,82 @@ function seedAssuntos(): Assunto[] {
   ];
 }
 
-function seedPosts(): Post[] {
-  type Base = [
-    string,
-    string,
-    Post["variacoes"][number]["rede"][],
-    number,
-    number,
-  ];
-  // título, assunto, redes, dias a partir de hoje, hora
-  const base: Base[] = [
-    ["5 erros ao migrar para a nuvem", "ass-cloud", ["linkedin", "x"], -20, 9],
-    ["Bastidores do onboarding", "ass-cultura", ["instagram"], -14, 12],
-    ["Backup em nuvem sem complicação", "ass-cloud", ["linkedin"], -9, 18],
-    [
-      "Nosso time no evento de tecnologia",
-      "ass-eventos",
-      ["linkedin", "instagram"],
-      -3,
-      9,
-    ],
-    ["Como medir o ROI de automação", "ass-cloud", ["linkedin"], 2, 12],
-    ["Um dia na vida do suporte", "ass-cultura", ["instagram"], 5, 18],
-    ["Custos escondidos da nuvem", "ass-cloud", ["linkedin", "x"], 9, 9],
-    [
-      "Checklist de segurança para o fim do ano",
-      "ass-seguranca",
-      ["linkedin", "instagram", "x"],
-      -6,
-      9,
-    ],
-    [
-      "Phishing: 3 sinais de alerta",
-      "ass-seguranca",
-      ["instagram", "x"],
-      1,
-      12,
-    ],
-    ["Autenticação em dois fatores", "ass-seguranca", ["linkedin"], 6, 9],
-    ["Novo painel de auditoria", "ass-produto", ["linkedin", "x"], 12, 12],
-  ];
+// título, assunto, redes, dias a partir de hoje
+type SeedPost = [string, string, Rede[], number];
+const SEED_POSTS: SeedPost[] = [
+  ["5 erros ao migrar para a nuvem", "ass-cloud", ["linkedin", "x"], -20],
+  ["Bastidores do onboarding", "ass-cultura", ["instagram"], -14],
+  ["Backup em nuvem sem complicação", "ass-cloud", ["linkedin"], -9],
+  [
+    "Nosso time no evento de tecnologia",
+    "ass-eventos",
+    ["linkedin", "instagram"],
+    -3,
+  ],
+  ["Como medir o ROI de automação", "ass-cloud", ["linkedin"], 2],
+  ["Um dia na vida do suporte", "ass-cultura", ["instagram"], 5],
+  ["Custos escondidos da nuvem", "ass-cloud", ["linkedin", "x"], 9],
+  [
+    "Checklist de segurança para o fim do ano",
+    "ass-seguranca",
+    ["linkedin", "instagram", "x"],
+    -6,
+  ],
+  ["Phishing: 3 sinais de alerta", "ass-seguranca", ["instagram", "x"], 1],
+  ["Autenticação em dois fatores", "ass-seguranca", ["linkedin"], 6],
+  ["Novo painel de auditoria", "ass-produto", ["linkedin", "x"], 12],
+];
 
-  return base.map(([titulo, assunto_id, redes, dias, hora], i) => {
-    const data = new Date();
-    data.setDate(data.getDate() + dias);
-    data.setHours(hora, 0, 0, 0);
-    const status: Post["status"] =
-      dias < 0 ? "publicado" : i % 2 === 0 ? "aprovado" : "rascunho";
+/** "AAAA-MM-DD" daqui a `dias` dias, no fuso local. */
+function diaDaquiA(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Imagem da biblioteca usada por cada post do seed (índice do post → id). */
+const SEED_IMAGEM_DO_POST: Record<number, string> = {
+  0: "img-nuvem",
+  3: "img-evento",
+  7: "img-checklist",
+};
+
+function seedPosts(): Post[] {
+  return SEED_POSTS.map(([title, subject_id, , dias], i) => {
     const agora = agoraIso();
     return {
       id: `post-${i + 1}`,
-      assunto_id,
-      titulo,
-      status,
-      data_prevista: data.toISOString(),
-      criado_em: agora,
-      atualizado_em: agora,
-      variacoes: redes.map((rede) => {
-        const texto = `${titulo}. Texto de exemplo para ${rede}.`;
-        const hashtags = ["tecnologia", "negocios"];
-        return {
-          id: `var-${i + 1}-${rede}`,
-          rede,
-          texto,
-          hashtags,
-          contagem_caracteres: contarCaracteres(texto, hashtags),
-        };
-      }),
+      subject_id,
+      title,
+      content: `${title}. Texto de exemplo.`,
+      status: dias < 0 ? "published" : i % 2 === 0 ? "approved" : "draft",
+      expected_date: diaDaquiA(dias),
+      image_id: SEED_IMAGEM_DO_POST[i] ?? null,
+      created_at: agora,
+      updated_at: agora,
     };
   });
 }
 
+/**
+ * Variações por rede, só para as imagens e métricas fictícias. O backend
+ * ainda não tem variações, então o Post não as carrega.
+ */
+type VariacaoMock = { id: string; post_id: string; rede: Rede };
+const SEED_VARIACOES: VariacaoMock[] = SEED_POSTS.flatMap(([, , redes], i) =>
+  redes.map((rede) => ({
+    id: `var-${i + 1}-${rede}`,
+    post_id: `post-${i + 1}`,
+    rede,
+  })),
+);
+
 function seedDocumentos(): DocumentoMock[] {
   const doc = (
     id: string,
-    projeto_id: string,
-    nome: string,
+    project_id: string,
+    name: string,
     tipo: Documento["tipo"],
     tamanho_bytes: number,
     total_chunks: number,
@@ -259,15 +259,15 @@ function seedDocumentos(): DocumentoMock[] {
     const data = new Date(Date.now() - diasAtras * 86_400_000).toISOString();
     return {
       id,
-      projeto_id,
-      nome,
+      project_id,
+      name,
       tipo,
       tamanho_bytes,
-      status: "pronto",
+      status: "ready",
       mensagem_erro: null,
       total_chunks,
-      criado_em: data,
-      atualizado_em: data,
+      created_at: data,
+      updated_at: data,
       processamento_iniciado_em: data,
     };
   };
@@ -302,7 +302,7 @@ function seedExecucoes(): ExecucaoMock[] {
     projetoId: string,
     modo: ModoAgente,
     pedido: string,
-    assunto: { id: string; nome: string } | null,
+    assunto: { id: string; name: string } | null,
     documentos: string[],
     horasAtras: number,
     post_id: string | null = null,
@@ -310,7 +310,7 @@ function seedExecucoes(): ExecucaoMock[] {
     const projeto = projetos.find((p) => p.id === projetoId)!;
     return {
       id,
-      projeto_id: projetoId,
+      project_id: projetoId,
       modo,
       pedido,
       iniciada_em: new Date(Date.now() - horasAtras * 3_600_000).toISOString(),
@@ -323,9 +323,9 @@ function seedExecucoes(): ExecucaoMock[] {
     exec(
       "exec-1",
       PROJ_ACME,
-      "criacao",
+      "creation",
       "Post sobre o checklist de segurança, com base no PDF da auditoria",
-      { id: "ass-seguranca", nome: "Segurança da informação" },
+      { id: "ass-seguranca", name: "Segurança da informação" },
       ["auditoria-seguranca-2026.pdf"],
       1,
       "post-8",
@@ -333,7 +333,7 @@ function seedExecucoes(): ExecucaoMock[] {
     exec(
       "exec-2",
       PROJ_ACME,
-      "ideacao",
+      "ideation",
       "Temas para a próxima semana sobre segurança em nuvem",
       null,
       [],
@@ -342,7 +342,7 @@ function seedExecucoes(): ExecucaoMock[] {
     exec(
       "exec-3",
       PROJ_ACME,
-      "ideacao",
+      "ideation",
       "O que está funcionando melhor no LinkedIn? #erro",
       null,
       [],
@@ -351,16 +351,16 @@ function seedExecucoes(): ExecucaoMock[] {
     exec(
       "exec-4",
       PROJ_MARCA,
-      "criacao",
+      "creation",
       "Carrossel do Instagram sobre onboarding #limite",
-      { id: "ass-cultura", nome: "Cultura da empresa" },
+      { id: "ass-cultura", name: "Cultura da empresa" },
       [],
       26,
     ),
     exec(
       "exec-5",
       PROJ_MARCA,
-      "ideacao",
+      "ideation",
       "Ideias de posts para pequenas empresas que querem migrar para a nuvem",
       null,
       [],
@@ -369,52 +369,40 @@ function seedExecucoes(): ExecucaoMock[] {
   ];
 }
 
+/** Imagens da biblioteca de cada projeto; algumas já usadas por posts. */
 function seedImagens(): Imagem[] {
-  const criado_em = agoraIso();
-  const gerada = (
-    variacao_id: string,
-    formato: Imagem["formato"],
-    prompt: string,
+  const created_at = agoraIso();
+  const imagem = (
+    id: string,
+    project_id: string,
+    description: string,
   ): Imagem => ({
-    id: `img-${variacao_id}`,
-    variacao_id,
-    formato,
-    prompt,
-    url: imagemFicticia(variacao_id, formato),
-    criado_em,
+    id,
+    project_id,
+    content_type: "image/svg+xml",
+    description,
+    url: imagemFicticia(id),
+    created_at,
+    updated_at: created_at,
   });
   return [
-    gerada(
-      "var-1-linkedin",
-      "1:1",
-      "ilustração minimalista de servidores migrando para a nuvem, sem texto",
-    ),
-    gerada(
-      "var-4-instagram",
-      "4:5",
-      "equipe em um evento de tecnologia, estilo ilustração plana, sem texto",
-    ),
-    gerada(
-      "var-8-linkedin",
-      "1:1",
-      "ilustração sobre checklist de segurança, sem texto",
-    ),
-    gerada(
-      "var-8-instagram",
-      "4:5",
-      "ilustração sobre checklist de segurança, sem texto",
-    ),
+    imagem("img-nuvem", PROJ_MARCA, "Servidores migrando para a nuvem"),
+    imagem("img-evento", PROJ_MARCA, "Equipe no evento de tecnologia"),
+    imagem("img-escritorio", PROJ_MARCA, "Escritório com o time trabalhando"),
+    imagem("img-checklist", PROJ_ACME, "Checklist de segurança"),
+    imagem("img-cadeado", PROJ_ACME, "Cadeado digital sobre fundo azul"),
   ];
 }
 
 /** Métricas dos posts publicados: um registro 1 dia e outro 7 dias após publicar. */
 function seedMetricas(): Metrica[] {
   const fator = { linkedin: 1, instagram: 1.6, x: 0.7 } as const;
-  return seedPosts()
-    .filter((p) => p.status === "publicado" && p.data_prevista)
+  const posts = seedPosts();
+  return posts
+    .filter((p) => p.status === "published" && p.expected_date)
     .flatMap((post, i) =>
-      post.variacoes.flatMap((v) => {
-        const publicado = new Date(post.data_prevista!);
+      SEED_VARIACOES.filter((v) => v.post_id === post.id).flatMap((v) => {
+        const publicado = parseData(post.expected_date!);
         const base = (900 + ((i * 7919) % 9) * 260) * fator[v.rede];
         return [1, 7]
           .map((dias) => ({
@@ -444,38 +432,26 @@ function seedMetricas(): Metrica[] {
 // ---------------------------------------------------------------------------
 
 export const mockDb = {
-  projetos: colecao<Projeto>("postpilot:mock:projetos", seedProjetos),
-  assuntos: colecao<Assunto>("postpilot:mock:assuntos", seedAssuntos),
-  posts: colecao<Post>("postpilot:mock:posts", seedPosts),
+  projetos: colecao<Projeto>("postpilot:mock:v2:projetos", seedProjetos),
+  assuntos: colecao<Assunto>("postpilot:mock:v2:assuntos", seedAssuntos),
+  posts: colecao<Post>("postpilot:mock:v2:posts", seedPosts),
   documentos: colecao<DocumentoMock>(
-    "postpilot:mock:documentos",
+    "postpilot:mock:v2:documentos",
     seedDocumentos,
   ),
-  execucoes: colecao<ExecucaoMock>("postpilot:mock:execucoes", seedExecucoes),
-  imagens: colecao<Imagem>("postpilot:mock:imagens", seedImagens),
-  metricas: colecao<Metrica>("postpilot:mock:metricas", seedMetricas),
+  execucoes: colecao<ExecucaoMock>(
+    "postpilot:mock:v2:execucoes",
+    seedExecucoes,
+  ),
+  imagens: colecao<Imagem>("postpilot:mock:v2:imagens", seedImagens),
+  metricas: colecao<Metrica>("postpilot:mock:v2:metricas", seedMetricas),
 };
 
 /** Encontra a variação e o post dela, ou responde 404 como a API. */
 export function variacaoDoMock(variacaoId: string) {
-  for (const post of mockDb.posts.todos()) {
-    const variacao = post.variacoes.find((v) => v.id === variacaoId);
-    if (variacao) return { post, variacao };
-  }
-  throw new ApiError(404, "Variação não encontrada");
-}
-
-/** Remove imagens e métricas das variações excluídas (cascata do banco). */
-export function removerDependentesDasVariacoes(variacaoIds: string[]) {
-  const ids = new Set(variacaoIds);
-  for (const img of mockDb.imagens
-    .todos()
-    .filter((i) => ids.has(i.variacao_id))) {
-    mockDb.imagens.remover(img.id);
-  }
-  for (const m of mockDb.metricas
-    .todos()
-    .filter((m) => ids.has(m.variacao_id))) {
-    mockDb.metricas.remover(m.id);
-  }
+  const variacao = SEED_VARIACOES.find((v) => v.id === variacaoId);
+  const post =
+    variacao && mockDb.posts.todos().find((p) => p.id === variacao.post_id);
+  if (!variacao || !post) throw new ApiError(404, "Variação não encontrada");
+  return { post, variacao };
 }

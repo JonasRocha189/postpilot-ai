@@ -16,7 +16,7 @@ export const metricasMock: MetricasService = {
   async registrar(variacaoId, input) {
     await latencia();
     const { post } = variacaoDoMock(variacaoId);
-    if (post.status !== "publicado") {
+    if (post.status !== "published") {
       throw new ApiError(
         422,
         "Só é possível registrar métricas de posts publicados",

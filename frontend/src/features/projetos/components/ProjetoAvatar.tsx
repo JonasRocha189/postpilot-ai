@@ -25,7 +25,7 @@ export default function ProjetoAvatar({
   projeto,
   className,
 }: {
-  projeto: Pick<Projeto, "id" | "nome">;
+  projeto: Pick<Projeto, "id" | "name">;
   className?: string;
 }) {
   return (
@@ -37,7 +37,7 @@ export default function ProjetoAvatar({
         className,
       )}
     >
-      {projeto.nome.trim().charAt(0) || "?"}
+      {projeto.name.trim().charAt(0) || "?"}
     </span>
   );
 }

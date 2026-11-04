@@ -29,7 +29,10 @@ export function setTokenGetter(getter: TokenGetter | null) {
   tokenGetter = getter;
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
   const token = tokenGetter ? await tokenGetter() : null;
 
   const response = await fetch(`${baseUrl}${path}`, {

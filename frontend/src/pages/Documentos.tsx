@@ -34,7 +34,7 @@ export default function Documentos() {
   return (
     <>
       <PageMeta title={`${t("title")} | PostPilot`} description={t("subtitle")} />
-      <PageHeader title={t("title")} subtitle={t("subtitle", { project: projetoAtual?.nome })} />
+      <PageHeader title={t("title")} subtitle={t("subtitle", { project: projetoAtual?.name })} />
 
       <div className="space-y-6">
         {projetoAtual && <UploadArea projetoId={projetoAtual.id} />}
@@ -73,9 +73,9 @@ export default function Documentos() {
                           </span>
                           <div className="min-w-0">
                             <p className="truncate font-medium text-gray-800 dark:text-white/90">
-                              {doc.nome}
+                              {doc.name}
                             </p>
-                            {doc.status === "erro" && doc.mensagem_erro && (
+                            {doc.status === "error" && doc.mensagem_erro && (
                               <p className="text-theme-xs text-error-600 dark:text-error-400">
                                 {doc.mensagem_erro}
                               </p>
@@ -93,11 +93,11 @@ export default function Documentos() {
                         {doc.total_chunks ?? "—"}
                       </td>
                       <td className={`${td} hidden whitespace-nowrap lg:table-cell`}>
-                        {fmt.relative(doc.criado_em)}
+                        {fmt.relative(doc.created_at)}
                       </td>
                       <td className={td}>
                         <span className="inline-flex items-center gap-2">
-                          {(doc.status === "processando" || doc.status === "pendente") && (
+                          {(doc.status === "processing" || doc.status === "pending") && (
                             <span
                               aria-hidden
                               className="size-3.5 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500 dark:border-gray-700"
@@ -114,7 +114,7 @@ export default function Documentos() {
                             type="button"
                             onClick={() => setParaExcluir(doc)}
                             className={iconButtonDangerClass}
-                            aria-label={t("deleteLabel", { name: doc.nome })}
+                            aria-label={t("deleteLabel", { name: doc.name })}
                             title={t("delete.confirm")}
                           >
                             <TrashBinIcon className="size-4" />
@@ -137,7 +137,7 @@ export default function Documentos() {
 
       <ConfirmarExclusaoModal
         isOpen={paraExcluir !== null}
-        title={t("delete.title", { name: paraExcluir?.nome })}
+        title={t("delete.title", { name: paraExcluir?.name })}
         message={t("delete.message")}
         onConfirm={() => excluir.mutateAsync(paraExcluir!.id)}
         onClose={() => setParaExcluir(null)}

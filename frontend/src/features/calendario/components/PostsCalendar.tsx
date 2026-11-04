@@ -1,5 +1,10 @@
 import CalendarEventItem from "@/components/calendar/CalendarEventItem";
-import { BookmarkIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from "@/components/calendar/icons";
+import {
+  BookmarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+} from "@/components/calendar/icons";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import type {
@@ -49,9 +54,9 @@ export default function PostsCalendar({
 
   const events: EventInput[] = posts.map((post) => ({
     id: post.id,
-    title: post.titulo,
+    title: post.title,
     start: post.dataPrevista,
-    allDay: false,
+    allDay: true,
     extendedProps: { calendar: STATUS_NIVEL[post.status] },
   }));
 

@@ -16,7 +16,7 @@ export type PassoAgente = {
 
 export type ExecucaoAgente = {
   id: string;
-  projeto_id: string;
+  project_id: string;
   modo: ModoAgente;
   pedido: string;
   status: StatusExecucao;
@@ -30,9 +30,9 @@ export type ExecucaoAgente = {
   finalizada_em: string | null;
 };
 
-/** Corpo de POST /agente/execucoes */
+/** Corpo de POST /agent/runs */
 export type ExecucaoInput = {
-  projeto_id: string;
+  project_id: string;
   modo: ModoAgente;
   pedido: string;
 };
