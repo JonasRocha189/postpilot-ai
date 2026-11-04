@@ -12,6 +12,8 @@ export const STATUS_POST: readonly StatusPost[] = [
   "published",
 ];
 export type Rede = "linkedin" | "instagram" | "x";
+/** Como o post é publicado: só texto, uma imagem ou várias (carrossel). */
+export type FormatoPost = "text" | "single" | "carousel";
 export type ModoAgente = "ideation" | "creation";
 export type StatusExecucao =
   "running" | "completed" | "error" | "limit_reached";

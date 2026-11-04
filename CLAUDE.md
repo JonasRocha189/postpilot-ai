@@ -123,9 +123,9 @@ Nomes em inglês (classe / tabela). Detalhes e glossário em `_docs/modelo-de-da
 
 - **Project** / `projects`: name, description, target_audience, voice_tone (padrão). CRUD completo. Topo da hierarquia: a marca do usuário ou um cliente. Exclusão só sem subjects e documents (`409`).
 - **Subject** / `subjects`: project_id, name, description, target_audience e voice_tone **opcionais** (vazios = valem os do projeto). CRUD completo.
-- **Post** / `posts`: title, subject_id, content, status (`draft`, `review`, `approved`, `published`), expected_date, image_id (opcional, da biblioteca do projeto). CRUD completo. Sem `project_id`: o projeto vem do subject.
+- **Post** / `posts`: title, subject_id, content, status (`draft`, `review`, `approved`, `published`), network (`instagram`, `linkedin`, `x`), format (`text`, `single`, `carousel`), expected_date e imagens da biblioteca em ordem (`post_images`). Regras por rede em `_docs/api.md`. CRUD completo. Sem `project_id`: o projeto vem do subject.
 - **PostVariation** / `post_variations`: post_id, network (`linkedin`, `instagram`, `x`), text, hashtags, char_count. **Detalhe de Post** (tela mestre-detalhe).
-- **Image** / `images`: project_id, key, content_type, description. **Biblioteca de imagens do projeto**; o post escolhe uma (`posts.image_id`). Exclusão só se nenhum post usa (`409`).
+- **Image** / `images`: project_id, key, content_type, description. **Biblioteca de imagens do projeto**; o post escolhe as suas (`post_images`). Exclusão só se nenhum post usa (`409`).
 - **Metric** / `metrics`: variation_id, published_at, impressions, likes, comments, shares, clicks, collected_at.
 - **Document** / `documents`: project_id, name, s3_key, type, status (`pending`, `processing`, `ready`, `error`).
 - **Chunk** / `chunks`: document_id, content, embedding (`vector`), search_vector (`tsvector`). `ON DELETE CASCADE` a partir de Document.

@@ -11,6 +11,12 @@ export function today(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
 }
 
+/** Today as shown by the date field in pt-BR (dd/mm/aaaa). */
+export function todayBr(): string {
+  const [y, m, d] = today().split("-");
+  return `${d}/${m}/${y}`;
+}
+
 /** Unique names, so runs never collide with old data (mock or real API). */
 export function unique(prefix: string): string {
   return `${prefix} ${Date.now().toString(36)}`;

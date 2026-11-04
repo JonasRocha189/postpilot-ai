@@ -17,6 +17,7 @@ import {
   ListIcon,
   PageIcon,
   PieChartIcon,
+  ShootingStarIcon,
   TableIcon,
   TaskIcon,
   TimeIcon,
@@ -84,6 +85,12 @@ const navItems: NavItem[] = [
     appKey: "nav.calendar",
     path: "/calendar",
   },
+  {
+    icon: <ShootingStarIcon fontSize={24} />,
+    name: "Boas práticas",
+    appKey: "nav.bestPractices",
+    path: "/best-practices",
+  },
   // Divisor: IA e base de conhecimento
   {
     icon: <FileIcon fontSize={24} />,
@@ -132,7 +139,11 @@ const othersItems: NavItem[] = [
     key: "forms",
     icon: <ListIcon fontSize={24} />,
     subItems: [
-      { name: "Form Elements", key: "formElements", path: "/template/form-elements" },
+      {
+        name: "Form Elements",
+        key: "formElements",
+        path: "/template/form-elements",
+      },
     ],
   },
   {
@@ -140,7 +151,11 @@ const othersItems: NavItem[] = [
     key: "tables",
     icon: <TableIcon fontSize={24} />,
     subItems: [
-      { name: "Basic Tables", key: "basicTables", path: "/template/basic-tables" },
+      {
+        name: "Basic Tables",
+        key: "basicTables",
+        path: "/template/basic-tables",
+      },
     ],
   },
   {
@@ -235,7 +250,9 @@ const AppSidebar: React.FC = () => {
     (path: string) => {
       const casa = (p: string) =>
         location.pathname === p || location.pathname.startsWith(`${p}/`);
-      const melhor = TODOS_OS_CAMINHOS.filter(casa).sort((a, b) => b.length - a.length)[0];
+      const melhor = TODOS_OS_CAMINHOS.filter(casa).sort(
+        (a, b) => b.length - a.length,
+      )[0];
       return melhor === path;
     },
     [location.pathname],
@@ -301,9 +318,7 @@ const AppSidebar: React.FC = () => {
               </span>
 
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text">
-                  {label(nav)}
-                </span>
+                <span className="menu-item-text">{label(nav)}</span>
               )}
               {nav.new && (isExpanded || isHovered || isMobileOpen) && (
                 <span
@@ -347,9 +362,7 @@ const AppSidebar: React.FC = () => {
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">
-                    {label(nav)}
-                  </span>
+                  <span className="menu-item-text">{label(nav)}</span>
                 )}
               </Link>
             )

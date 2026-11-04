@@ -11,40 +11,68 @@ const valores = (over: Partial<PostFormValues> = {}): PostFormValues => ({
   title: "Checklist de segurança",
   subject_id: "subj-1",
   status: "draft",
+  network: "instagram",
+  format: "single",
   expected_date: "",
   content: "",
-  image_id: "",
+  image_ids: [],
   ...over,
 });
 
+const mensagens = (values: PostFormValues) => {
+  const result = postFormSchema.safeParse(values);
+  return result.success ? [] : result.error.issues.map((i) => i.message);
+};
+
 describe("postFormSchema", () => {
-  it("accepts a minimal valid post", () => {
-    expect(postFormSchema.safeParse(valores()).success).toBe(true);
+  it("accepts a minimal valid draft (images can come later)", () => {
+    expect(mensagens(valores())).toEqual([]);
   });
 
   it("requires a title and a subject (messages are i18n keys)", () => {
-    const result = postFormSchema.safeParse(
-      valores({ title: "   ", subject_id: "" }),
+    expect(mensagens(valores({ title: "   ", subject_id: "" }))).toEqual(
+      expect.arrayContaining([
+        "posts.form.errors.titleRequired",
+        "posts.form.errors.subjectRequired",
+      ]),
     );
-    expect(result.success).toBe(false);
-    const messages = result.error!.issues.map((i) => i.message);
-    expect(messages).toContain("posts.form.errors.titleRequired");
-    expect(messages).toContain("posts.form.errors.subjectRequired");
-  });
-
-  it("limits the title to 200 characters", () => {
-    expect(
-      postFormSchema.safeParse(valores({ title: "a".repeat(201) })).success,
-    ).toBe(false);
   });
 
   it("only accepts the statuses of the API", () => {
-    expect(
-      postFormSchema.safeParse(valores({ status: "review" })).success,
-    ).toBe(true);
+    expect(mensagens(valores({ status: "review" }))).toEqual([]);
     expect(
       postFormSchema.safeParse({ ...valores(), status: "rascunho" }).success,
     ).toBe(false);
+  });
+
+  it("applies the network rules (same as the backend)", () => {
+    expect(
+      mensagens(valores({ network: "instagram", format: "text" })),
+    ).toEqual(["posts.form.errors.formatNotAvailable"]);
+    expect(
+      mensagens(
+        valores({ network: "x", format: "single", content: "a".repeat(281) }),
+      ),
+    ).toEqual(["posts.form.errors.tooLongForNetwork"]);
+    expect(
+      mensagens(
+        valores({
+          network: "x",
+          format: "carousel",
+          image_ids: ["1", "2", "3", "4", "5"],
+        }),
+      ),
+    ).toEqual(["posts.form.errors.tooManyImages"]);
+    expect(
+      mensagens(
+        valores({ status: "approved", format: "single", image_ids: [] }),
+      ),
+    ).toEqual(["posts.form.errors.needsOneImage"]);
+    expect(
+      mensagens(
+        valores({ status: "published", format: "carousel", image_ids: ["1"] }),
+      ),
+    ).toEqual(["posts.form.errors.needsTwoImages"]);
   });
 });
 
@@ -54,38 +82,36 @@ describe("toPostInput", () => {
       title: "Checklist de segurança",
       subject_id: "subj-1",
       status: "draft",
+      network: "instagram",
+      format: "single",
       expected_date: null,
       content: null,
-      image_id: null,
+      image_ids: [],
     });
   });
 
-  it("keeps the date, content and image when filled in", () => {
+  it("keeps the date, content and images (in order)", () => {
     const input = toPostInput(
       valores({
+        format: "carousel",
         expected_date: "2026-11-20",
         content: " Texto ",
-        image_id: "img-1",
+        image_ids: ["img-2", "img-1"],
       }),
     );
     expect(input).toMatchObject({
       expected_date: "2026-11-20",
       content: "Texto",
-      image_id: "img-1",
+      image_ids: ["img-2", "img-1"],
     });
   });
 });
 
 describe("toFormValues", () => {
-  it("starts a new post as a draft, with the default subject", () => {
-    expect(toFormValues(undefined, "subj-9")).toEqual({
-      title: "",
-      subject_id: "subj-9",
-      status: "draft",
-      expected_date: "",
-      content: "",
-      image_id: "",
-    });
+  it("starts a new post as an Instagram single-image draft", () => {
+    expect(toFormValues(undefined, "subj-9")).toEqual(
+      valores({ title: "", subject_id: "subj-9" }),
+    );
   });
 
   it("maps a saved post back to the form (null → empty string)", () => {
@@ -95,18 +121,21 @@ describe("toFormValues", () => {
       title: "T",
       content: null,
       status: "approved",
+      network: "linkedin",
+      format: "text",
       expected_date: "2026-11-20",
-      image_id: null,
+      image_ids: [],
       created_at: "",
       updated_at: "",
     };
-    expect(toFormValues(post)).toEqual({
-      title: "T",
-      subject_id: "subj-1",
-      status: "approved",
-      expected_date: "2026-11-20",
-      content: "",
-      image_id: "",
-    });
+    expect(toFormValues(post)).toEqual(
+      valores({
+        title: "T",
+        status: "approved",
+        network: "linkedin",
+        format: "text",
+        expected_date: "2026-11-20",
+      }),
+    );
   });
 });

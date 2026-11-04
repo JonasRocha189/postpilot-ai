@@ -25,11 +25,13 @@ export function useEnviarImagem() {
       projetoId,
       arquivo,
       onProgress,
+      descricao,
     }: {
       projetoId: string;
       arquivo: File;
       onProgress?: Progresso;
-    }) => imagensService.enviar(projetoId, arquivo, onProgress),
+      descricao?: string | null;
+    }) => imagensService.enviar(projetoId, arquivo, onProgress, descricao),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: imagensKeys.all }),
   });

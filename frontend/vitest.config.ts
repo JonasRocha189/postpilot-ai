@@ -18,6 +18,9 @@ export default mergeConfig(
         VITE_AUTH0_CLIENT_ID: "",
       },
       restoreMocks: true,
+      // Long form flows (typing, dialogs, uploads) can pass the 5 s default
+      // when all files run in parallel
+      testTimeout: 15_000,
     },
   }),
 );

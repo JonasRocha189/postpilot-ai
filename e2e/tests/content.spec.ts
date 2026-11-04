@@ -1,4 +1,4 @@
-import { confirmDelete, expect, login, PNG, test, today, unique } from "./fixtures";
+import { confirmDelete, expect, login, PNG, test, todayBr, unique } from "./fixtures";
 
 /**
  * Main acceptance flow of the first part of the app: project → subject →
@@ -49,10 +49,14 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await page.getByLabel(/^Título/).fill(title);
     await page.getByLabel(/^Assunto/).selectOption({ label: subject });
     await page.getByLabel(/^Status/).selectOption("review");
-    await page.getByLabel("Data prevista").fill(today());
+    // Calendar date field: typed as dd/mm/aaaa (a click on the calendar works too)
+    await page.getByLabel("Data prevista").fill(todayBr());
+    await page.getByLabel("Data prevista").press("Tab");
+    await expect(page.getByRole("radio", { name: /^Instagram/ })).toBeChecked();
+    await expect(page.getByRole("radio", { name: /^Imagem única/ })).toBeChecked();
     await page.getByLabel("Conteúdo").fill("Texto escrito pelo teste de aceite.");
 
-    await page.getByRole("button", { name: "Escolher da biblioteca" }).click();
+    await page.getByRole("button", { name: "Escolher", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Imagem 1" }).click();
     await expect(page.getByRole("button", { name: "Trocar imagem" })).toBeVisible();
 
@@ -86,7 +90,7 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await dialog.getByRole("link", { name: "Abrir post" }).click();
     await expect(page).toHaveURL(/\/posts\/[^/]+$/);
     await expect(page.getByLabel(/^Título/)).toHaveValue(title);
-    await expect(page.getByLabel("Data prevista")).toHaveValue(today());
+    await expect(page.getByLabel("Data prevista")).toHaveValue(todayBr());
   });
 
   await test.step("an image used by a post cannot be deleted (409)", async () => {

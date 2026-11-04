@@ -2,7 +2,7 @@
 
 > Status: **em implementação**. Atualize esta página sempre que uma rota for criada, alterada ou removida.
 >
-> **Implementadas:** `/login`, `/signup`, `/error`, `/`, `/projects`, `/subjects` e `/posts` (lista, novo e edição), `/images` (biblioteca de imagens do projeto), o seletor de projeto no cabeçalho, `/calendar`, `/documents`, `/agent`, `/agent/runs` e `/agent/runs/:id`, `/dashboard` (ainda com dados de exemplo), `/profile` e `*`.
+> **Implementadas:** `/login`, `/signup`, `/error`, `/`, `/projects`, `/subjects` e `/posts` (lista, novo e edição), `/images` (biblioteca de imagens do projeto), o seletor de projeto no cabeçalho, `/calendar`, `/best-practices` (guia de boas práticas por rede), `/documents`, `/agent`, `/agent/runs` e `/agent/runs/:id`, `/dashboard` (ainda com dados de exemplo), `/profile` e `*`.
 >
 > **Ligadas à API real:** projetos, assuntos, posts e imagens. Documentos, agente e dashboard ainda usam a API fictícia.
 >
@@ -39,10 +39,11 @@ Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 | `/subjects/new` | Cadastro de assunto | `POST /subjects` | CRUD |
 | `/subjects/:id` | Edição de assunto | `GET`, `PUT /subjects/{id}` | CRUD |
 | `/posts` | Lista de posts, com filtros na URL (`?status=draft&subject=…`) | `GET /posts`, `DELETE /posts/{id}` | CRUD |
-| `/posts/new` | Cadastro de post: título, assunto, status, data prevista, conteúdo e **imagem escolhida na biblioteca** do projeto | `POST /posts`, `GET /images` | CRUD |
+| `/posts/new` | Cadastro de post: título, assunto, status, **data no calendário** (flatpickr, dd/mm/aaaa em pt-BR), **rede** e **formato** (só texto, imagem única, carrossel), **editor de texto** (emoji, marcador, hashtag, contador pelo limite da rede e prévia cortada no “ver mais”) e **imagens da biblioteca** na ordem do carrossel. O botão **Criar arte** abre o editor (decisão 26): arte no tamanho da rede com fundo de cor ou foto da biblioteca e texto, salva na biblioteca e escolhida para o post (no carrossel, vários slides que entram no fim do carrossel, na ordem), ou só baixada ("Baixar imagem"). O texto do post vem depois da imagem | `POST /posts`, `GET /images` | CRUD |
 | `/posts/:id` | Edição do post (mesmo formulário) | `GET`, `PUT /posts/{id}` | CRUD |
 | `/images` | **Biblioteca de imagens do projeto**: envio direto para o S3 (vários arquivos, com progresso), ampliação com os posts que usam a imagem e exclusão (`409` se algum post a usa) | `GET /images`, `POST /images/upload-url`, `POST /images`, `DELETE /images/{id}` | |
 | `/calendar` | Posts no calendário pela `expected_date`, com cor por status. Busca só o mês visível (`?from=…&to=…`) e mantém o mês anterior na tela enquanto carrega o próximo. Clicar em um post abre um modal com link para `/posts/:id` | `GET /posts?from&to` | |
+| `/best-practices` | **Guia de boas práticas** (só leitura, sem CRUD e sem projeto): princípios gerais e uma aba por rede (`?network=instagram`, `linkedin` ou `x`) com formatos e tamanhos (único, carrossel, vertical), limite de texto, hashtags, o que funciona, quando publicar, métricas e fontes de inspiração. Textos no i18n (`bestPractices`); limites de caracteres vêm de `features/posts/redes.ts` | | |
 | `/documents` | Lista com status de processamento e upload na mesma tela | `/documents/*` | IA (RAG) |
 | `/agent` | Conversa com o agente, com troca de modo (`?mode=ideation` ou `creation`) | `POST /agent/runs` | IA |
 | `/agent/runs` | Histórico de execuções | `GET /agent/runs` | |
@@ -59,6 +60,7 @@ Assuntos
 Posts
 Imagens
 Calendário
+Boas práticas
 ─────────
 Documentos
 Agente
@@ -74,7 +76,7 @@ Os divisores vêm da propriedade `divider` dos itens em `layout/AppSidebar.tsx`.
 - **Sem formulários próprios de login e cadastro.** `/login` e `/signup` só levam ao Auth0, que hospeda login, cadastro e redefinição de senha.
 - **Modo de desenvolvimento sem Auth0.** Sem `VITE_AUTH0_DOMAIN` e `VITE_AUTH0_CLIENT_ID`, o `npm run dev` entra com um usuário fictício (ver `frontend/.env.example`). No build de produção isso nunca acontece: sem configuração, o login fica indisponível.
 - **Roteador com data router** (`createBrowserRouter`), necessário para o `errorElement` e para o carregamento sob demanda (`lazy`) de cada página.
-- **Imagens numa biblioteca por projeto** ([decisão 22](decisoes.md)). O post aponta para uma imagem da biblioteca (`image_id`); o seletor do formulário abre a biblioteca num modal renderizado fora do `<form>` (`components/common/Portal.tsx`).
+- **Imagens numa biblioteca por projeto** ([decisão 22](decisoes.md)). O post aponta para imagens da biblioteca, em ordem (`image_ids`); o seletor do formulário abre a biblioteca num modal renderizado fora do `<form>` (`components/common/Portal.tsx`).
 - **Posts sem variações por rede, por enquanto.** O backend ainda não tem `post_variations`; o post tem um único `content`. As telas de variações e métricas por variação voltam quando o backend as tiver.
 - **"Novo" e "editar" usam o mesmo formulário**: `/new` começa vazio e `/:id` carrega os dados. Um schema Zod por entidade.
 - **Filtros na query string**, não em estado do componente: links compartilháveis, botão voltar funciona e os testes Playwright abrem a lista já filtrada.

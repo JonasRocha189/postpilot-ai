@@ -15,6 +15,8 @@ export interface ImagensService {
     projetoId: string,
     arquivo: File,
     onProgress?: Progresso,
+    /** Texto alternativo (ex.: o texto da arte criada no editor) */
+    descricao?: string | null,
   ): Promise<Imagem>;
   /** Remove a imagem e o objeto no S3. Rejeita com 409 se algum post a usa. */
   excluir(id: string): Promise<void>;
@@ -26,7 +28,7 @@ const imagensHttp: ImagensService = {
       `/images?${new URLSearchParams({ project_id: projetoId })}`,
     ),
 
-  async enviar(projetoId, arquivo, onProgress) {
+  async enviar(projetoId, arquivo, onProgress, descricao) {
     const tipo = tipoDaImagem(arquivo);
     if (!tipo) throw new ApiError(422, "Unsupported image type");
     const content_type = MIME_POR_TIPO[tipo];
@@ -49,7 +51,7 @@ const imagensHttp: ImagensService = {
         project_id: projetoId,
         key,
         content_type,
-        description: null,
+        description: descricao?.trim() || null,
       }),
     });
   },

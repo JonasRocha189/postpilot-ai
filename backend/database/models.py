@@ -23,6 +23,26 @@ class PostStatus(enum.StrEnum):
     PUBLISHED = "published"
 
 
+class Network(enum.StrEnum):
+    """Social network a post is written for."""
+
+    LINKEDIN = "linkedin"
+    INSTAGRAM = "instagram"
+    X = "x"
+
+
+class PostFormat(enum.StrEnum):
+    """How the post is published: text only, one image or several (carousel)."""
+
+    TEXT = "text"
+    SINGLE = "single"
+    CAROUSEL = "carousel"
+
+
+def _enum_values(enum_cls: type[enum.Enum]) -> list[str]:
+    return [str(member.value) for member in enum_cls]
+
+
 class Project(UUIDMixin, TimestampMixin, Base):
     """The user's own brand or a client. Top of the hierarchy."""
 
@@ -63,18 +83,43 @@ class Post(UUIDMixin, TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(255))
     content: Mapped[str | None] = mapped_column(Text)
     status: Mapped[PostStatus] = mapped_column(
-        Enum(
-            PostStatus,
-            name="post_status",
-            values_callable=lambda e: [member.value for member in e],
-        ),
+        Enum(PostStatus, name="post_status", values_callable=_enum_values),
         default=PostStatus.DRAFT,
     )
+    network: Mapped[Network] = mapped_column(
+        Enum(Network, name="network", values_callable=_enum_values)
+    )
+    format: Mapped[PostFormat] = mapped_column(
+        Enum(PostFormat, name="post_format", values_callable=_enum_values)
+    )
     expected_date: Mapped[date | None] = mapped_column(Date)
-    # Image chosen from the project's library. Deleting an image in use is refused (409).
-    image_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("images.id"), index=True)
 
     subject: Mapped["Subject"] = relationship(back_populates="posts")
+    # Images from the project's library, in carousel order. Loaded with the post.
+    images: Mapped[list["PostImage"]] = relationship(
+        order_by="PostImage.position",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    @property
+    def image_ids(self) -> list[uuid.UUID]:
+        """Image ids in order (what the API returns)."""
+        return [item.image_id for item in self.images]
+
+
+class PostImage(Base):
+    """An image of a post (carousel slide). Deleting an image in use is refused (409)."""
+
+    __tablename__ = "post_images"
+
+    post_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True
+    )
+    image_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("images.id"), primary_key=True, index=True
+    )
+    position: Mapped[int]
 
 
 class Image(UUIDMixin, TimestampMixin, Base):

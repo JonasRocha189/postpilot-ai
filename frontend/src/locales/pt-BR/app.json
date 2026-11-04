@@ -10,6 +10,7 @@
     "dashboard": "Dashboard",
     "projects": "Projetos",
     "calendar": "Calendário",
+    "bestPractices": "Boas práticas",
     "profile": "Perfil",
     "templateGroup": "Template (referência)",
     "toggleSidebar": "Abrir ou fechar o menu",
@@ -243,7 +244,7 @@
     "details": {
       "scheduledFor": "Previsto para",
       "subject": "Assunto",
-      "networks": "Redes",
+      "networks": "Rede",
       "status": "Status",
       "openPost": "Abrir post"
     }
@@ -334,10 +335,10 @@
     "columns": {
       "title": "Título",
       "subject": "Assunto",
-      "networks": "Redes",
       "date": "Data prevista",
       "status": "Status",
-      "actions": "Ações"
+      "actions": "Ações",
+      "network": "Rede"
     },
     "delete": {
       "title": "Excluir \"{name}\"?",
@@ -355,50 +356,99 @@
       "statusHint": "O agente sempre cria como rascunho; aprovar e publicar é com você.",
       "scheduledFor": "Data prevista",
       "content": "Conteúdo",
-      "contentPlaceholder": "Escreva o texto do post",
-      "variations": "Variações por rede",
-      "variationsHint": "Um texto para cada rede, respeitando o formato e o limite de caracteres de cada uma.",
-      "tabFilled": "(com variação)",
-      "tabEmpty": "(sem variação)",
-      "tabError": "(com erro)",
-      "noVariation": "Este post ainda não tem variação para o {network}.",
-      "addVariation": "Adicionar variação para o {network}",
-      "removeVariation": "Remover variação do {network}",
-      "text": "Texto",
-      "textPlaceholder": "Texto do post para o {network}",
-      "hashtags": "Hashtags",
-      "hashtagsPlaceholder": "#nuvem #seguranca",
-      "hashtagsHint": "Separe por espaço ou vírgula. O # é opcional.",
-      "counter": "{count} / {limit} caracteres (com hashtags)",
       "errors": {
         "titleRequired": "Informe o título do post.",
         "subjectRequired": "Selecione o assunto.",
-        "textRequired": "Escreva o texto desta variação.",
         "tooLongForNetwork": "Passou do limite de {limit} caracteres do {network} (contando as hashtags).",
-        "tooManyHashtags": "Use no máximo 30 hashtags.",
-        "variationRequired": "Adicione a variação de pelo menos uma rede."
+        "formatNotAvailable": "Este formato não está disponível no {network}.",
+        "tooManyImages": "Use no máximo {max} imagens neste formato.",
+        "needsOneImage": "Posts aprovados ou publicados precisam de uma imagem.",
+        "needsTwoImages": "Carrosséis aprovados ou publicados precisam de pelo menos 2 imagens."
       },
-      "saveFirst": "Salve o post para adicionar imagens e métricas à variação do {network}.",
-      "savedImmediately": "Imagens e métricas são salvas na hora, sem precisar clicar em \"Salvar alterações\".",
-      "images": "Imagens",
-      "metrics": "Métricas",
-      "removeTitle": "Remover a variação do {network}?",
-      "removeMessage": "Ela tem {images} imagem(ns) e {metrics} registro(s) de métricas, que serão excluídos quando você salvar o post.",
       "created": "Post criado. Agora você pode adicionar imagens a cada variação.",
       "image": {
         "label": "Imagem",
-        "none": "Nenhuma imagem escolhida.",
-        "selected": "Imagem escolhida",
+        "labelMany": "Imagens, na ordem do carrossel",
+        "count": "{count} de {max}",
         "loading": "Carregando…",
-        "choose": "Escolher da biblioteca",
+        "choose": "Escolher",
+        "add": "Adicionar",
         "change": "Trocar imagem",
-        "remove": "Remover",
+        "removeOne": "Remover imagem {n}",
+        "moveLeft": "Mover imagem {n} para a esquerda",
+        "moveRight": "Mover imagem {n} para a direita",
         "dialogTitle": "Escolha a imagem do post",
+        "dialogTitleMany": "Escolha até {max} imagens, na ordem do carrossel",
         "loadError": "Não foi possível carregar a biblioteca.",
         "emptyLibrary": "A biblioteca do projeto ainda não tem imagens.",
         "goToLibrary": "Enviar imagens para a biblioteca",
         "uploadMore": "Enviar mais imagens",
-        "option": "Imagem {n}"
+        "option": "Imagem {n}",
+        "done": "Concluir ({count})"
+      },
+      "publishSection": "Rede, texto e imagens",
+      "network": "Rede",
+      "networkHint": "Até {limit} caracteres",
+      "format": "Formato",
+      "seeBestPractices": "Ver boas práticas do {network}",
+      "formats": {
+        "instagram": {
+          "single": {
+            "label": "Imagem única",
+            "hint": "1080 × 1350 (4:5) ou 1080 × 1080"
+          },
+          "carousel": {
+            "label": "Carrossel",
+            "hint": "2 a 20 imagens, 1080 × 1350 (4:5)"
+          }
+        },
+        "linkedin": {
+          "text": {
+            "label": "Só texto",
+            "hint": "Sem imagem: o texto é o conteúdo"
+          },
+          "single": {
+            "label": "Imagem única",
+            "hint": "1200 × 627, 1200 × 1200 ou 1080 × 1350"
+          },
+          "carousel": {
+            "label": "Carrossel",
+            "hint": "2 a 20 imagens, publicado como PDF (1080 × 1350)"
+          }
+        },
+        "x": {
+          "text": {
+            "label": "Só texto",
+            "hint": "Até 280 caracteres"
+          },
+          "single": {
+            "label": "Imagem única",
+            "hint": "1600 × 900 (16:9) ou 1080 × 1080"
+          },
+          "carousel": {
+            "label": "Várias imagens",
+            "hint": "2 a 4 imagens (o X não tem carrossel)"
+          }
+        }
+      },
+      "editor": {
+        "mode": "Modo do editor",
+        "edit": "Editar",
+        "preview": "Pré-visualizar",
+        "toolbar": "Ferramentas de texto",
+        "emoji": "Inserir emoji",
+        "emojiPanel": "Emojis",
+        "insertEmoji": "Inserir {emoji}",
+        "moreEmojis": "Mais emojis: Windows + . ou Ctrl + Cmd + Espaço no Mac.",
+        "bullet": "Inserir marcador (•) no começo da linha",
+        "hashtag": "Inserir hashtag",
+        "placeholder": "Escreva o texto do post para o {network}",
+        "previewTitle": "Como aparece no feed do {network}",
+        "previewEmpty": "Escreva o texto para ver a prévia.",
+        "seeMore": "mais",
+        "visibleHint": "Os primeiros {count} caracteres aparecem antes do “ver mais”.",
+        "visibleAll": "O post aparece inteiro no feed.",
+        "counter": "{count} / {limit} caracteres"
       }
     }
   },
@@ -584,7 +634,484 @@
       "beforePublished": "A coleta não pode ser antes da publicação."
     }
   },
+  "art": {
+    "ctaTitle": "Criar arte para o post",
+    "ctaHint": "Fundo colorido ou foto da biblioteca, com texto, no tamanho certo do {network}.",
+    "open": "Criar arte",
+    "title": "Criar arte para o {network}",
+    "subtitle": "A arte é salva na biblioteca do projeto e escolhida como imagem do post.",
+    "previewLabel": "Prévia da arte ({size} px)",
+    "size": "Tamanho",
+    "background": "Fundo",
+    "backgroundTypes": {
+      "color": "Cor",
+      "image": "Imagem da biblioteca"
+    },
+    "backgroundColor": "Cor do fundo",
+    "otherBackgroundColor": "Outra cor de fundo",
+    "colorOption": "Cor {color}",
+    "libraryImage": "Escolha a imagem",
+    "imageOption": "Imagem {n}",
+    "libraryError": "Não foi possível carregar a biblioteca de imagens.",
+    "emptyLibrary": "A biblioteca do projeto ainda não tem imagens.",
+    "goToLibrary": "Enviar imagens",
+    "loadingImage": "Carregando a imagem…",
+    "imageError": "Não foi possível carregar esta imagem. Tente outra ou recarregue a página.",
+    "dragHint": "A imagem é ajustada para cobrir a arte inteira. Arraste a prévia ou use os controles para escolher a parte que aparece.",
+    "zoom": "Zoom",
+    "horizontal": "Posição horizontal",
+    "vertical": "Posição vertical",
+    "darken": "Escurecer a imagem",
+    "text": "Texto da arte",
+    "textPlaceholder": "Ex.: 5 erros ao migrar para a nuvem",
+    "textHint": "Frases curtas funcionam melhor. Se o texto não couber, a fonte diminui sozinha.",
+    "fontSize": "Tamanho da fonte",
+    "textColor": "Cor do texto",
+    "otherTextColor": "Outra cor de texto",
+    "align": "Alinhamento",
+    "alignments": {
+      "left": "Esquerda",
+      "center": "Centro",
+      "right": "Direita"
+    },
+    "position": "Posição do texto",
+    "positions": {
+      "top": "Topo",
+      "middle": "Meio",
+      "bottom": "Base"
+    },
+    "defaultDescription": "Arte criada no editor",
+    "cancel": "Cancelar",
+    "download": "Baixar imagem",
+    "downloading": "Preparando…",
+    "downloadError": "Não foi possível gerar a imagem para baixar. Tente novamente.",
+    "ctaTitleCarousel": "Criar slides do carrossel",
+    "ctaHintCarousel": "Slides com fundo colorido ou foto da biblioteca e texto, no tamanho do {network}. Cabem mais {max}.",
+    "carouselFull": "O carrossel já está com o máximo de imagens. Remova alguma para criar novos slides.",
+    "titleCarousel": "Criar carrossel para o {network}",
+    "subtitleCarousel": "Todos os slides têm o mesmo tamanho. Eles são salvos na biblioteca e entram no fim do carrossel, nesta ordem (até {max}).",
+    "sizeCarousel": "Tamanho (todos os slides)",
+    "slides": "Slides",
+    "slideN": "Slide {n}",
+    "slideCount": "Slide {n} de {total} (máximo {max})",
+    "addSlide": "Novo slide (mesmo visual, sem texto)",
+    "duplicateSlide": "Duplicar",
+    "removeSlide": "Remover",
+    "moveSlideLeft": "Antes",
+    "moveSlideRight": "Depois",
+    "slideText": "Texto do slide {n}",
+    "slideDescription": "Slide {n} do carrossel",
+    "downloadSlides": "Baixar slides ({count})",
+    "useSlides": "Usar no post ({count})",
+    "savingSlides": "Salvando {n} de {total}…",
+    "use": "Usar no post",
+    "saving": "Salvando…",
+    "saveError": "Não foi possível salvar a arte. Tente novamente."
+  },
   "modal": {
     "close": "Fechar"
+  },
+  "bestPractices": {
+    "title": "Boas práticas",
+    "metaDescription": "Formatos, tamanhos, hashtags, métricas e referências para Instagram, LinkedIn e X.",
+    "subtitle": "Guia rápido para criar conteúdo em cada rede: formatos, tamanhos, texto, hashtags, métricas e onde buscar inspiração.",
+    "reviewed": "Revisado em novembro de 2026. As redes mudam limites e formatos com frequência: na dúvida, confira a central de ajuda de cada uma.",
+    "principlesTitle": "Princípios para qualquer rede",
+    "principles": [
+      {
+        "title": "Uma ideia por post",
+        "text": "Escolha uma mensagem principal. Se tiver mais para dizer, transforme em série, carrossel ou fio."
+      },
+      {
+        "title": "Gancho no começo",
+        "text": "A primeira linha (ou o primeiro slide) decide se a pessoa para de rolar. Comece com um problema, um número ou uma pergunta."
+      },
+      {
+        "title": "Adapte para cada rede",
+        "text": "O mesmo assunto ganha formato, tamanho e tom diferentes no Instagram, no LinkedIn e no X. Não copie o mesmo texto."
+      },
+      {
+        "title": "Chamada para ação clara",
+        "text": "Diga o que a pessoa deve fazer: salvar, comentar, compartilhar ou clicar. Uma ação por post."
+      },
+      {
+        "title": "Acessibilidade",
+        "text": "Escreva o texto alternativo das imagens, use contraste alto, fonte grande e legendas nos vídeos."
+      },
+      {
+        "title": "Meça e ajuste",
+        "text": "Registre as métricas, compare por assunto, dia e horário e repita o que funciona. O dashboard do PostPilot faz essa comparação."
+      }
+    ],
+    "tabsLabel": "Redes sociais",
+    "sections": {
+      "formats": "Formatos e tamanhos",
+      "formatsHint": "Tamanhos recomendados em pixels (largura × altura).",
+      "format": "Formato",
+      "size": "Tamanho",
+      "ratio": "Proporção",
+      "notes": "Observações",
+      "text": "Texto",
+      "limit": "Limite",
+      "limitValue": "{limit} caracteres",
+      "visible": "Antes do “ver mais”",
+      "ideal": "Tamanho ideal",
+      "hashtags": "Hashtags",
+      "hashtagsCount": "Quantas usar",
+      "practices": "O que funciona",
+      "timing": "Quando e com que frequência publicar",
+      "timingDashboard": "Ver o melhor dia e horário no dashboard",
+      "metrics": "Métricas que importam",
+      "metricsFormula": "No PostPilot, taxa de engajamento = (curtidas + comentários + compartilhamentos + cliques) ÷ impressões. Recomendações só aparecem com pelo menos 5 posts por grupo.",
+      "inspiration": "Inspiração e referências",
+      "inspirationGeneral": "Para qualquer rede",
+      "agentIdeation": "Abrir o agente no modo Ideação"
+    },
+    "generalInspiration": [
+      {
+        "name": "Perguntas dos clientes",
+        "description": "Comentários, mensagens, e-mails de suporte e reuniões de venda: cada dúvida frequente vira um post."
+      },
+      {
+        "name": "Google Trends",
+        "description": "Mostra o interesse por um tema ao longo do tempo e por região, e os assuntos relacionados em alta."
+      },
+      {
+        "name": "AnswerThePublic",
+        "description": "Lista as perguntas que as pessoas pesquisam sobre uma palavra-chave."
+      },
+      {
+        "name": "Concorrentes e referências do setor",
+        "description": "Observe formatos e assuntos que geram conversa, para adaptar à sua voz (nunca copiar)."
+      },
+      {
+        "name": "Newsletters, podcasts e relatórios do setor",
+        "description": "Dados e novidades recentes rendem posts com autoridade. Cite a fonte."
+      },
+      {
+        "name": "Pinterest e Behance",
+        "description": "Referências visuais de layout, paleta e tipografia para artes e carrosséis."
+      }
+    ],
+    "networks": {
+      "instagram": {
+        "summary": "Rede visual: a imagem ou o vídeo para a rolagem; a legenda aprofunda. Carrosséis geram salvamentos e Reels ampliam o alcance para quem não te segue.",
+        "formats": [
+          {
+            "name": "Post único (retrato)",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Recomendado: ocupa mais espaço no feed."
+          },
+          {
+            "name": "Post único (quadrado)",
+            "size": "1080 × 1080",
+            "ratio": "1:1",
+            "note": "Bom para artes com texto centralizado."
+          },
+          {
+            "name": "Post vertical da grade",
+            "size": "1080 × 1440",
+            "ratio": "3:4",
+            "note": "Mesma proporção das miniaturas da grade do perfil. Mantenha o assunto no centro."
+          },
+          {
+            "name": "Carrossel",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Até 20 imagens ou vídeos. O primeiro slide define a proporção de todos."
+          },
+          {
+            "name": "Stories e Reels",
+            "size": "1080 × 1920",
+            "ratio": "9:16",
+            "note": "Deixe cerca de 250 px livres em cima e embaixo, onde ficam os botões da interface."
+          }
+        ],
+        "text": {
+          "visible": "cerca de 125 caracteres",
+          "ideal": "Gancho na primeira linha; 150 a 600 caracteres para a maioria dos posts. Legendas longas funcionam em conteúdo educativo.",
+          "tips": [
+            "Use palavras-chave na legenda: a busca do Instagram lê o texto, não só as hashtags.",
+            "Quebre o texto em parágrafos curtos e use emojis com moderação, como marcadores."
+          ]
+        },
+        "hashtags": {
+          "count": "3 a 5",
+          "tips": [
+            "Desde dezembro de 2025 o Instagram limita a 5 hashtags por post, na legenda e nos comentários somados.",
+            "Prefira hashtags específicas do nicho e da marca a hashtags genéricas (#love, #instagood).",
+            "Coloque no fim da legenda e varie conforme o assunto, em vez de repetir sempre o mesmo bloco."
+          ]
+        },
+        "practices": [
+          "No carrossel, um tópico por slide, título grande e chamada para ação no último slide.",
+          "Texto na arte legível no celular: fonte de pelo menos 24 px numa arte de 1080 px de largura.",
+          "Mantenha identidade visual (cores, fontes, estilo) para o perfil ser reconhecido no feed.",
+          "Peça salvamentos e compartilhamentos: são sinais fortes de valor para o algoritmo.",
+          "Responda os comentários na primeira hora depois de publicar.",
+          "Escreva o texto alternativo da imagem (Configurações avançadas, antes de publicar)."
+        ],
+        "timing": [
+          "3 a 5 posts por semana no feed, mais Stories quase todos os dias, com constância.",
+          "Use os Insights da conta profissional: eles mostram em que dias e horários seus seguidores estão online.",
+          "Teste horários diferentes por algumas semanas antes de fixar uma agenda."
+        ],
+        "metrics": [
+          {
+            "name": "Visualizações",
+            "description": "Quantas vezes o conteúdo foi exibido (o Instagram trocou “impressões” por “visualizações”)."
+          },
+          {
+            "name": "Alcance",
+            "description": "Contas únicas que viram o post. Compare seguidores e não seguidores."
+          },
+          {
+            "name": "Salvamentos",
+            "description": "Indicam conteúdo útil, que a pessoa quer rever. Ótimos em carrosséis educativos."
+          },
+          {
+            "name": "Compartilhamentos",
+            "description": "Levam o post para quem ainda não te segue."
+          },
+          {
+            "name": "Comentários e curtidas",
+            "description": "Mostram conversa e aprovação; comentários pesam mais."
+          },
+          {
+            "name": "Visitas ao perfil e novos seguidores",
+            "description": "Mostram se o conteúdo desperta interesse pela marca."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Aba Explorar e Reels",
+            "description": "Mostra o que está em alta para o seu perfil de interesses."
+          },
+          {
+            "name": "Áudios em alta",
+            "description": "Músicas e sons com seta de tendência nos Reels."
+          },
+          {
+            "name": "Coleções salvas",
+            "description": "Salve posts de referência em coleções por tema (layout, legenda, gancho)."
+          },
+          {
+            "name": "Biblioteca de Anúncios da Meta",
+            "description": "Anúncios ativos de qualquer marca no Instagram e no Facebook."
+          }
+        ]
+      },
+      "linkedin": {
+        "summary": "Rede profissional: conteúdo que ensina, conta aprendizados ou traz dados. O texto tem mais peso que no Instagram, e o perfil pessoal costuma alcançar mais que a página da empresa.",
+        "formats": [
+          {
+            "name": "Imagem paisagem",
+            "size": "1200 × 627",
+            "ratio": "1.91:1",
+            "note": "Também é o tamanho da prévia de links."
+          },
+          {
+            "name": "Imagem quadrada",
+            "size": "1200 × 1200",
+            "ratio": "1:1",
+            "note": "Funciona bem no computador e no celular."
+          },
+          {
+            "name": "Imagem retrato",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Ocupa mais espaço no feed do celular."
+          },
+          {
+            "name": "Carrossel (documento PDF)",
+            "size": "1080 × 1350 por página",
+            "ratio": "4:5",
+            "note": "Até 300 páginas e 100 MB; o ideal é de 6 a 12. Todas as páginas do mesmo tamanho."
+          },
+          {
+            "name": "Vídeo",
+            "size": "1080 × 1920 ou 1080 × 1350",
+            "ratio": "9:16",
+            "note": "Vertical ou retrato; legende, pois muita gente assiste sem som."
+          }
+        ],
+        "text": {
+          "visible": "cerca de 210 caracteres (menos no celular)",
+          "ideal": "800 a 1.500 caracteres, com frases curtas e uma linha em branco entre os parágrafos.",
+          "tips": [
+            "As duas primeiras linhas precisam fazer a pessoa clicar em “ver mais”.",
+            "Conte uma história real: contexto, o que aconteceu, o que aprendeu e o que o leitor pode aplicar."
+          ]
+        },
+        "hashtags": {
+          "count": "0 a 3",
+          "tips": [
+            "Hashtags pesam pouco na distribuição do LinkedIn; use só as realmente relevantes.",
+            "Coloque no fim do texto, nunca no meio das frases.",
+            "Marque pessoas ou empresas apenas quando elas fazem parte do conteúdo."
+          ]
+        },
+        "practices": [
+          "Carrossel em PDF para conteúdo educativo: passo a passo, checklist, comparativos.",
+          "Links externos podem reduzir o alcance: teste o link no primeiro comentário e compare.",
+          "Responda todos os comentários com algo além de “obrigado”: a conversa aumenta a distribuição.",
+          "Termine com uma pergunta aberta para estimular comentários.",
+          "Publique pelo perfil pessoal de quem representa a marca e compartilhe pela página da empresa."
+        ],
+        "timing": [
+          "2 a 5 posts por semana, em dias úteis.",
+          "Início da manhã e horário de almoço costumam funcionar; confirme com os seus dados.",
+          "Fique disponível na primeira hora para responder os comentários."
+        ],
+        "metrics": [
+          {
+            "name": "Impressões",
+            "description": "Quantas vezes o post apareceu no feed."
+          },
+          {
+            "name": "Membros alcançados",
+            "description": "Pessoas únicas que viram o post."
+          },
+          {
+            "name": "Reações, comentários e compartilhamentos",
+            "description": "Comentários longos e compartilhamentos com comentário valem mais que reações."
+          },
+          {
+            "name": "Cliques e CTR",
+            "description": "Cliques divididos por impressões: mede o interesse em saber mais."
+          },
+          {
+            "name": "Dados demográficos",
+            "description": "Cargo, setor e empresa de quem viu: confirma se o post chegou ao público certo."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Top Voices e criadores do setor",
+            "description": "Observe como estruturam ganchos, histórias e carrosséis."
+          },
+          {
+            "name": "Newsletters do LinkedIn",
+            "description": "Assine as do seu setor para acompanhar temas e debates."
+          },
+          {
+            "name": "Biblioteca de Anúncios do LinkedIn",
+            "description": "Anúncios de qualquer empresa, com formatos e mensagens."
+          },
+          {
+            "name": "Comentários em posts populares",
+            "description": "As dúvidas e opiniões ali viram pautas."
+          }
+        ]
+      },
+      "x": {
+        "summary": "Rede rápida e de conversa: textos curtos e diretos, opinião e participação em assuntos do momento. Para conteúdo longo, use fios (threads).",
+        "formats": [
+          {
+            "name": "Imagem paisagem",
+            "size": "1600 × 900",
+            "ratio": "16:9",
+            "note": "Formato padrão; 1200 × 675 também funciona."
+          },
+          {
+            "name": "Imagem quadrada",
+            "size": "1080 × 1080",
+            "ratio": "1:1",
+            "note": "Boa para artes com texto."
+          },
+          {
+            "name": "Imagem retrato",
+            "size": "1080 × 1350",
+            "ratio": "4:5",
+            "note": "Aparece inteira no app e ocupa mais espaço."
+          },
+          {
+            "name": "Várias imagens",
+            "size": "até 4 por post",
+            "ratio": "16:9",
+            "note": "Não há carrossel; para uma sequência maior, use um fio."
+          },
+          {
+            "name": "Vídeo",
+            "size": "1920 × 1080 ou 1080 × 1920",
+            "ratio": "16:9",
+            "note": "Horizontal ou vertical; coloque legendas."
+          }
+        ],
+        "text": {
+          "visible": "o post inteiro (contas gratuitas)",
+          "ideal": "70 a 200 caracteres. Contas Premium podem publicar textos longos, mas o curto costuma render mais.",
+          "tips": [
+            "Todo link conta como 23 caracteres, qualquer que seja o tamanho.",
+            "Num fio, o primeiro post é o gancho; numere (1/5) e feche com um resumo ou chamada para ação."
+          ]
+        },
+        "hashtags": {
+          "count": "1 a 2",
+          "tips": [
+            "Mais de duas hashtags parece spam e reduz o engajamento.",
+            "Use hashtags de eventos ou assuntos do momento só quando o post tem relação com eles.",
+            "Prefira escrever as palavras-chave no próprio texto."
+          ]
+        },
+        "practices": [
+          "Uma ideia por post, direto ao ponto; a opinião bem fundamentada gera conversa.",
+          "Imagens e vídeos dão destaque no feed; escreva o texto alternativo.",
+          "Participe: responda outros perfis e use repost com comentário, não só publique.",
+          "Fixe no perfil o post que melhor apresenta a marca."
+        ],
+        "timing": [
+          "O feed é muito rápido: 1 a 3 posts por dia funcionam melhor que um por semana.",
+          "Acompanhe eventos e assuntos do momento do seu setor e reaja enquanto estão em alta.",
+          "Republique o melhor conteúdo em outro horário, com uma nova abordagem."
+        ],
+        "metrics": [
+          {
+            "name": "Impressões",
+            "description": "Quantas vezes o post foi exibido."
+          },
+          {
+            "name": "Engajamentos e taxa de engajamento",
+            "description": "Todas as interações divididas pelas impressões."
+          },
+          {
+            "name": "Respostas e reposts",
+            "description": "Medem conversa e alcance para fora dos seguidores."
+          },
+          {
+            "name": "Cliques em links",
+            "description": "Essencial quando o objetivo é levar tráfego ao site."
+          },
+          {
+            "name": "Itens salvos e visitas ao perfil",
+            "description": "Mostram interesse em voltar ao conteúdo e conhecer a marca."
+          }
+        ],
+        "inspiration": [
+          {
+            "name": "Explorar e Assuntos do momento",
+            "description": "O que está em alta agora, no geral e por tema."
+          },
+          {
+            "name": "Listas",
+            "description": "Monte listas com especialistas e veículos do seu setor para acompanhar sem ruído."
+          },
+          {
+            "name": "Busca avançada",
+            "description": "Filtre posts por palavras, perfis, datas e número mínimo de curtidas."
+          },
+          {
+            "name": "Comunidades",
+            "description": "Grupos por tema onde as dúvidas do público aparecem."
+          }
+        ]
+      }
+    }
+  },
+  "dateField": {
+    "placeholder": "dd/mm/aaaa",
+    "clear": "Limpar data",
+    "open": "Abrir calendário"
   }
 }
