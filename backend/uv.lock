@@ -1684,6 +1684,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "truststore" },
 ]
 
 [package.dev-dependencies]
@@ -1703,6 +1704,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.16.2" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.15.1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.6" },
+    { name = "truststore", specifier = ">=0.10.5" },
 ]
 
 [package.metadata.requires-dev]
