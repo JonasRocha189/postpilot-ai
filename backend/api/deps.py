@@ -1,8 +1,10 @@
 import asyncio
+import ssl
 from functools import lru_cache
 from typing import Any
 
 import jwt
+import truststore
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -10,12 +12,6 @@ from database.config import settings
 
 # auto_error=False: without a token we decide what happens (dev user or 401)
 bearer = HTTPBearer(auto_error=False)
-
-
-@lru_cache
-def jwks_client() -> jwt.PyJWKClient:
-    """Client that downloads Auth0's public signing keys and caches them."""
-    return jwt.PyJWKClient(f"{settings.auth0_issuer}.well-known/jwks.json")
 
 
 def decode_token(token: str) -> dict[str, Any]:
@@ -67,3 +63,11 @@ async def get_current_user_id(
         raise unauthorized("Invalid token") from exc
 
     return str(claims["sub"])
+
+
+@lru_cache
+def jwks_client() -> jwt.PyJWKClient:
+    """Client that downloads Auth0's public signing keys and caches them."""
+    # Verify TLS with the OS trust store (works behind antivirus/corporate HTTPS inspection)
+    context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    return jwt.PyJWKClient(f"{settings.auth0_issuer}.well-known/jwks.json", ssl_context=context)

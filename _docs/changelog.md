@@ -25,6 +25,10 @@ Formato de cada entrada:
 - Implantação planejada: **Vercel** (frontend), **Render** (backend) e **Neon** (PostgreSQL), no lugar da VPS com k3s (decisão 28). Deploy só pelo GitHub Actions, depois do lint e dos testes.
 - `.gitignore` ignora `node_modules/` em qualquer pasta (antes, só na raiz).
 
+### Corrigido
+
+- Backend: o download das chaves públicas do Auth0 (JWKS) usa o repositório de certificados do sistema operacional (`truststore`). Com o OpenSSL padrão do Python, falhava com `certificate has expired` (resposta `503`) atrás de antivírus com inspeção de HTTPS, por causa de raízes vencidas no repositório do Windows.
+
 ### Removido
 
 - `frontend/public/favicon.png` (era um PNG declarado como SVG no `index.html`).
