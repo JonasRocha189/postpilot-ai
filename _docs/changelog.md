@@ -12,6 +12,23 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-05
+
+### Adicionado
+
+- Backend: **autenticação com Auth0** (decisão 29). Toda rota da API exige `Authorization: Bearer <access token>`; o backend confere a assinatura RS256 com as chaves públicas do tenant (JWKS, em cache), o emissor (`iss`), a audiência (`aud`) e a validade (`exp`), e usa o `sub` do token como `user_id`. Token ausente ou inválido responde `401`; Auth0 fora do ar responde `503`. Novas variáveis `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` e `AUTH_DEV_USER` (só local).
+- Backend: **verificação de saúde** sem autenticação: `GET /api/v1/health` (o processo responde) e `GET /api/v1/health/ready` (o banco responde a um `SELECT 1` em até 2 s; senão, `503`), para o health check da plataforma de hospedagem.
+- Frontend: **logo do PostPilot**: avião de papel com rastro e um brilho (a IA), no azul da marca. Aparece no menu lateral (só o símbolo quando recolhido), nas telas de login e cadastro e como favicon (`favicon.svg`).
+
+### Alterado
+
+- Implantação planejada: **Vercel** (frontend), **Render** (backend) e **Neon** (PostgreSQL), no lugar da VPS com k3s (decisão 28). Deploy só pelo GitHub Actions, depois do lint e dos testes.
+- `.gitignore` ignora `node_modules/` em qualquer pasta (antes, só na raiz).
+
+### Removido
+
+- `frontend/public/favicon.png` (era um PNG declarado como SVG no `index.html`).
+
 ## 2026-11-04
 
 ### Adicionado

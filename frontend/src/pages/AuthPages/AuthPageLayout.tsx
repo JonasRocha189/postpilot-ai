@@ -1,4 +1,5 @@
 import GridShape from "@/components/common/GridShape";
+import { LogoMark } from "@/components/common/Logo";
 import ThemeTogglerTwo from "@/components/common/ThemeTogglerTwo";
 import LanguageDropdown from "@/components/header/LanguageDropdown";
 import React from "react";
@@ -20,8 +21,9 @@ export default function AuthLayout({
             <GridShape />
 
             <div className="flex max-w-xs flex-col items-center">
+              <LogoMark className="mb-5 size-16" />
               <span className="mb-4 text-4xl font-bold tracking-tight text-white">
-                PostPilot
+                Post<span className="text-brand-400">Pilot</span>
               </span>
               <p className="text-center text-gray-400 dark:text-white/60">
                 {t("brand.tagline")}

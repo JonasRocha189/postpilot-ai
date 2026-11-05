@@ -1,19 +1,41 @@
 # API
 
-> Status: **em implementação**. Pronto: **Projects**. Até a integração com o Auth0, todas as rotas usam um usuário fixo (`dev-user`). A referência oficial é o OpenAPI gerado pelo FastAPI em `/api/docs`. Mantenha esta tabela alinhada a ela.
+> Status: **em implementação**. Prontos: **Projects**, **Subjects**, **Posts**, **Images**, autenticação com Auth0 e verificação de saúde. A referência oficial é o OpenAPI gerado pelo FastAPI em `/api/docs`. Mantenha esta tabela alinhada a ela.
 
 - Prefixo: `/api/v1`
 - Rotas, parâmetros e campos JSON em **inglês** (ver [decisão 20](decisoes.md)), com os mesmos nomes do [modelo de dados](modelo-de-dados.md).
-- Autenticação: `Authorization: Bearer <JWT do Auth0>` em todas as rotas, exceto `/health`
+- Autenticação: `Authorization: Bearer <access token do Auth0>` em todas as rotas, exceto `/health` (ver [Autenticação](#autenticação))
 - Erros: `{"detail": ...}`
 - Um usuário nunca acessa dados de outro. Recursos de outro usuário retornam `404`.
 - **Escopo por projeto:** as listagens marcadas com 🅿 exigem `?project_id=…`, e as criações recebem `project_id` no corpo. O backend confere se o projeto pertence ao usuário do token (senão, `404`). O frontend envia o projeto selecionado no cabeçalho da tela.
+
+## Autenticação
+
+O frontend faz login no Auth0 (Authorization Code + PKCE) e envia o **access token** em cada chamada. O backend ([`api/deps.py`](../backend/api/deps.py)) não consulta o Auth0 a cada requisição: baixa uma vez as chaves públicas do tenant (`https://<AUTH0_DOMAIN>/.well-known/jwks.json`, em cache) e confere o token localmente.
+
+| Verificação | Valor esperado |
+| --- | --- |
+| Assinatura | RS256, com a chave do JWKS indicada pelo `kid` do token. O algoritmo é fixo no backend, nunca lido do token |
+| `iss` | `https://<AUTH0_DOMAIN>/` (com a barra final) |
+| `aud` | `AUTH0_AUDIENCE` (identificador da API no Auth0: `https://projeto.jonas-rocha.com/api`) |
+| `exp` | No futuro |
+| `sub` | Presente; vira o `user_id` de todas as consultas |
+
+| Situação | Resposta |
+| --- | --- |
+| Sem token, com `AUTH_DEV_USER` definido (só desenvolvimento local) | Segue como esse usuário |
+| Sem token | `401` `{"detail": "Not authenticated"}` e `WWW-Authenticate: Bearer` |
+| Token expirado, de outra API, de outro tenant ou com assinatura inválida | `401` `{"detail": "Invalid token"}` (sem dizer o motivo) |
+| Auth0 inacessível ao baixar as chaves | `503` `{"detail": "Authentication provider unavailable"}` |
+
+A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_USER` esteja definido. Em produção, `AUTH_DEV_USER` fica vazio. A autorização vem do filtro por `user_id` em cada consulta: um usuário nunca vê dados de outro.
 
 ## Endpoints
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
-| GET | `/health` | Verificação de saúde (sem autenticação) |
+| GET | `/health` | Liveness: o processo responde. Não consulta o banco (sem autenticação) |
+| GET | `/health/ready` | Readiness: o banco responde a um `SELECT 1` em até 2 s; senão, `503` (sem autenticação) |
 | **Projects** | | |
 | GET | `/projects` | Lista os projetos do usuário |
 | POST | `/projects` | Cria |

@@ -64,8 +64,8 @@
 | IA | LLM com tool calling (provedor a definir), embeddings, geração de imagem, busca web (Tavily ou Brave) |
 | Autenticação | Auth0 (OAuth 2.0 / OpenID Connect, Authorization Code + PKCE) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
-| Infraestrutura | VPS com k3s, Traefik, cert-manager + Let's Encrypt |
-| IaC | Terraform (AWS), Ansible (VPS), Helm (aplicação) |
+| Infraestrutura | Vercel (frontend), Render (backend em Docker), Neon (PostgreSQL) |
+| IaC | Terraform (AWS, Vercel, Render, Neon) |
 | CI/CD | GitHub Actions + GitHub Container Registry |
 | Testes | pytest, Testcontainers, moto/LocalStack, Vitest + Testing Library, Playwright |
 | Qualidade | Ruff, mypy, ESLint, Prettier, pre-commit |
@@ -73,10 +73,10 @@
 ## Arquitetura
 
 ```
-Navegador ──HTTPS──> Traefik (k3s)
-                       ├── /     → Frontend (React, servido por nginx)
-                       └── /api  → Backend (FastAPI)
-                                     ├── PostgreSQL + pgvector
+Navegador ──HTTPS──> Vercel
+                       ├── /       → Frontend (React, arquivos estáticos)
+                       └── /api/*  → Render: Backend (FastAPI, Docker)
+                                     ├── Neon: PostgreSQL + pgvector
                                      ├── AWS S3 (documentos e imagens)
                                      ├── Auth0 (validação de JWT)
                                      └── Provedores de IA (LLM, embeddings, imagem, busca web)
@@ -139,10 +139,10 @@ cd e2e && npx playwright test                   # aceite (ver _docs/testes.md)
 | [ ] | OAuth para autenticação e autorização das APIs | Auth0 (OIDC + PKCE), JWT validado no backend |
 | [ ] | Backend com API consumida pelo frontend | API REST FastAPI em `/api/v1` |
 | [ ] | Controle de versões na internet | GitHub |
-| [ ] | CI/CD com build, testes, publicação e IaC | GitHub Actions, GHCR, Terraform, Ansible, Helm |
-| [ ] | Implantação em nuvem | k3s em VPS + AWS S3 |
+| [ ] | CI/CD com build, testes, publicação e IaC | GitHub Actions, GHCR, Terraform |
+| [ ] | Implantação em nuvem | Vercel + Render + Neon + AWS S3 |
 | [ ] | Declaração e isolamento de dependências | `uv.lock`, `package-lock.json`, imagens Docker |
-| [ ] | Configuração por variáveis de ambiente | pydantic-settings, Secrets do Kubernetes e do GitHub |
+| [ ] | Configuração por variáveis de ambiente | pydantic-settings, variáveis da Render e da Vercel, GitHub Secrets |
 | [ ] | Logs como fluxo de eventos | JSON no stdout (structlog) |
 | [ ] | Testes de unidade, integração e aceite | pytest, Vitest, Testcontainers, Playwright |
 | [ ] | Ciclo de vida do usuário (cadastro e alteração de credenciais) | Auth0 |
