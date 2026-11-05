@@ -37,21 +37,21 @@ A publicação nas redes é feita pelo próprio usuário. A integração automá
 flowchart TB
     browser["👤 Navegador"]
 
-    subgraph k3s["Cluster k3s (VPS)"]
-        traefik["Traefik<br/><i>Ingress + HTTPS (cert-manager)</i>"]
-        front["Frontend<br/><i>React + Vite + TailAdmin<br/>servido por nginx</i>"]
-        back["Backend<br/><i>FastAPI (Python)<br/>2 réplicas</i>"]
-        db[("PostgreSQL 16<br/>+ pgvector<br/><i>StatefulSet</i>")]
-        backup["CronJob de backup<br/><i>pg_dump</i>"]
+    subgraph vercel["Vercel"]
+        front["Frontend<br/><i>React + Vite + TailAdmin<br/>arquivos estáticos</i>"]
     end
+    subgraph render["Render"]
+        back["Backend<br/><i>FastAPI (Python)<br/>contêiner Docker</i>"]
+    end
+    db[("PostgreSQL 16<br/>+ pgvector<br/><i>Neon</i>")]
+    backup["Backup agendado<br/><i>GitHub Actions, pg_dump</i>"]
 
     s3["AWS S3"]
     auth0["Auth0"]
     ia["Provedores de IA<br/>e busca web"]
 
-    browser -- "HTTPS" --> traefik
-    traefik -- "/" --> front
-    traefik -- "/api" --> back
+    browser -- "HTTPS" --> front
+    front -- "/api/* (rewrite)" --> back
     browser -- "Login (PKCE)" --> auth0
     browser -- "Upload/download<br/>(URL pré-assinada)" --> s3
     back -- "SQL (async)" --> db

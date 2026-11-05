@@ -25,15 +25,15 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 | IA | LLM com tool calling via SDK oficial (provedor **a definir**, atrás de abstração), embeddings, geração de imagem, busca web via Tavily ou Brave |
 | Autenticação | Auth0 (OAuth 2.0 / OIDC, Authorization Code + PKCE no frontend, validação de JWT no backend) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
-| Infra | VPS Hostinger (2 vCPU, 8 GB RAM, Ubuntu 24.04) com k3s, Traefik, cert-manager + Let's Encrypt |
-| IaC | Terraform (AWS: S3, IAM, Budget), Ansible (VPS), Helm (aplicação) |
+| Infra | Vercel (frontend), Render (backend, Docker), Neon (PostgreSQL + pgvector), plano gratuito (decisão 28) |
+| IaC | Terraform (AWS: S3, IAM, Budget; Vercel, Render, Neon) |
 | CI/CD | GitHub Actions, imagens no GitHub Container Registry (GHCR) |
 | Testes | pytest, Vitest + Testing Library, Testcontainers (`pgvector/pgvector`), moto/LocalStack, Playwright |
 | Qualidade | Ruff, mypy, ESLint, Prettier, pre-commit |
 
 **Não use LangChain nem LlamaIndex.** O loop do agente é implementado manualmente com tool calling do SDK, por decisão de aprendizado.
 
-**Domínio de produção:** `https://projeto.jonas-rocha.com` (`/` frontend, `/api` backend). A home `jonas-rocha.com` não pertence a este projeto.
+**Domínio de produção:** `https://projeto.jonas-rocha.com`, apontando para a Vercel (`/` frontend; `/api/*` reescrito para o backend na Render). A home `jonas-rocha.com` não pertence a este projeto.
 
 ## Estrutura do repositório
 
@@ -73,9 +73,8 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 │   └── Dockerfile          # multi-stage: build Node → nginx
 ├── e2e/                    # testes de aceite Playwright
 ├── infra/
-│   ├── terraform/          # S3, IAM, Budget, estado remoto
-│   ├── ansible/            # provisionamento da VPS (k3s, firewall, usuários)
-│   └── helm/postpilot/     # chart da aplicação
+│   ├── terraform/          # AWS (S3, IAM, Budget), Vercel, Render, Neon, estado remoto
+│   └── localstack/         # S3 local (docker-compose)
 ├── .github/workflows/
 ├── docker-compose.yml      # ambiente local
 └── CLAUDE.md
@@ -110,9 +109,7 @@ npx playwright test                                    # frontend com API fictí
 E2E_BASE_URL=http://localhost:5173 npx playwright test # stack completa já rodando
 
 # Infra
-cd infra/terraform && terraform plan
-helm lint infra/helm/postpilot
-helm template infra/helm/postpilot      # revisar manifests antes de aplicar
+cd infra/terraform && terraform plan   # revisar antes de aplicar
 ```
 
 Se um comando acima ainda não existir, crie-o seguindo este padrão e atualize esta seção.
@@ -180,7 +177,7 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
 ## Os 12 fatores neste projeto
 
 - **Configuração** só por variáveis de ambiente (pydantic-settings). Mantenha `.env.example` atualizado. Nunca commite `.env`, chaves ou kubeconfig.
-- **Segredos** em produção ficam em Secrets do Kubernetes e no GitHub Secrets.
+- **Segredos** em produção ficam nas variáveis de ambiente da Render e da Vercel e no GitHub Secrets. `AUTH_DEV_USER` fica vazio em produção.
 - **Logs** em JSON no stdout (structlog), com `request_id` e `user_id` quando houver. Nunca grave logs em arquivo. Nunca registre tokens, chaves ou conteúdo completo de documentos.
 - **Dependências** declaradas e travadas (`uv.lock`, `package-lock.json`).
 - **Processos sem estado:** nada de arquivos em disco local. Tudo que persiste vai para o Postgres ou o S3.
@@ -199,17 +196,18 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
 Pipeline no GitHub Actions:
 1. Lint e typecheck (backend e frontend)
 2. Testes de unidade e integração
-3. Build das imagens Docker e push para o GHCR (apenas na `main`)
-4. Deploy com `helm upgrade --install` no k3s
+3. Build da imagem Docker do backend e push para o GHCR (apenas na `main`)
+4. Deploy: Deploy Hook da Render e `vercel deploy --prod` (deploy automático das plataformas desligado)
 5. Testes de aceite contra o ambiente publicado
 
 ## Infraestrutura
 
-- **k3s na VPS:** frontend (nginx), backend (FastAPI, 2 réplicas) e PostgreSQL (StatefulSet com volume persistente). Todo Deployment define `requests` e `limits` de CPU e memória.
-- **Ingress (Traefik):** host `projeto.jonas-rocha.com`, `/` para o frontend e `/api` para o backend. HTTPS via cert-manager.
-- **Backup:** CronJob com `pg_dump` enviando para o S3.
+- **Vercel:** frontend (Root Directory `frontend`), domínio `projeto.jonas-rocha.com`, rewrite de `/api/*` para a Render (mesma origem, sem CORS).
+- **Render:** backend como web service Docker (Root Directory `backend`), health check em `/api/v1/health/ready`. O plano gratuito dorme sem uso (primeira requisição lenta).
+- **Neon:** PostgreSQL com pgvector.
+- **Backup:** job agendado no GitHub Actions com `pg_dump` enviando para o S3.
 - **AWS (Terraform):** bucket privado com Block Public Access, SSE-S3, CORS liberando apenas o domínio de produção (e `localhost` em dev), lifecycle para uploads incompletos; usuário IAM com menor privilégio (`GetObject`, `PutObject`, `DeleteObject` só neste bucket); AWS Budget com alerta.
-- Não altere recursos de infraestrutura em produção sem mostrar antes o `terraform plan` ou o `helm diff`/`helm template`.
+- Não altere recursos de infraestrutura em produção sem mostrar antes o `terraform plan`.
 
 ## Requisitos do TCC (não podem ser quebrados)
 
