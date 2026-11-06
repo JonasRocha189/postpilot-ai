@@ -93,7 +93,7 @@ uv run alembic upgrade head              # aplicar migrations
 uv run alembic revision --autogenerate -m "descricao"
 uv run fastapi dev main.py               # http://localhost:8000/docs
 uv run pytest tests/unit
-uv run pytest tests/integration          # requer Docker (Testcontainers)
+uv run pytest tests/integration          # requer Docker (Testcontainers); rode a partir de backend/
 uv run ruff check . && uv run ruff format . && uv run mypy app
 
 # Frontend

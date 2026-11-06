@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). Backend ainda sem pytest (próximo passo).
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend:** unidade (autenticação e verificação de saúde) e integração de **Projects** com PostgreSQL de verdade; Subjects, Posts (depois das variações) e Images (com S3) são os próximos.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -10,6 +10,8 @@ Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste cha
 | --- | --- | --- | --- | --- |
 | Unidade | Vitest | `frontend/src/**/*.test.ts` | Funções puras: datas (`lib/format`), schema do post, hashtags e contagem de caracteres, tipos de imagem, cálculos da arte (quebra de linha, ajuste da fonte, recorte), cliente HTTP (`apiFetch`: erros, `204`, token) e paridade das traduções pt-BR/en | `cd frontend && npm run test` |
 | Integração | Vitest + Testing Library + MSW | `frontend/src/test/integration/` | Páginas de verdade (TanStack Query, roteador, projeto atual) chamando os services `http` contra uma **API falsa em memória** (`src/test/fakeApi.ts`) com as mesmas regras do backend: escopo por projeto, `404`, `409`, `422` e upload para o S3 por URL pré-assinada | `cd frontend && npm run test` |
+| Unidade (backend) | pytest | `backend/tests/unit/` | Validação do JWT do Auth0 (token válido, expirado, de outra audiência ou emissor, sem `sub`, assinado por outra chave, `alg: none`, sem token com e sem usuário de desenvolvimento, Auth0 fora do ar → `503`) e verificação de saúde (banco no ar e fora) | `cd backend && uv run pytest tests/unit` |
+| Integração (backend) | pytest + Testcontainers | `backend/tests/integration/` | A API de verdade (HTTP → router → SQLAlchemy) contra **PostgreSQL + pgvector num contêiner**, com o esquema criado pelas migrations: CRUD, validações (`422`), `409` e **autorização** (um usuário nunca lê, altera ou apaga dados de outro: `404`) | `cd backend && uv run pytest tests/integration` (Docker ligado) |
 | Aceite (E2E) | Playwright | `e2e/tests/` | Fluxos completos no navegador: login, projeto → assunto → imagem → post com imagem → filtros → calendário → exclusões (com os `409`), validação de formulários e uso no celular | `cd e2e && npx playwright test` |
 
 ## Unidade e integração (Vitest)
@@ -20,6 +22,22 @@ Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste cha
 - O jsdom não tem `<canvas>`: o teste de integração do editor de arte (`src/test/integration/art.test.tsx`) substitui só o módulo de desenho (`features/arte/canvas.ts`) e confere o resto (tamanho, escolhas, upload e corpo do post). Os cálculos (quebra de linha, ajuste da fonte, recorte) têm teste de unidade em `features/arte/layout.test.ts`, e o desenho real é conferido no aceite (`e2e/tests/artwork.spec.ts`, pela cor dos pixels), para imagem única e carrossel.
 - Limite de 15 s por teste (`testTimeout`), porque os fluxos longos de formulário passam dos 5 s padrão quando os arquivos rodam em paralelo.
 - O teste de traduções (`src/locales/locales.test.ts`) falha se uma chave existir só em um idioma ou se os `{placeholders}` forem diferentes.
+
+## Backend (pytest)
+
+```
+backend/tests/
+├── conftest.py          # para todos: variáveis do Auth0 fixas (não depende do .env)
+├── unit/                # sem banco e sem rede
+└── integration/
+    └── conftest.py      # contêiner do Postgres, migrations, cliente HTTP, limpeza
+```
+
+- `tests/conftest.py` define `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` e `AUTH_DEV_USER` (vazio) antes de qualquer import, então o resultado não depende do `.env` de quem roda, e o CI (sem `.env`) funciona igual.
+- **Autenticação (unidade):** o teste faz o papel do Auth0: gera um par de chaves RSA e assina os tokens. O cliente JWKS é trocado por um falso (`monkeypatch`) que devolve a chave pública, sem rede. A dependência é testada num app mínimo (`/me`), sem banco.
+- **Integração:** um contêiner `pgvector/pgvector:pg16` por execução (Testcontainers), com `alembic upgrade head`, então as migrations também são testadas. Cada teste começa com as tabelas vazias (`TRUNCATE`). O usuário vem do cabeçalho `X-Test-User` (padrão `user-a`), o que permite agir como dois usuários no mesmo teste; o JWT em si fica com os testes de unidade.
+- Os testes assíncronos usam o plugin do **anyio** (já vem com o FastAPI) e o `httpx.AsyncClient` com `ASGITransport`, para o app e o driver do banco (asyncpg) rodarem no mesmo loop de eventos.
+- Rode a partir de `backend/` (o `alembic.ini` é lido do diretório atual). A integração precisa do Docker ligado.
 
 ## Aceite (Playwright)
 

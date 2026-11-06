@@ -29,6 +29,10 @@ Formato de cada entrada:
 
 - Backend: o download das chaves públicas do Auth0 (JWKS) usa o repositório de certificados do sistema operacional (`truststore`). Com o OpenSSL padrão do Python, falhava com `certificate has expired` (resposta `503`) atrás de antivírus com inspeção de HTTPS, por causa de raízes vencidas no repositório do Windows.
 
+### Testes
+
+- Backend: **pytest** com testes de unidade da autenticação (validação do JWT com chaves RSA geradas no teste, sem rede) e da verificação de saúde, e testes de integração de **Projects** com **Testcontainers** (PostgreSQL + pgvector de verdade, esquema pelas migrations), incluindo autorização entre usuários. Documentado em [testes](testes.md).
+
 ### Removido
 
 - `frontend/public/favicon.png` (era um PNG declarado como SVG no `index.html`).
