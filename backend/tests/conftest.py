@@ -6,6 +6,8 @@ is built from these values and not from the developer's `.env`.
 
 import os
 
+os.environ.setdefault("TC_HOST", "127.0.0.1")
+
 # Environment variables win over the .env file in pydantic-settings
 os.environ["AUTH0_DOMAIN"] = "test-tenant.auth0.com"
 os.environ["AUTH0_AUDIENCE"] = "https://api.postpilot.test"

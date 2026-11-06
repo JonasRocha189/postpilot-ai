@@ -9,16 +9,25 @@ from api.deps import get_current_user_id
 from api.v1.routers.projects import get_owned_project
 from api.v1.routers.subjects import get_owned_subject
 from database.db import get_db
-from database.models import Image, Network, Post, PostFormat, PostImage, PostStatus, Subject
-from schemas.posts import PostCreate, PostRead, PostUpdate, post_rule_error
+from database.models import (
+    Image,
+    Network,
+    Post,
+    PostStatus,
+    PostVariation,
+    Subject,
+    VariationImage,
+)
+from schemas.posts import PostIn, PostRead, VariationIn
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 async def check_images(
-    image_ids: list[uuid.UUID], subject: Subject, user_id: str, db: AsyncSession
+    variations: list[VariationIn], subject: Subject, user_id: str, db: AsyncSession
 ) -> None:
-    """422 unless every image is in the library of the subject's project."""
+    """422 unless every image of every variation is in the subject's project library."""
+    image_ids = {image_id for v in variations for image_id in v.image_ids}
     if not image_ids:
         return
     found = await db.scalar(
@@ -34,28 +43,35 @@ async def check_images(
         raise HTTPException(status_code=422, detail="Image is not in this project's library")
 
 
-def check_rules(
-    network: Network,
-    post_format: PostFormat,
-    image_count: int,
-    content: str | None,
-    post_status: PostStatus,
-) -> None:
-    """422 when the network, format, images and text break the network's rules."""
-    error = post_rule_error(network, post_format, image_count, content, post_status)
-    if error is not None:
-        raise HTTPException(status_code=422, detail=error)
-
-
-def set_images(post: Post, image_ids: list[uuid.UUID]) -> None:
-    """Replace the post's images, keeping the order given (rows of kept images are reused)."""
-    current = {item.image_id: item for item in post.images}
+def set_images(variation: PostVariation, image_ids: list[uuid.UUID]) -> None:
+    """Replace the variation's images, keeping the order given (kept rows are reused)."""
+    current = {item.image_id: item for item in variation.images}
     items = []
     for position, image_id in enumerate(image_ids):
-        item = current.get(image_id) or PostImage(image_id=image_id)
+        item = current.get(image_id) or VariationImage(image_id=image_id)
         item.position = position
         items.append(item)
-    post.images = items
+    variation.images = items
+
+
+def set_variations(post: Post, variations: list[VariationIn]) -> None:
+    """Replace the post's variations, matched by network.
+
+    A network that stays keeps its variation (and id, which metrics point to);
+    a new network gets a new variation; a network left out is deleted
+    (delete-orphan cascade).
+    """
+    current = {v.network: v for v in post.variations}
+    result = []
+    for data in variations:
+        variation = current.get(data.network) or PostVariation(network=data.network)
+        variation.format = data.format
+        variation.content = data.content
+        variation.status = data.status
+        variation.expected_date = data.expected_date
+        set_images(variation, data.image_ids)
+        result.append(variation)
+    post.variations = result
 
 
 async def get_owned_post(post_id: uuid.UUID, user_id: str, db: AsyncSession) -> Post:
@@ -66,21 +82,31 @@ async def get_owned_post(post_id: uuid.UUID, user_id: str, db: AsyncSession) -> 
     return post
 
 
+async def reload(post: Post, db: AsyncSession) -> Post:
+    """The saved post with fresh variations and images (ids and order from the database)."""
+    result = await db.scalar(
+        select(Post).where(Post.id == post.id).execution_options(populate_existing=True)
+    )
+    assert result is not None
+    return result
+
+
 @router.get("", response_model=list[PostRead])
 async def list_posts(
     project_id: uuid.UUID,
     subject_id: uuid.UUID | None = None,
     status: PostStatus | None = None,
+    network: Network | None = None,
     date_from: date | None = Query(default=None, alias="from"),
     date_to: date | None = Query(default=None, alias="to"),
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> list[Post]:
-    """List the posts of one of the user's projects, ordered by title.
+    """List the posts of one of the user's projects, ordered by title, with all variations.
 
-    Optional filters: subject, status and an inclusive expected_date range
-    (`?from=YYYY-MM-DD&to=YYYY-MM-DD`, used by the calendar). With a date range,
-    posts without expected_date are left out.
+    Optional filters: subject, and per variation status, network and an inclusive
+    expected_date range (`?from=YYYY-MM-DD&to=YYYY-MM-DD`, used by the calendar).
+    A post is listed when one variation matches all the variation filters.
     """
     await get_owned_project(project_id, user_id, db)
     query = (
@@ -91,36 +117,43 @@ async def list_posts(
     )
     if subject_id is not None:
         query = query.where(Post.subject_id == subject_id)
+
+    # The variation filters apply to the same variation: EXISTS (... AND ...)
+    conditions = []
     if status is not None:
-        query = query.where(Post.status == status)
+        conditions.append(PostVariation.status == status)
+    if network is not None:
+        conditions.append(PostVariation.network == network)
     if date_from is not None:
-        query = query.where(Post.expected_date >= date_from)
+        conditions.append(PostVariation.expected_date >= date_from)
     if date_to is not None:
-        query = query.where(Post.expected_date <= date_to)
+        conditions.append(PostVariation.expected_date <= date_to)
+    if conditions:
+        query = query.where(
+            select(PostVariation.id).where(PostVariation.post_id == Post.id, *conditions).exists()
+        )
     result = await db.scalars(query)
     return list(result)
 
 
 @router.post("", response_model=PostRead, status_code=status.HTTP_201_CREATED)
 async def create_post(
-    body: PostCreate,
+    body: PostIn,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Post:
-    """Create a post under one of the user's subjects.
+    """Create a post and its variations under one of the user's subjects.
 
     404 if the subject is not theirs; 422 if an image is not in the project's
-    library or the post breaks the network's rules (format, images, length).
+    library or a variation breaks its network's rules (checked in the schema).
     """
     subject = await get_owned_subject(body.subject_id, user_id, db)
-    await check_images(body.image_ids, subject, user_id, db)
-    check_rules(body.network, body.format, len(body.image_ids), body.content, body.status)
-    post = Post(**body.model_dump(exclude={"image_ids"}), user_id=user_id)
-    set_images(post, body.image_ids)
+    await check_images(body.variations, subject, user_id, db)
+    post = Post(user_id=user_id, subject_id=body.subject_id, title=body.title, variations=[])
+    set_variations(post, body.variations)
     db.add(post)
     await db.commit()
-    await db.refresh(post)
-    return post
+    return await reload(post, db)
 
 
 @router.get("/{post_id}", response_model=PostRead)
@@ -129,46 +162,29 @@ async def get_post(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Post:
-    """Return one post. 404 if it does not exist or belongs to another user."""
+    """Return one post with its variations. 404 if it does not exist or is another user's."""
     return await get_owned_post(post_id, user_id, db)
 
 
 @router.put("/{post_id}", response_model=PostRead)
 async def update_post(
     post_id: uuid.UUID,
-    body: PostUpdate,
+    body: PostIn,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Post:
-    """Partially update a post: only the fields sent in the body are changed.
+    """Replace the post and its variations (same body and checks as the create).
 
-    The result is validated as a whole (same rules as the create), so changing
-    only the network can fail if the current format or text does not fit it.
+    Each network that stays keeps its variation id; the others are deleted.
     """
     post = await get_owned_post(post_id, user_id, db)
-    changes = body.model_dump(exclude_unset=True)
-    image_ids: list[uuid.UUID] | None = changes.pop("image_ids", None)
-    final_images = image_ids if image_ids is not None else post.image_ids
-
-    if image_ids is not None or "subject_id" in changes:
-        # The images must stay in the project of the (possibly new) subject
-        subject = await get_owned_subject(changes.get("subject_id", post.subject_id), user_id, db)
-        await check_images(final_images, subject, user_id, db)
-    check_rules(
-        changes.get("network", post.network),
-        changes.get("format", post.format),
-        len(final_images),
-        changes.get("content", post.content),
-        changes.get("status", post.status),
-    )
-
-    for field, value in changes.items():
-        setattr(post, field, value)
-    if image_ids is not None:
-        set_images(post, image_ids)
+    subject = await get_owned_subject(body.subject_id, user_id, db)
+    await check_images(body.variations, subject, user_id, db)
+    post.subject_id = body.subject_id
+    post.title = body.title
+    set_variations(post, body.variations)
     await db.commit()
-    await db.refresh(post)
-    return post
+    return await reload(post, db)
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -177,7 +193,7 @@ async def delete_post(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    """Delete a post. Its images stay in the project's library."""
+    """Delete a post and its variations. The images stay in the project's library."""
     post = await get_owned_post(post_id, user_id, db)
     await db.delete(post)
     await db.commit()
