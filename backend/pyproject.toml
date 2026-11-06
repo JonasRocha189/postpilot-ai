@@ -20,7 +20,9 @@ dev = [
     "boto3-stubs[s3]>=1.43.123",
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
     "ruff>=0.17.3",
+    "testcontainers[postgres]>=4.15.0",
 ]
 
 [tool.ruff]
@@ -44,6 +46,9 @@ ignore = [
     "D104", # package docstring
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -64,3 +69,10 @@ explicit_package_bases = true
 init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+# Import modules from the backend root (api, database, main), like the app does
+pythonpath = ["."]
+testpaths = ["tests"]
+# Summary of skipped/failed tests at the end
+addopts = "-ra"
