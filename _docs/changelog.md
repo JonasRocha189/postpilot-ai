@@ -18,9 +18,12 @@ Formato de cada entrada:
 
 - Infra: **Terraform da AWS** (`infra/terraform/`): bucket S3 do app (privado, SSE-S3, CORS só para o domínio de produção e `localhost:5173`, lifecycle de uploads incompletos), usuário IAM do backend com menor privilégio (objetos do bucket e `ListBucket`), Budget de US$ 5 por mês com alerta por e-mail e estado remoto num bucket próprio, com trava nativa do S3.
 - Infra: contas da Neon (PostgreSQL 16 + pgvector), Render e Vercel; domínio `postpilot.jonas-rocha.com` (CNAME na Cloudflare para a Vercel, HTTPS da Vercel) e URLs de produção no Auth0.
+- Backend: **imagem Docker** (`backend/Dockerfile`): dois estágios, `uv sync --locked --no-dev`, Python 3.12, usuário sem privilégios, porta da variável `PORT` e migrations antes do uvicorn. `.dockerignore` deixa de fora `.venv`, `.env`, testes e caches.
+- Backend: **logs em JSON no stdout** com structlog (requisito 10): `request_id` (cabeçalho `X-Request-ID`, devolvido na resposta), `user_id` do token e uma linha por requisição (método, caminho, status e duração); uvicorn, Alembic e os loggers padrão saem no mesmo formato. `LOG_JSON=false` deixa os logs legíveis localmente. Nova dependência: `structlog`. Testes de unidade do middleware, inclusive que o token nunca é registrado (116 testes no backend).
 
 ### Alterado
 
+- Backend: documentação da API em **`/api/docs`** (e `/api/openapi.json`), para funcionar atrás do rewrite `/api/*` da Vercel.
 - Domínio de produção: **`postpilot.jonas-rocha.com`** no lugar de `projeto.jonas-rocha.com` (decisão 33), e nova API no Auth0 com o identificador `https://postpilot.jonas-rocha.com/api`.
 
 ## 2026-11-06

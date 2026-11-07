@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (111 testes): unidade (autenticação, verificação de saúde, regras por rede e da importação de métricas) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images com S3 simulado, Ideas, importação de métricas) e da migration das variações.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (116 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images com S3 simulado, Ideas, importação de métricas) e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -31,7 +31,8 @@ backend/tests/
 ├── unit/                # sem banco e sem rede
 │   ├── test_auth.py
 │   ├── test_health.py
-│   └── test_post_rules.py   # regras por rede (formato, limite de texto, imagens) e da importação de métricas
+│   ├── test_post_rules.py   # regras por rede (formato, limite de texto, imagens) e da importação de métricas
+│   └── test_request.py      # logs JSON: request_id (cabeçalho X-Request-ID), user_id, 500 e token nunca registrado
 └── integration/
     ├── conftest.py          # contêiner do Postgres, migrations, cliente HTTP, limpeza
     ├── test_projects.py

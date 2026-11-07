@@ -1,6 +1,6 @@
 # Implantação, CI/CD e IaC
 
-> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0 e a parte da AWS pelo Terraform. Faltam o Dockerfile, o serviço na Render, o `vercel.json` e o pipeline. Não altere recursos em produção sem revisar antes o `terraform plan`.
+> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend e os logs em JSON. Faltam o `vercel.json`, o pipeline e o serviço na Render. Não altere recursos em produção sem revisar antes o `terraform plan`.
 
 ## Modelo de implantação
 
@@ -112,9 +112,42 @@ terraform output
 - `AUTH_DEV_USER` fica **vazio** em produção, para a API sempre exigir token.
 - Nunca commitar `.env` ou chaves.
 
+## Imagem do backend
+
+`backend/Dockerfile`, em dois estágios:
+
+1. **Build:** `python:3.12-slim` com o `uv` da imagem oficial; `uv sync --locked --no-dev` instala exatamente o `uv.lock`, sem as dependências de desenvolvimento. O `pyproject.toml` e o `uv.lock` são copiados antes do código, então a camada das dependências fica em cache enquanto o lockfile não muda.
+2. **Execução:** só o Python, o `.venv` e o código, com o usuário `app` (não root). Cerca de 105 MB compactada.
+
+- **Comando:** `alembic upgrade head && exec uvicorn main:app --port $PORT --proxy-headers`. As migrations rodam a cada deploy, antes da API; se uma falhar, o contêiner não sobe e a Render mantém a versão anterior. O plano gratuito da Render não tem comando de pré-deploy, por isso elas ficam no início do contêiner.
+- **`.dockerignore`:** fora da imagem ficam `.venv/` (o local é do Windows), `.env` (segredos), testes e caches.
+- **Teste local:** dentro do contêiner, `127.0.0.1` é o próprio contêiner; para o Postgres e o LocalStack do `docker compose`, use `host.docker.internal`:
+
+```powershell
+cd backend
+docker build -t postpilot-backend .
+docker run --rm -p 8000:8000 --env-file .env `
+  -e DATABASE_URL="postgresql+asyncpg://postpilot:postpilot@host.docker.internal:5433/postpilot" `
+  -e S3_ENDPOINT_URL="http://host.docker.internal:4566" `
+  postpilot-backend
+# outro terminal: curl.exe http://127.0.0.1:8000/api/v1/health/ready
+```
+
+A documentação da API fica em `/api/docs` (e o OpenAPI em `/api/openapi.json`), porque em produção só `/api/*` chega ao backend.
+
 ## Logs
 
-JSON no stdout (structlog), com `request_id` e `user_id` quando houver. Sem arquivos de log. Tokens, chaves e conteúdo completo de documentos nunca são registrados.
+Um objeto JSON por linha no stdout (structlog), configurado em `backend/core/logs.py`. Os loggers padrão (uvicorn, Alembic e os `logging.getLogger(__name__)` dos routers) passam pelo mesmo formatador, então todas as linhas têm o mesmo formato. Sem arquivos de log.
+
+- **`request_id`:** o middleware `api/middleware.py` reaproveita o cabeçalho `X-Request-ID` se for um id válido ou gera um novo, coloca em todas as linhas da requisição e devolve no cabeçalho da resposta, para o usuário poder informar.
+- **`user_id`:** a dependência de autenticação (`get_current_user_id`) acrescenta o `sub` do token ao contexto. O middleware é ASGI puro (não `BaseHTTPMiddleware`) justamente para esse valor aparecer na linha final.
+- **Uma linha por requisição:** `method`, `path` (sem a query string), `status` e `duration_ms`. O health check vai em `debug`, para não encher o log.
+- **Nunca registrados:** tokens, chaves e conteúdo completo de documentos (há um teste que confere que o token não aparece).
+- **Local:** `LOG_JSON=false` no `.env` troca o JSON por linhas coloridas e legíveis; `LOG_LEVEL` controla o nível.
+
+```json
+{"method": "GET", "path": "/api/v1/projects", "status": 200, "duration_ms": 82.1, "event": "request", "user_id": "auth0|123", "request_id": "52be3d57a25e4acd98bc6eb515d48c09", "level": "info", "logger": "api.request", "timestamp": "2026-11-07T17:16:54.399Z"}
+```
 
 ## Backup
 
