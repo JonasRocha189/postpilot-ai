@@ -120,10 +120,11 @@ Nomes em inglês (classe / tabela). Detalhes e glossário em `_docs/modelo-de-da
 
 - **Project** / `projects`: name, description, target_audience, voice_tone (padrão). CRUD completo. Topo da hierarquia: a marca do usuário ou um cliente. Exclusão só sem subjects e documents (`409`).
 - **Subject** / `subjects`: project_id, name, description, target_audience e voice_tone **opcionais** (vazios = valem os do projeto). CRUD completo.
-- **Post** / `posts`: title, subject_id, content, status (`draft`, `review`, `approved`, `published`), network (`instagram`, `linkedin`, `x`), format (`text`, `single`, `carousel`), expected_date e imagens da biblioteca em ordem (`post_images`). Regras por rede em `_docs/api.md`. CRUD completo. Sem `project_id`: o projeto vem do subject.
-- **PostVariation** / `post_variations`: post_id, network (`linkedin`, `instagram`, `x`), text, hashtags, char_count. **Detalhe de Post** (tela mestre-detalhe).
-- **Image** / `images`: project_id, key, content_type, description. **Biblioteca de imagens do projeto**; o post escolhe as suas (`post_images`). Exclusão só se nenhum post usa (`409`).
-- **Metric** / `metrics`: variation_id, published_at, impressions, likes, comments, shares, clicks, collected_at.
+- **Post** / `posts`: title, subject_id. CRUD completo, salvo junto com as variações (API aninhada, decisão 30). Sem `project_id`: o projeto vem do subject.
+- **PostVariation** / `post_variations`: post_id, network (`linkedin`, `instagram`, `x`), format (`text`, `single`, `carousel`), content, status (`draft`, `review`, `approved`, `published`), expected_date e imagens da biblioteca em ordem (`variation_images`). No máximo uma por rede, pelo menos uma por post. Regras por rede em `_docs/api.md`. **Detalhe de Post** (tela mestre-detalhe).
+- **Image** / `images`: project_id, key, content_type, description. **Biblioteca de imagens do projeto**; cada variação escolhe as suas (`variation_images`). Exclusão só se nenhuma variação usa (`409`).
+- **Idea** / `ideas`: project_id, title, notes, subject_id e networks opcionais, source (`manual`, `agent`), post_id (post criado a partir dela). CRUD na página `/ideas` (decisão 31).
+- **Metric** / `metrics`: variation_id, published_at, impressions, likes, comments, shares, clicks, collected_at. Importadas do CSV de cada rede em `/metrics` (`POST /metrics/import`, decisão 32).
 - **Document** / `documents`: project_id, name, s3_key, type, status (`pending`, `processing`, `ready`, `error`).
 - **Chunk** / `chunks`: document_id, content, embedding (`vector`), search_vector (`tsvector`). `ON DELETE CASCADE` a partir de Document.
 - **AgentRun** / `agent_runs` (com project_id) e **AgentStep** / `agent_steps`: registro de cada execução e de cada tool chamada, exibido na tela.

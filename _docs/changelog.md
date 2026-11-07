@@ -12,6 +12,29 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-06
+
+### Adicionado
+
+- Frontend: **texto arrastável no editor de arte**. Apertar sobre o texto na prévia e arrastar coloca o bloco em qualquer lugar da arte (com mouse ou toque); fora do texto, arrastar move a foto de fundo. O bloco nunca passa das margens de segurança (8%), o alinhamento continua valendo dentro dele e escolher Topo, Meio ou Base volta a uma posição fixa. No carrossel, um slide novo herda a posição. A posição livre vai junto na exportação.
+- Testes: unidade da posição do bloco (fixa, livre, limitada às margens), integração do arraste no editor e aceite com o canvas de verdade (o mouse arrasta o texto e os pixels conferem onde ele foi desenhado).
+- Frontend: **foto de fundo arrastável, como o texto**. Arrastar a prévia fora do texto leva a foto para qualquer lugar (o centro dela não sai da arte); o zoom vai de 20% a 300% (100% cobre a arte inteira). Quando a foto não cobre a arte, aparece a escolha da **cor em volta da imagem**, e **Cobrir a arte** volta ao padrão (100%, centralizada). "Escurecer" vale só sobre a foto. Antes, arrastar só mudava a parte visível de uma foto que sempre cobria a arte, e não fazia nada quando a foto tinha a proporção da arte.
+- Testes: unidade da área da foto (cobrir, mover, zoom, limites), integração do arraste da foto e aceite com o canvas de verdade (a cor de fundo aparece acima da foto arrastada).
+- Frontend: **variações por rede (mestre-detalhe na mesma tela, decisão 30)**. O post guarda o título e o assunto; cada rede marcada (LinkedIn, Instagram, X) vira uma aba com texto, formato, imagens (com o editor de arte), status e data próprios. Desmarcar uma rede e marcar de novo recupera o texto; uma aba com erro fica marcada e abre sozinha ao salvar. A lista mostra as variações de cada post (rede, formato, data e status, com link para a aba) e ganhou o filtro por rede; o calendário mostra uma entrada por variação, no dia dela, e abre o post na aba certa (`/posts/{id}?network=…`). API fictícia, MSW e dados de exemplo no novo formato.
+- Testes: unidade do schema por variação, integração do mestre-detalhe (abas, status e data por rede, erro na aba certa, filtro por rede, `id` mantido por rede) e aceite do fluxo completo com duas variações, lista, calendário e edição.
+- Frontend: página **Ideias** (`/ideas`, decisão 31): possíveis posts com anotações, assunto e redes sugeridas, criados pelo usuário ou sugeridos pelo agente; filtro abertas / viraram post; **Criar post** preenche o formulário a partir da ideia e, ao salvar, liga a ideia ao post.
+- Frontend: página **Métricas** (`/metrics`, decisão 32): importação do CSV exportado do LinkedIn, Instagram ou X, com modelo para baixar, prévia com erros por linha, associação automática à variação publicada no mesmo dia (editável) e envio de tudo numa requisição.
+- Testes: unidade do leitor de CSV e da leitura das métricas (colunas por rede, datas, números com separador de milhar, associação), integração das duas páginas (inclusive um teste que reproduz a associação quando os posts carregam depois do arquivo) e aceite do fluxo ideia → post publicado → importação das métricas.
+- Backend: **variações por rede**. Tabelas `post_variations` (no máximo uma por rede, `UNIQUE (post_id, network)`) e `variation_images`; `POST`/`PUT /posts` recebem `variations` (o `PUT` casa pela rede e mantém o `id` de cada variação) e os filtros `status`, `network`, `from` e `to` valem para a mesma variação (`EXISTS`). As regras por rede passaram para o schema de cada variação. A migration transforma cada post existente numa variação, com as imagens na mesma ordem.
+- Backend: **ideias** (`/ideas`, CRUD). `subject_id` e `post_id` precisam ser do mesmo projeto (`422`); apagar o post reabre a ideia e apagar o assunto mantém a ideia sem assunto (`ON DELETE SET NULL`). `source` é sempre `manual` pela API.
+- Backend: **importação de métricas** (`POST /metrics/import`), tudo ou nada: cada linha precisa apontar para uma variação publicada do usuário, na rede informada; números negativos, datas sem fuso ou `published_at` depois de `collected_at` dão `422` com o número da linha. Nova tabela `metrics` (apagada junto com a variação).
+- Testes do backend: integração de posts, ideias e métricas (inclusive autorização entre usuários) e da migration das variações com dados antigos.
+- Testes do backend que faltavam: integração de **Subjects** (CRUD, `409` com posts, autorização) e de **Images** com o S3 simulado pelo **moto** (URL pré-assinada na pasta do projeto, arquivo não enviado, grande demais e apagado, chave de outra pasta, exclusão do objeto, projeto com imagens `409`, autorização), e unidade das regras por rede e da importação de métricas. Todos os recursos do backend têm testes de integração (111 testes no total). Nova dependência de desenvolvimento: `moto[s3]`.
+
+### Corrigido
+
+- Conexão local com o Docker no Windows: `localhost` falhava com `WinError 64` (no Alembic e no Testcontainers). O `.env.example` usa `127.0.0.1` e os testes definem `TC_HOST=127.0.0.1`.
+
 ## 2026-11-05
 
 ### Adicionado

@@ -49,17 +49,24 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | PUT | `/subjects/{id}` | Atualiza |
 | DELETE | `/subjects/{id}` | Remove. `409` se ainda tiver posts |
 | **Posts** | | |
-| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), ordenados pelo título. Filtros: `subject_id`, `status` e período da `expected_date`, inclusivo (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, usado pelo calendário; com período, posts sem data ficam de fora) |
-| POST | `/posts` | Cria (corpo abaixo). `404` se o subject não for do usuário; `422` se alguma imagem não for da biblioteca do projeto do subject ou se o post quebrar as regras da rede (tabela abaixo) |
+| GET | `/posts` 🅿 | Lista os posts do projeto (via subject), ordenados pelo título, cada um com **todas** as variações. Filtros: `subject_id`, e por variação `status`, `network` e período da `expected_date`, inclusivo (`?from=AAAA-MM-DD&to=AAAA-MM-DD`, usado pelo calendário). O post entra quando **uma mesma variação** atende a todos os filtros de variação; com período, variações sem data não contam |
+| POST | `/posts` | Cria o post com as variações (corpo abaixo). `404` se o subject não for do usuário; `422` sem variações, com rede repetida, com imagem fora da biblioteca do projeto do subject ou se alguma variação quebrar as regras da rede (tabela abaixo) |
 | GET | `/posts/{id}` | Detalha |
-| PUT | `/posts/{id}` | Atualiza só os campos enviados; `image_ids` substitui a lista inteira (na nova ordem). O resultado é validado como no `POST` |
-| DELETE | `/posts/{id}` | Remove o post. A imagem continua na biblioteca |
+| PUT | `/posts/{id}` | Substitui o post e a lista de variações (mesmo corpo e validação do `POST`). A variação de cada rede que continua mantém o `id` |
+| DELETE | `/posts/{id}` | Remove o post e as variações (`ON DELETE CASCADE`). As imagens continuam na biblioteca |
 | **Images (biblioteca do projeto)** | | |
 | GET | `/images` 🅿 | Imagens do projeto, das mais recentes para as mais antigas, cada uma com `url`: URL pré-assinada de leitura que expira em 15 minutos |
 | POST | `/images/upload-url` | Corpo `{project_id, content_type, size_bytes}` (`image/png`, `image/jpeg` ou `image/webp`, até 5 MB; `422` se inválido). Responde `{key, upload_url}`; ainda não cria registro. A URL pré-assinada exige o mesmo `Content-Type` no PUT |
 | POST | `/images` | Corpo `{project_id, key, content_type, description}`, depois do PUT no S3. `422` se a chave não for da biblioteca deste projeto, se o arquivo não foi enviado ou se passou de 5 MB (o objeto é apagado). Responde `201` com a Image |
 | DELETE | `/images/{id}` | Remove a imagem e o objeto no S3. `409` se algum post (inclusive um carrossel) ainda usa a imagem |
+| **Ideas** | | |
+| GET | `/ideas` 🅿 | Ideias do projeto, das mais recentes para as mais antigas ([decisão 31](decisoes.md)) |
+| GET | `/ideas/{id}` | Detalha (usado pelo formulário do post em `/posts/new?idea=…`) |
+| POST | `/ideas` | Corpo `{project_id, title, notes, subject_id, networks}`. `subject_id` e `notes` opcionais (`null`); `networks` pode ser vazio. `source` é `manual` (o agente cria com `agent`). `422` se o título estiver vazio ou se o subject não for do projeto |
+| PUT | `/ideas/{id}` | Mesmo corpo, sem `project_id`, mais `post_id` (o post criado a partir da ideia; `null` = aberta). `422` se o post não for do mesmo projeto |
+| DELETE | `/ideas/{id}` | Remove a ideia. O post criado a partir dela continua |
 | **Metrics e relatório** | | |
+| POST | `/metrics/import` | Importa a exportação de uma rede de uma vez (corpo abaixo, [decisão 32](decisoes.md)). **Tudo ou nada:** `422` se alguma linha apontar para uma variação que não é do usuário, não é da rede informada ou não está `published`, se algum número for negativo ou se `collected_at` for antes de algum `published_at`. Responde `201` com `{created}` |
 | GET | `/variations/{id}/metrics` | Coletas da variação, da mais recente para a mais antiga |
 | POST | `/variations/{id}/metrics` | Registra uma coleta (corpo abaixo). `422` se o post não estiver `published`, se algum número for negativo, se `collected_at` for antes de `published_at` ou se alguma data estiver no futuro |
 | DELETE | `/metrics/{id}` | Remove uma coleta (para corrigir um registro errado) |
@@ -76,27 +83,43 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 
 ## Corpo de `POST /posts` e `PUT /posts/{id}`
 
+Mestre-detalhe ([decisão 30](decisoes.md)): o **post** é a ideia (título e assunto) e cada **variação** é o post adaptado para uma rede, com texto, formato, imagens, status e data próprios. Um único `POST`/`PUT` salva o post e todas as variações, numa transação.
+
 ```json
 {
   "subject_id": "uuid",
   "title": "5 erros ao migrar para a nuvem",
-  "content": "Texto do post…",
-  "status": "draft",
-  "network": "instagram",
-  "format": "carousel",
-  "expected_date": "2026-11-20",
-  "image_ids": ["uuid", "uuid"]
+  "variations": [
+    {
+      "network": "linkedin",
+      "format": "text",
+      "content": "Texto mais longo para o LinkedIn…",
+      "status": "approved",
+      "expected_date": "2026-11-20",
+      "image_ids": []
+    },
+    {
+      "network": "instagram",
+      "format": "carousel",
+      "content": "Legenda curta #nuvem",
+      "status": "draft",
+      "expected_date": "2026-11-21",
+      "image_ids": ["uuid", "uuid"]
+    }
+  ]
 }
 ```
 
-- `status`: `draft`, `review`, `approved` ou `published` (padrão `draft`).
-- `network`: `instagram`, `linkedin` ou `x` (uma rede por post). `format`: `text`, `single` ou `carousel`.
-- `expected_date` é só a data (`AAAA-MM-DD`).
+- `variations`: **pelo menos uma** e **no máximo uma por rede** (rede repetida → `422`).
+- `network`: `instagram`, `linkedin` ou `x`. `format`: `text`, `single` ou `carousel`.
+- `status` (padrão `draft`): `draft`, `review`, `approved` ou `published`, **por variação**.
+- `expected_date`: só a data (`AAAA-MM-DD`), **por variação**.
 - `image_ids`: imagens da biblioteca do projeto do subject, **na ordem do carrossel**, sem repetir.
-- No `PUT`, só os campos enviados mudam; `title`, `status`, `subject_id`, `network`, `format` e `image_ids` não aceitam `null`.
-- **Planejado:** variações por rede no mesmo post (`variations`).
+- **`PUT` substitui o post inteiro:** a lista `variations` enviada passa a ser a lista do post. Rede que sumiu da lista tem a variação apagada; rede que continua **mantém o `id` da variação** (as métricas ficam ligadas a ele); rede nova ganha uma variação nova.
 
-**Regras por rede** (`schemas/posts.py`; o frontend usa as mesmas em `features/posts/redes.ts`). Quebrar uma delas responde `422`:
+Resposta (`GET`, `POST`, `PUT`): o post com `id`, `subject_id`, `title`, `created_at`, `updated_at` e `variations` (cada uma com `id`), **ordenadas por rede: LinkedIn, Instagram, X**.
+
+**Regras por rede**, aplicadas a cada variação (`schemas/posts.py`; o frontend usa as mesmas em `features/posts/redes.ts`). Quebrar uma delas responde `422`:
 
 | Rede | Formatos | Limite de texto | Máximo de imagens |
 | --- | --- | --- | --- |
@@ -105,11 +128,11 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | `x` | `text`, `single`, `carousel` (várias imagens) | 280 | 4 |
 
 - `text` não tem imagem; `single` tem no máximo 1.
-- Rascunhos podem ficar incompletos. Com status `approved` ou `published`, `single` precisa de 1 imagem e `carousel` de pelo menos 2.
+- Rascunhos podem ficar incompletos. Variação com status `approved` ou `published`: `single` precisa de 1 imagem e `carousel` de pelo menos 2.
 
 ## Imagens
 
-Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); o post aponta para elas com `image_ids` (tabela `post_images`, com a posição de cada uma). O envio vai direto do navegador para o S3:
+Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); cada variação do post aponta para elas com `image_ids` (tabela `variation_images`, com a posição de cada uma). O envio vai direto do navegador para o S3:
 
 1. `POST /images/upload-url` → `{key, upload_url}`
 2. `PUT upload_url` com o arquivo e o mesmo `Content-Type`
@@ -131,9 +154,30 @@ Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); o post apont
 
 - O banco guarda só a chave S3 (`users/{user_id}/projects/{project_id}/images/{uuid}.png`); a `url` é gerada a cada listagem e a chave nunca sai na API.
 
-## Métricas (planejado)
+## Métricas
 
-Dependem das variações por rede, que ainda não existem no backend.
+**Corpo de `POST /metrics/import`** (página `/metrics`): o navegador lê o CSV exportado da rede, associa cada linha a uma variação publicada daquela rede (pela data, ou o usuário escolhe) e envia só as linhas associadas.
+
+```json
+{
+  "network": "linkedin",
+  "collected_at": "2026-11-06T12:00:00Z",
+  "rows": [
+    {
+      "variation_id": "uuid",
+      "published_at": "2026-11-02T12:00:00Z",
+      "impressions": 2720,
+      "likes": 65,
+      "comments": 13,
+      "shares": 9,
+      "clicks": 22
+    }
+  ]
+}
+```
+
+- Cada linha vira um registro de `Metric` com o `collected_at` do corpo. As datas vão ao meio-dia UTC para continuarem no mesmo dia em qualquer fuso.
+- O frontend já filtra: só envia linhas sem erro, associadas e com `published_at` até a data da coleta.
 
 **Corpo de `POST /variations/{id}/metrics`:**
 
