@@ -1,6 +1,6 @@
 # Implantação, CI/CD e IaC
 
-> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend e os logs em JSON. Faltam o `vercel.json`, o pipeline e o serviço na Render. Não altere recursos em produção sem revisar antes o `terraform plan`.
+> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON e o `vercel.json` (frontend publicado). Faltam o pipeline e o serviço na Render. Não altere recursos em produção sem revisar antes o `terraform plan`.
 
 ## Modelo de implantação
 
@@ -111,6 +111,21 @@ terraform output
 - Em produção, os segredos ficam nas variáveis de ambiente da Render e da Vercel (definidas no painel de cada uma). No pipeline, em GitHub Secrets (tokens da Vercel e da Render, Deploy Hook, credenciais da AWS).
 - `AUTH_DEV_USER` fica **vazio** em produção, para a API sempre exigir token.
 - Nunca commitar `.env` ou chaves.
+
+## Vercel (`frontend/vercel.json`)
+
+O projeto da Vercel usa Root Directory `frontend` e o preset Vite (`npm run build`, saída `dist`). O `vercel.json` define:
+
+| Regra | Efeito |
+| --- | --- |
+| `/api/:path*` → `https://postpilot-api.onrender.com/api/:path*` | A Vercel repassa as chamadas da API para a Render (caminho, query string, cabeçalhos como `Authorization` e corpo). O navegador só fala com `postpilot.jonas-rocha.com` |
+| `/(.*)` → `/index.html` | Fallback da SPA: arquivos que existem (`/assets/*`, `favicon`) são servidos antes; as outras rotas (`/posts`, `/login`, retorno do Auth0) caem no `index.html` e o React Router assume |
+| Cabeçalho `Cache-Control` em `/assets/*` | Cache de um ano (`immutable`): o Vite põe um hash no nome desses arquivos. O `index.html` não fica em cache, então um deploy novo aparece na hora |
+| `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` | Cabeçalhos de segurança em todas as respostas (o `DENY` impede embutir o app num iframe; o Auth0 redireciona a página inteira, então não é afetado) |
+
+- Em produção, `VITE_API_URL` fica **vazio**: o cliente HTTP chama `/api/v1` na mesma origem.
+- **Limite com a Render gratuita:** se o backend estiver dormindo, a primeira chamada pelo rewrite pode estourar o tempo de espera da Vercel; as seguintes funcionam (o TanStack Query tenta de novo).
+- Deploy manual, a partir de `frontend/`: `npx vercel@latest login` (uma vez) e `npx vercel@latest deploy --prod`. A pasta `.vercel/` (ligação com o projeto) fica no `.gitignore`.
 
 ## Imagem do backend
 
