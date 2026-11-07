@@ -1,0 +1,14 @@
+# Local environment and secrets: never inside the image
+.venv/
+.env
+.env.*
+
+# Not needed to run the API
+tests/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+Dockerfile
+.dockerignore
