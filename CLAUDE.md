@@ -26,14 +26,14 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 | Autenticação | Auth0 (OAuth 2.0 / OIDC, Authorization Code + PKCE no frontend, validação de JWT no backend) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
 | Infra | Vercel (frontend), Render (backend, Docker), Neon (PostgreSQL + pgvector), plano gratuito (decisão 28) |
-| IaC | Terraform (AWS: S3, IAM, Budget; Vercel, Render, Neon) |
+| IaC | Terraform (AWS: S3, IAM, Budget, estado remoto). Vercel, Render e Neon configurados pelo painel (roadmap: Terraform) |
 | CI/CD | GitHub Actions, imagens no GitHub Container Registry (GHCR) |
 | Testes | pytest, Vitest + Testing Library, Testcontainers (`pgvector/pgvector`), moto/LocalStack, Playwright |
 | Qualidade | Ruff, mypy, ESLint, Prettier, pre-commit |
 
 **Não use LangChain nem LlamaIndex.** O loop do agente é implementado manualmente com tool calling do SDK, por decisão de aprendizado.
 
-**Domínio de produção:** `https://projeto.jonas-rocha.com`, apontando para a Vercel (`/` frontend; `/api/*` reescrito para o backend na Render). A home `jonas-rocha.com` não pertence a este projeto.
+**Domínio de produção:** `https://postpilot.jonas-rocha.com`, apontando para a Vercel (`/` frontend; `/api/*` reescrito para o backend na Render). A home `jonas-rocha.com` não pertence a este projeto.
 
 ## Estrutura do repositório
 
@@ -203,11 +203,11 @@ Pipeline no GitHub Actions:
 
 ## Infraestrutura
 
-- **Vercel:** frontend (Root Directory `frontend`), domínio `projeto.jonas-rocha.com`, rewrite de `/api/*` para a Render (mesma origem, sem CORS).
+- **Vercel:** frontend (Root Directory `frontend`), domínio `postpilot.jonas-rocha.com`, rewrite de `/api/*` para a Render (mesma origem, sem CORS).
 - **Render:** backend como web service Docker (Root Directory `backend`), health check em `/api/v1/health/ready`. O plano gratuito dorme sem uso (primeira requisição lenta).
 - **Neon:** PostgreSQL com pgvector.
 - **Backup:** job agendado no GitHub Actions com `pg_dump` enviando para o S3.
-- **AWS (Terraform):** bucket privado com Block Public Access, SSE-S3, CORS liberando apenas o domínio de produção (e `localhost` em dev), lifecycle para uploads incompletos; usuário IAM com menor privilégio (`GetObject`, `PutObject`, `DeleteObject` só neste bucket); AWS Budget com alerta.
+- **AWS (Terraform):** bucket privado com Block Public Access, SSE-S3, CORS liberando apenas o domínio de produção (e `localhost` em dev), lifecycle para uploads incompletos; usuário IAM com menor privilégio (`GetObject`, `PutObject`, `DeleteObject` e `ListBucket` só neste bucket); AWS Budget com alerta.
 - Não altere recursos de infraestrutura em produção sem mostrar antes o `terraform plan`.
 
 ## Requisitos do TCC (não podem ser quebrados)

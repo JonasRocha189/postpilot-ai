@@ -46,8 +46,8 @@
 
 | Item | Valor |
 | --- | --- |
-| URL de produção | https://projeto.jonas-rocha.com *(em implantação)* |
-| Documentação da API | https://projeto.jonas-rocha.com/api/docs *(em implantação)* |
+| URL de produção | https://postpilot.jonas-rocha.com *(em implantação)* |
+| Documentação da API | https://postpilot.jonas-rocha.com/api/docs *(em implantação)* |
 | Usuário de teste | [a definir] |
 | Senha de teste | [informada ao professor] |
 | Vídeo de apresentação | [a definir] |

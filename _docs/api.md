@@ -17,7 +17,7 @@ O frontend faz login no Auth0 (Authorization Code + PKCE) e envia o **access tok
 | --- | --- |
 | Assinatura | RS256, com a chave do JWKS indicada pelo `kid` do token. O algoritmo é fixo no backend, nunca lido do token |
 | `iss` | `https://<AUTH0_DOMAIN>/` (com a barra final) |
-| `aud` | `AUTH0_AUDIENCE` (identificador da API no Auth0: `https://projeto.jonas-rocha.com/api`) |
+| `aud` | `AUTH0_AUDIENCE` (identificador da API no Auth0: `https://postpilot.jonas-rocha.com/api`) |
 | `exp` | No futuro |
 | `sub` | Presente; vira o `user_id` de todas as consultas |
 
