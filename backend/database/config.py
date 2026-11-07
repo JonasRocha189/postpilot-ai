@@ -7,6 +7,10 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    # Logs: JSON lines on stdout (production); LOG_JSON=false for readable local logs
+    log_level: str = "INFO"
+    log_json: bool = True
+
     database_url: str = "postgresql+asyncpg://postpilot:postpilot@localhost:5433/postpilot"
     database_echo: bool = False
     # Browser origins allowed to call the API (JSON list in the env var).

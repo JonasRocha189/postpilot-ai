@@ -101,7 +101,7 @@ docker compose up -d
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run fastapi dev main.py               # http://localhost:8000/docs
+uv run fastapi dev main.py               # http://127.0.0.1:8000/api/docs
 
 # Frontend
 cd frontend

@@ -1,5 +1,4 @@
 import asyncio
-from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -7,6 +6,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import database.models  # noqa: F401  (registers the tables on Base.metadata for autogenerate)
 from alembic import context
+from core.logs import configure_logging
 from database.config import settings
 from database.db import Base
 
@@ -15,10 +15,9 @@ from database.db import Base
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# Same JSON logs as the API (the container runs migrations before uvicorn)
+configure_logging(settings.log_level, settings.log_json)
+
 
 # add your model's MetaData object here
 # for 'autogenerate' support

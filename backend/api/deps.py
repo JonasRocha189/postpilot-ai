@@ -4,6 +4,7 @@ from functools import lru_cache
 from typing import Any
 
 import jwt
+import structlog
 import truststore
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -46,6 +47,7 @@ async def get_current_user_id(
     """
     if credentials is None:
         if settings.auth_dev_user:
+            structlog.contextvars.bind_contextvars(user_id=settings.auth_dev_user)
             return settings.auth_dev_user
         raise unauthorized("Not authenticated")
 
@@ -62,7 +64,10 @@ async def get_current_user_id(
         # Expired, wrong audience/issuer, bad signature, unknown key...
         raise unauthorized("Invalid token") from exc
 
-    return str(claims["sub"])
+    user_id = str(claims["sub"])
+    # Every log line of this request gets the user (never the token)
+    structlog.contextvars.bind_contextvars(user_id=user_id)
+    return user_id
 
 
 @lru_cache
