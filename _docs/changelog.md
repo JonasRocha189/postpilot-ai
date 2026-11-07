@@ -12,6 +12,17 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-07
+
+### Adicionado
+
+- Infra: **Terraform da AWS** (`infra/terraform/`): bucket S3 do app (privado, SSE-S3, CORS só para o domínio de produção e `localhost:5173`, lifecycle de uploads incompletos), usuário IAM do backend com menor privilégio (objetos do bucket e `ListBucket`), Budget de US$ 5 por mês com alerta por e-mail e estado remoto num bucket próprio, com trava nativa do S3.
+- Infra: contas da Neon (PostgreSQL 16 + pgvector), Render e Vercel; domínio `postpilot.jonas-rocha.com` (CNAME na Cloudflare para a Vercel, HTTPS da Vercel) e URLs de produção no Auth0.
+
+### Alterado
+
+- Domínio de produção: **`postpilot.jonas-rocha.com`** no lugar de `projeto.jonas-rocha.com` (decisão 33), e nova API no Auth0 com o identificador `https://postpilot.jonas-rocha.com/api`.
+
 ## 2026-11-06
 
 ### Adicionado
