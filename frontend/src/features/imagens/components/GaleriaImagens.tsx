@@ -36,7 +36,9 @@ export default function GaleriaImagens({ projetoId }: { projetoId: string }) {
   const [aExcluir, setAExcluir] = useState<Imagem | null>(null);
 
   const postsQueUsam = (imagemId: string) =>
-    posts.data?.filter((p) => p.image_ids.includes(imagemId)) ?? [];
+    posts.data?.filter((p) =>
+      p.variations.some((v) => v.image_ids.includes(imagemId)),
+    ) ?? [];
   const maxMb = fmt.number(TAMANHO_MAXIMO / 1024 / 1024);
 
   const atualizar = (chave: string, mudanca: Partial<Envio>) =>

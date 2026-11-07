@@ -15,8 +15,8 @@ export const metricasMock: MetricasService = {
 
   async registrar(variacaoId, input) {
     await latencia();
-    const { post } = variacaoDoMock(variacaoId);
-    if (post.status !== "published") {
+    const { variacao } = variacaoDoMock(variacaoId);
+    if (variacao.status !== "published") {
       throw new ApiError(
         422,
         "Só é possível registrar métricas de posts publicados",
@@ -30,6 +30,36 @@ export const metricasMock: MetricasService = {
       id: crypto.randomUUID(),
       variacao_id: variacaoId,
     });
+  },
+
+  async importMetrics(input) {
+    await latencia();
+    if (input.rows.length === 0) throw new ApiError(422, "No rows to import");
+    // Like the backend: every row must be a published variation of the network
+    const checked = input.rows.map((row) => {
+      const { variacao } = variacaoDoMock(row.variation_id);
+      if (
+        variacao.network !== input.network ||
+        variacao.status !== "published"
+      ) {
+        throw new ApiError(422, "Variation is not published on this network");
+      }
+      return row;
+    });
+    for (const row of checked) {
+      mockDb.metricas.inserir({
+        id: crypto.randomUUID(),
+        variacao_id: row.variation_id,
+        publicado_em: row.published_at,
+        impressoes: row.impressions,
+        curtidas: row.likes,
+        comentarios: row.comments,
+        compartilhamentos: row.shares,
+        cliques: row.clicks,
+        coletado_em: input.collected_at,
+      });
+    }
+    return { created: checked.length };
   },
 
   async excluir(id) {

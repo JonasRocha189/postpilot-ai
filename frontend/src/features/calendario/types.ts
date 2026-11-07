@@ -1,8 +1,10 @@
 import type { FormatoPost, Rede, StatusPost } from "@/lib/dominio";
 
-// Post com data prevista, no formato usado pelo calendário
+// A scheduled variation (one network of a post), as the calendar shows it
 export type PostAgendado = {
+  /** Variation id (each network is its own calendar event) */
   id: string;
+  postId: string;
   title: string;
   assunto: string;
   rede: Rede;

@@ -1,15 +1,18 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
 import { useAssunto, useAssuntos } from "@/features/assuntos/api";
+import { useIdea, useUpdateIdea } from "@/features/ideas/api";
 import { useAtualizarPost, useCriarPost, usePost } from "@/features/posts/api";
 import PostForm from "@/features/posts/components/PostForm";
 import {
+  fromIdea,
   toFormValues,
   toPostInput,
   type PostFormValues,
 } from "@/features/posts/schema";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
 import { ApiError } from "@/lib/api/http";
+import { REDES } from "@/features/posts/redes";
 import NotFound from "@/pages/OtherPage/NotFound";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,6 +44,11 @@ export default function PostFormPage() {
     : projetoAtual?.id;
   const assuntos = useAssuntos(projetoId);
 
+  // /posts/new?idea=…: the post starts from an idea (Ideas page)
+  const ideaId = isEdicao ? null : params.get("idea");
+  const idea = useIdea(ideaId);
+  const updateIdea = useUpdateIdea();
+
   const criar = useCriarPost();
   const atualizar = useAtualizarPost();
   const titulo = isEdicao ? t("editTitle") : t("newTitle");
@@ -52,7 +60,18 @@ export default function PostFormPage() {
         await atualizar.mutateAsync({ id, input: toPostInput(values) });
         navigate("/posts");
       } else {
-        await criar.mutateAsync(toPostInput(values));
+        const criado = await criar.mutateAsync(toPostInput(values));
+        if (idea.data) {
+          // The idea now points to its post. If this fails, the post is
+          // already saved: the idea just stays open (it can be retried later).
+          const { title, notes, subject_id, networks } = idea.data;
+          await updateIdea
+            .mutateAsync({
+              id: idea.data.id,
+              input: { title, notes, subject_id, networks, post_id: criado.id },
+            })
+            .catch(() => undefined);
+        }
         navigate("/posts");
       }
     } catch {
@@ -66,11 +85,15 @@ export default function PostFormPage() {
 
   const carregando =
     (isEdicao && (post.isLoading || assuntoDoPost.isLoading)) ||
+    (Boolean(ideaId) && idea.isLoading) ||
     assuntos.isLoading ||
     !assuntos.data;
   const erro = (isEdicao && post.isError) || assuntos.isError;
   // ?subject=… pré-seleciona o assunto (ex.: vindo da lista filtrada)
   const assuntoPadrao = params.get("subject") ?? "";
+  // ?network=… opens that variation's tab (e.g. coming from the calendar)
+  const networkParam = params.get("network");
+  const initialNetwork = REDES.find((n) => n === networkParam) ?? null;
 
   return (
     <>
@@ -98,9 +121,14 @@ export default function PostFormPage() {
             )}
             <PostForm
               projetoId={projetoId!}
-              key={post.data?.id ?? "novo"}
+              key={post.data?.id ?? idea.data?.id ?? "novo"}
               assuntos={assuntos.data ?? []}
-              defaultValues={toFormValues(post.data, assuntoPadrao)}
+              defaultValues={
+                idea.data && !isEdicao
+                  ? fromIdea(idea.data)
+                  : toFormValues(post.data, assuntoPadrao)
+              }
+              initialNetwork={initialNetwork}
               onSubmit={onSubmit}
               submitLabel={isEdicao ? t("save") : t("create")}
               submitError={submitError}

@@ -20,7 +20,9 @@
     "subjects": "Subjects",
     "documents": "Documents",
     "agent": "Agent",
-    "agentRuns": "Runs"
+    "agentRuns": "Runs",
+    "ideas": "Ideas",
+    "metrics": "Metrics"
   },
   "projects": {
     "title": "Projects",
@@ -330,7 +332,8 @@
       "status": "Status",
       "subject": "Subject",
       "all": "All",
-      "clear": "Clear filters"
+      "clear": "Clear filters",
+      "network": "Network"
     },
     "columns": {
       "title": "Title",
@@ -338,7 +341,8 @@
       "date": "Planned date",
       "status": "Status",
       "actions": "Actions",
-      "network": "Network"
+      "network": "Network",
+      "variations": "Variations per network"
     },
     "delete": {
       "title": "Delete \"{name}\"?",
@@ -363,7 +367,8 @@
         "formatNotAvailable": "This format isn't available on {network}.",
         "tooManyImages": "Use at most {max} images in this format.",
         "needsOneImage": "Approved or published posts need an image.",
-        "needsTwoImages": "Approved or published carousels need at least 2 images."
+        "needsTwoImages": "Approved or published carousels need at least 2 images.",
+        "variationRequired": "Choose at least one network."
       },
       "created": "Post created. You can now add images to each variation.",
       "image": {
@@ -449,7 +454,12 @@
         "visibleHint": "The first {count} characters show before “see more”.",
         "visibleAll": "The whole post shows in the feed.",
         "counter": "{count} / {limit} characters"
-      }
+      },
+      "networks": "Networks",
+      "networksHint": "Check the post's networks. Each one gets a variation with its own text, format, images, status and date.",
+      "variationsSection": "Variations per network",
+      "variationsHint": "The same post adapted to each network.",
+      "tabHasErrors": "This variation has errors"
     }
   },
   "documents": {
@@ -657,7 +667,9 @@
     "goToLibrary": "Upload images",
     "loadingImage": "Loading the image…",
     "imageError": "Could not load this image. Try another one or reload the page.",
-    "dragHint": "The image is scaled to cover the whole artwork. Drag the preview or use the controls to choose the visible part.",
+    "dragHint": "Drag the preview (outside the text) to move the image anywhere, like the text. At 100% zoom it covers the whole artwork; below that, the background color shows around it.",
+    "coverArtwork": "Cover the artwork",
+    "colorAroundImage": "Color around the image",
     "zoom": "Zoom",
     "horizontal": "Horizontal position",
     "vertical": "Vertical position",
@@ -680,6 +692,8 @@
       "middle": "Middle",
       "bottom": "Bottom"
     },
+    "dragTextHint": "Or drag the text in the preview to place it anywhere.",
+    "positionFree": "Free position (text dragged). Choose an option above to go back to a fixed position.",
     "defaultDescription": "Artwork created in the editor",
     "cancel": "Cancel",
     "download": "Download image",
@@ -1113,5 +1127,101 @@
     "placeholder": "mm/dd/yyyy",
     "clear": "Clear date",
     "open": "Open calendar"
+  },
+  "ideas": {
+    "title": "Ideas",
+    "subtitle": "Possible posts for {project}, before they are written.",
+    "new": "New idea",
+    "filterLabel": "Show ideas",
+    "filters": {
+      "open": "Open",
+      "used": "Became posts",
+      "all": "All"
+    },
+    "loadError": "Couldn't load the ideas. Please try again.",
+    "emptyOpen": "No open ideas. Write down the next one!",
+    "empty": "No ideas here.",
+    "agentHint": "The agent, in Ideation mode, also leaves suggestions on this page.",
+    "fromAgent": "Suggested by the agent",
+    "used": "Became a post",
+    "openPost": "Open post",
+    "createPost": "Create post",
+    "createPostLabel": "Create post from {name}",
+    "edit": "Edit",
+    "editLabel": "Edit {name}",
+    "deleteLabel": "Delete {name}",
+    "delete": {
+      "title": "Delete “{name}”?",
+      "message": "The idea will be removed. This can't be undone.",
+      "messageUsed": "The idea will be removed. The post created from it stays.",
+      "confirm": "Delete"
+    },
+    "form": {
+      "newTitle": "New idea",
+      "editTitle": "Edit idea",
+      "title": "Title",
+      "titlePlaceholder": "E.g. FinOps in 5 steps for small businesses",
+      "notes": "Notes",
+      "notesHint": "Angle, references, intended format… Optional.",
+      "subject": "Subject",
+      "noSubject": "No subject yet",
+      "networks": "Suggested networks",
+      "create": "Create idea",
+      "save": "Save idea",
+      "saveError": "Couldn't save the idea. Please try again.",
+      "errors": {
+        "titleRequired": "Enter the idea's title."
+      }
+    }
+  },
+  "metricsImport": {
+    "title": "Metrics",
+    "subtitle": "Import the metrics exported from each network to track how the posts perform.",
+    "network": "Network",
+    "step1": "1. Export the metrics from {network}",
+    "howTo": {
+      "linkedin": "On LinkedIn, open the page or profile analytics (Content), choose the period and export. Save it as CSV before uploading.",
+      "instagram": "In Meta Business Suite, open Insights → Content, choose the period and export as CSV.",
+      "x": "On X, open Analytics (Premium account), choose the period and export the post data as CSV."
+    },
+    "columnsHint": "The file needs the date and impressions columns; likes, comments, shares and clicks are read when present. Each network's English or Portuguese column names are recognized. The template shows the expected format.",
+    "template": "Download CSV template",
+    "step2": "2. Upload the file",
+    "file": "{network} CSV file",
+    "collectedOn": "Collection date",
+    "collectedHint": "The day you exported. The numbers are the running total up to that day.",
+    "readError": "Couldn't read the file. Please upload a CSV.",
+    "missingColumns": "Columns missing from the file: {columns}. Download the template to see the format.",
+    "step3": "3. Check and match to posts",
+    "summary": "{file}: {rows} rows, {ready} ready to import, {errors} with errors.",
+    "matchHint": "Each row is matched to the {network} variation published on the same day. Check and adjust; only published variations are listed.",
+    "noCandidates": "No published {network} variation in this project. Mark the post as published before importing.",
+    "columns": {
+      "line": "Line",
+      "date": "Published on",
+      "post": "Post in the file",
+      "match": "Post in PostPilot"
+    },
+    "fields": {
+      "impressions": "Impressions",
+      "likes": "Likes",
+      "comments": "Comments",
+      "shares": "Shares",
+      "clicks": "Clicks"
+    },
+    "matchLabel": "PostPilot post for line {line}",
+    "skip": "Don't import",
+    "discard": "Discard",
+    "import": "Import {count} rows",
+    "importing": "Importing...",
+    "importError": "Couldn't import. Nothing was saved; please try again.",
+    "imported": "{count} metric records imported.",
+    "errors": {
+      "invalidDate": "Invalid date.",
+      "invalidNumber": "Invalid number.",
+      "collectedBeforePublished": "Published after the collection date."
+    },
+    "import_one": "Import 1 row",
+    "imported_one": "1 metric record imported."
   }
 }

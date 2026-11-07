@@ -23,6 +23,7 @@ import "@fullcalendar/react/skeleton.css";
 import themePlugin from "@fullcalendar/react/themes/classic";
 import "@fullcalendar/react/themes/classic/palette.css";
 import "@fullcalendar/react/themes/classic/theme.css";
+import { REDE_LABEL } from "@/lib/dominio";
 import { diaIso } from "@/lib/format";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -59,7 +60,8 @@ export default function PostsCalendar({
 
   const events: EventInput[] = posts.map((post) => ({
     id: post.id,
-    title: post.title,
+    // Same post on several networks: the network tells the events apart
+    title: `${post.title} · ${REDE_LABEL[post.rede]}`,
     start: post.dataPrevista,
     allDay: true,
     extendedProps: { calendar: STATUS_NIVEL[post.status] },

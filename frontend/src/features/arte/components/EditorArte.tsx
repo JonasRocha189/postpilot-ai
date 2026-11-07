@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import {
+  areaDoTexto,
   baixarArquivos,
   carregarFonte,
   carregarImagem,
@@ -28,12 +29,21 @@ import {
   type ImagemFundo,
 } from "../canvas";
 import {
+  clampCenter,
   corQueContrasta,
-  sobraCover,
+  coversArtwork,
+  dentroDaCaixa,
+  imageArea,
+  limitarPonto,
+  margem,
   TAMANHOS_ARTE,
+  ZOOM_MAX,
+  ZOOM_MIN,
   type AlinhamentoTexto,
   type Arte,
+  type CaixaTexto,
   type FundoImagem,
+  type PontoTexto,
   type PosicaoTexto,
 } from "../layout";
 
@@ -53,13 +63,11 @@ const ALINHAMENTOS: readonly AlinhamentoTexto[] = ["left", "center", "right"];
 const POSICOES: readonly PosicaoTexto[] = ["top", "middle", "bottom"];
 const AJUSTE_INICIAL: FundoImagem = {
   zoom: 1,
-  focoX: 0.5,
-  focoY: 0.5,
+  x: 0.5,
+  y: 0.5,
   escurecer: 0.3,
 };
 const FONTE_INICIAL = 72;
-
-const limitar = (v: number) => Math.min(1, Math.max(0, v));
 
 const tituloGrupo = "mb-2 text-sm font-medium text-gray-700 dark:text-gray-400";
 
@@ -75,7 +83,8 @@ function Segmentado<T extends string>({
   legenda: string;
   nome: string;
   opcoes: readonly T[];
-  valor: T;
+  /** null = nenhuma opção marcada */
+  valor: T | null;
   onChange: (v: T) => void;
   rotulo: (v: T) => ReactNode;
 }) {
@@ -213,6 +222,8 @@ type Slide = {
   fonte: number;
   alinhamento: AlinhamentoTexto;
   posicao: PosicaoTexto;
+  /** Texto arrastado para um lugar livre; null = posição fixa */
+  ponto: PontoTexto | null;
 };
 
 let sequencia = 0;
@@ -229,6 +240,7 @@ const slideInicial = (texto: string): Slide => ({
   fonte: FONTE_INICIAL,
   alinhamento: "center",
   posicao: "middle",
+  ponto: null,
 });
 
 const botaoSlide =
@@ -331,11 +343,27 @@ export default function EditorArte({
     fonte: s.fonte,
     alinhamento: s.alinhamento,
     posicao: s.posicao,
+    ponto: s.ponto,
   });
 
   const fundo = fundoDo(atual);
   const arte = arteDo(atual);
   const comFoto = fundo !== null;
+  // The background color shows when the image is smaller or moved aside
+  const fotoCobre =
+    fundo !== null &&
+    coversArtwork(
+      imageArea(
+        { largura: fundo.width, altura: fundo.height },
+        tamanho,
+        atual.ajuste,
+      ),
+      tamanho,
+    );
+  const ajusteInicial =
+    atual.ajuste.zoom === AJUSTE_INICIAL.zoom &&
+    atual.ajuste.x === AJUSTE_INICIAL.x &&
+    atual.ajuste.y === AJUSTE_INICIAL.y;
   const imagemDoAtual = atual.tipoFundo === "image" ? atual.imagemId : null;
   const carregandoAtual =
     imagemDoAtual !== null && Boolean(carregando[imagemDoAtual]);
@@ -418,37 +446,79 @@ export default function EditorArte({
     setAtivo(destino);
   };
 
-  // Arrastar a prévia muda a parte visível da imagem
-  const arraste = useRef<{ x: number; y: number; ajuste: FundoImagem } | null>(
-    null,
-  );
+  // Dragging the preview: over the text, moves the text; elsewhere, moves the
+  // background image (freely, like the text)
+  const arraste = useRef<
+    | { tipo: "texto"; x: number; y: number; caixa: CaixaTexto }
+    | { tipo: "imagem"; x: number; y: number; ajuste: FundoImagem }
+    | null
+  >(null);
+  const [sobreTexto, setSobreTexto] = useState(false);
+
+  /** Posição do ponteiro em pixels da arte (a prévia é reduzida pelo CSS). */
+  const pontoNaArte = (e: PointerEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const escala = r.width > 0 ? tamanho.largura / r.width : 1;
+    return {
+      x: (e.clientX - r.left) * escala,
+      y: (e.clientY - r.top) * escala,
+      escala,
+    };
+  };
+  /** Bloco de texto sob o ponteiro (com folga para facilitar no celular). */
+  const textoSob = (e: PointerEvent<HTMLCanvasElement>) => {
+    const caixa = areaDoTexto(arte);
+    if (!caixa) return null;
+    const p = pontoNaArte(e);
+    // Folga de ~12 px na tela, convertida para pixels da arte
+    return dentroDaCaixa(caixa, p.x, p.y, 12 * p.escala) ? caixa : null;
+  };
+
   const onPointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
-    if (!comFoto) return;
+    const caixa = textoSob(e);
+    if (caixa) {
+      arraste.current = { tipo: "texto", x: e.clientX, y: e.clientY, caixa };
+    } else if (comFoto) {
+      arraste.current = {
+        tipo: "imagem",
+        x: e.clientX,
+        y: e.clientY,
+        ajuste: atual.ajuste,
+      };
+    } else {
+      return;
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
-    arraste.current = { x: e.clientX, y: e.clientY, ajuste: atual.ajuste };
   };
   const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
     const inicio = arraste.current;
-    if (!inicio || !fundo) return;
-    const escala =
-      tamanho.largura / e.currentTarget.getBoundingClientRect().width;
-    const sobra = sobraCover(
-      { largura: fundo.width, altura: fundo.height },
-      tamanho,
-      inicio.ajuste.zoom,
-    );
+    if (!inicio) {
+      // Sem arrastar: só muda o cursor quando passa sobre o texto
+      const sobre = textoSob(e) !== null;
+      if (sobre !== sobreTexto) setSobreTexto(sobre);
+      return;
+    }
+    const { escala } = pontoNaArte(e);
     const dx = (e.clientX - inicio.x) * escala;
     const dy = (e.clientY - inicio.y) * escala;
+
+    if (inicio.tipo === "texto") {
+      const { caixa } = inicio;
+      const centro = {
+        x: (caixa.esquerda + caixa.largura / 2 + dx) / tamanho.largura,
+        y: (caixa.topo + caixa.altura / 2 + dy) / tamanho.altura,
+      };
+      atualizar({
+        ponto: limitarPonto(centro, tamanho, caixa, margem(tamanho)),
+      });
+      return;
+    }
+
+    // The image follows the pointer; its center stays inside the artwork
     setAjuste({
       ...inicio.ajuste,
-      focoX:
-        sobra.x > 0
-          ? limitar(inicio.ajuste.focoX - dx / sobra.x)
-          : inicio.ajuste.focoX,
-      focoY:
-        sobra.y > 0
-          ? limitar(inicio.ajuste.focoY - dy / sobra.y)
-          : inicio.ajuste.focoY,
+      x: clampCenter(inicio.ajuste.x + dx / tamanho.largura),
+      y: clampCenter(inicio.ajuste.y + dy / tamanho.altura),
     });
   };
   const fimArraste = () => {
@@ -623,9 +693,10 @@ export default function EditorArte({
             onPointerMove={onPointerMove}
             onPointerUp={fimArraste}
             onPointerCancel={fimArraste}
+            onPointerLeave={() => setSobreTexto(false)}
             className={cn(
               "h-auto max-h-[45vh] w-auto max-w-full touch-none rounded-md shadow-theme-md lg:max-h-[65vh]",
-              comFoto && "cursor-move",
+              (comFoto || sobreTexto) && "cursor-move",
             )}
           />
         </div>
@@ -735,31 +806,44 @@ export default function EditorArte({
                     rotulo={t("zoom")}
                     valor={atual.ajuste.zoom}
                     texto={pct(atual.ajuste.zoom)}
-                    min={1}
-                    max={3}
+                    min={ZOOM_MIN}
+                    max={ZOOM_MAX}
                     step={0.05}
                     onChange={(zoom) => setAjuste({ ...atual.ajuste, zoom })}
                   />
                   <Controle
-                    id="arte-foco-x"
+                    id="arte-imagem-x"
                     rotulo={t("horizontal")}
-                    valor={atual.ajuste.focoX}
-                    texto={pct(atual.ajuste.focoX)}
+                    valor={atual.ajuste.x}
+                    texto={pct(atual.ajuste.x)}
                     min={0}
                     max={1}
                     step={0.01}
-                    onChange={(focoX) => setAjuste({ ...atual.ajuste, focoX })}
+                    onChange={(x) => setAjuste({ ...atual.ajuste, x })}
                   />
                   <Controle
-                    id="arte-foco-y"
+                    id="arte-imagem-y"
                     rotulo={t("vertical")}
-                    valor={atual.ajuste.focoY}
-                    texto={pct(atual.ajuste.focoY)}
+                    valor={atual.ajuste.y}
+                    texto={pct(atual.ajuste.y)}
                     min={0}
                     max={1}
                     step={0.01}
-                    onChange={(focoY) => setAjuste({ ...atual.ajuste, focoY })}
+                    onChange={(y) => setAjuste({ ...atual.ajuste, y })}
                   />
+                  <button
+                    type="button"
+                    className={botaoSlide}
+                    disabled={ajusteInicial}
+                    onClick={() =>
+                      setAjuste({
+                        ...AJUSTE_INICIAL,
+                        escurecer: atual.ajuste.escurecer,
+                      })
+                    }
+                  >
+                    {t("coverArtwork")}
+                  </button>
                   <Controle
                     id="arte-escurecer"
                     rotulo={t("darken")}
@@ -772,6 +856,17 @@ export default function EditorArte({
                       setAjuste({ ...atual.ajuste, escurecer })
                     }
                   />
+                  {!fotoCobre && (
+                    // Color around the image (the text color stays: it sits on the photo)
+                    <Cores
+                      legenda={t("colorAroundImage")}
+                      cores={CORES_FUNDO}
+                      valor={atual.cor}
+                      onChange={(cor) => atualizar({ cor })}
+                      rotuloOutra={t("otherBackgroundColor")}
+                      rotuloCor={rotuloCor}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -820,14 +915,23 @@ export default function EditorArte({
               onChange={(alinhamento) => atualizar({ alinhamento })}
               rotulo={(a) => t(`alignments.${a}`)}
             />
-            <Segmentado
-              legenda={t("position")}
-              nome="arte-posicao"
-              opcoes={POSICOES}
-              valor={atual.posicao}
-              onChange={(posicao) => atualizar({ posicao })}
-              rotulo={(p) => t(`positions.${p}`)}
-            />
+            <div>
+              <Segmentado
+                legenda={t("position")}
+                nome="arte-posicao"
+                opcoes={POSICOES}
+                // Texto arrastado: nenhuma posição fixa marcada
+                valor={atual.ponto ? null : atual.posicao}
+                onChange={(posicao) => atualizar({ posicao, ponto: null })}
+                rotulo={(p) => t(`positions.${p}`)}
+              />
+              <p
+                aria-live="polite"
+                className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400"
+              >
+                {atual.ponto ? t("positionFree") : t("dragTextHint")}
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -5,8 +5,10 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import {
   AiIcon,
+  BoltIcon,
   BoxCubeIcon,
   CalenderIcon,
+  ChartAltIcon,
   ChevronDownIcon,
   DocsIcon,
   FileIcon,
@@ -68,6 +70,12 @@ const navItems: NavItem[] = [
     path: "/subjects",
   },
   {
+    icon: <BoltIcon fontSize={24} />,
+    name: "Ideias",
+    appKey: "nav.ideas",
+    path: "/ideas",
+  },
+  {
     icon: <DocsIcon fontSize={24} />,
     name: "Posts",
     appKey: "nav.posts",
@@ -84,6 +92,12 @@ const navItems: NavItem[] = [
     name: "Calendário",
     appKey: "nav.calendar",
     path: "/calendar",
+  },
+  {
+    icon: <ChartAltIcon fontSize={24} />,
+    name: "Métricas",
+    appKey: "nav.metrics",
+    path: "/metrics",
   },
   {
     icon: <ShootingStarIcon fontSize={24} />,

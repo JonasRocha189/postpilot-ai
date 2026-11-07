@@ -1,102 +1,118 @@
-// API FICTÍCIA de posts (ver lib/api/mockDb.ts)
+// FAKE posts API (see lib/api/mockDb.ts)
 import { ApiError } from "@/lib/api/http";
 import { agoraIso, latencia, mockDb } from "@/lib/api/mockDb";
 import { erroRegraPost } from "./redes";
 import type { PostsService } from "./service";
-import type { PostInput } from "./types";
+import type { Post, PostInput, PostVariation } from "./types";
+import { variationMatches } from "./types";
 
-const NOME = "Post";
+const NAME = "Post";
 
-function validarAssunto(subjectId: string) {
+function checkSubject(subjectId: string) {
   if (!mockDb.assuntos.todos().some((a) => a.id === subjectId)) {
     throw new ApiError(404, "Subject not found");
   }
 }
 
-/** As imagens precisam ser da biblioteca do projeto do assunto, sem repetir. */
-function validarImagens(subjectId: string, imageIds: string[]) {
-  const assunto = mockDb.assuntos.encontrar(subjectId, "Assunto");
-  const daBiblioteca = new Set(
+/** Like the backend: at least one variation, one per network, network rules,
+ * and images from the subject's project library (no repeats). */
+function checkVariations(input: PostInput) {
+  const { variations } = input;
+  if (variations.length === 0) {
+    throw new ApiError(422, "A post needs at least one variation");
+  }
+  if (new Set(variations.map((v) => v.network)).size !== variations.length) {
+    throw new ApiError(422, "Only one variation per network");
+  }
+  const subject = mockDb.assuntos.encontrar(input.subject_id, "Assunto");
+  const library = new Set(
     mockDb.imagens
       .todos()
-      .filter((i) => i.project_id === assunto.project_id)
+      .filter((i) => i.project_id === subject.project_id)
       .map((i) => i.id),
   );
-  if (
-    new Set(imageIds).size !== imageIds.length ||
-    imageIds.some((id) => !daBiblioteca.has(id))
-  ) {
-    throw new ApiError(422, "Image is not in this project's library");
+  for (const v of variations) {
+    if (
+      new Set(v.image_ids).size !== v.image_ids.length ||
+      v.image_ids.some((id) => !library.has(id))
+    ) {
+      throw new ApiError(422, "Image is not in this project's library");
+    }
+    const error = erroRegraPost({
+      network: v.network,
+      format: v.format,
+      imagens: v.image_ids.length,
+      texto: v.content ?? "",
+      status: v.status,
+    });
+    if (error) throw new ApiError(422, error.mensagem);
   }
 }
 
-/** Regras da rede (formato, texto e quantidade de imagens), como o backend. */
-function validarRegras(post: PostInput) {
-  const erro = erroRegraPost({
-    network: post.network,
-    format: post.format,
-    imagens: post.image_ids.length,
-    texto: post.content ?? "",
-    status: post.status,
-  });
-  if (erro) throw new ApiError(422, erro.mensagem);
+/** Keeps the id of each network's variation (metrics hang on it). */
+function withIds(input: PostInput, current?: Post): PostVariation[] {
+  return input.variations.map((v) => ({
+    ...v,
+    id:
+      current?.variations.find((old) => old.network === v.network)?.id ??
+      crypto.randomUUID(),
+  }));
 }
 
 export const postsMock: PostsService = {
   async listar(projetoId, filtros = {}) {
     await latencia();
-    const assuntosDoProjeto = new Set(
+    const subjectsOfProject = new Set(
       mockDb.assuntos
         .todos()
         .filter((a) => a.project_id === projetoId)
         .map((a) => a.id),
     );
-
     return mockDb.posts
       .todos()
-      .filter((p) => assuntosDoProjeto.has(p.subject_id))
-      .filter((p) => !filtros.status || p.status === filtros.status)
+      .filter((p) => subjectsOfProject.has(p.subject_id))
       .filter((p) => !filtros.subject_id || p.subject_id === filtros.subject_id)
-      .filter((p) => !filtros.from || (p.expected_date ?? "") >= filtros.from)
-      .filter((p) => !filtros.to || (p.expected_date ?? "9999") <= filtros.to)
+      .filter((p) => p.variations.some((v) => variationMatches(v, filtros)))
       .sort((a, b) => a.title.localeCompare(b.title));
   },
 
   async obter(id) {
     await latencia();
-    return mockDb.posts.encontrar(id, NOME);
+    return mockDb.posts.encontrar(id, NAME);
   },
 
   async criar(input) {
     await latencia();
-    validarAssunto(input.subject_id);
-    validarImagens(input.subject_id, input.image_ids);
-    validarRegras(input);
-    const agora = agoraIso();
+    checkSubject(input.subject_id);
+    checkVariations(input);
+    const now = agoraIso();
     return mockDb.posts.inserir({
-      ...input,
       id: crypto.randomUUID(),
-      created_at: agora,
-      updated_at: agora,
+      subject_id: input.subject_id,
+      title: input.title,
+      variations: withIds(input),
+      created_at: now,
+      updated_at: now,
     });
   },
 
   async atualizar(id, input) {
     await latencia();
-    const atual = mockDb.posts.encontrar(id, NOME);
-    validarAssunto(input.subject_id);
-    validarImagens(input.subject_id, input.image_ids);
-    validarRegras(input);
+    const current = mockDb.posts.encontrar(id, NAME);
+    checkSubject(input.subject_id);
+    checkVariations(input);
     return mockDb.posts.substituir({
-      ...atual,
-      ...input,
+      ...current,
+      subject_id: input.subject_id,
+      title: input.title,
+      variations: withIds(input, current),
       updated_at: agoraIso(),
     });
   },
 
   async excluir(id) {
     await latencia();
-    mockDb.posts.encontrar(id, NOME);
+    mockDb.posts.encontrar(id, NAME);
     mockDb.posts.remover(id);
   },
 };

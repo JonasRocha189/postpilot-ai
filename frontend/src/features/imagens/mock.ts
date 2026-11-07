@@ -60,8 +60,12 @@ export const imagensMock: ImagensService = {
   async excluir(id) {
     await latencia();
     mockDb.imagens.encontrar(id, "Imagem");
-    // Regra da API: não exclui imagem usada por algum post
-    if (mockDb.posts.todos().some((p) => p.image_ids.includes(id))) {
+    // API rule: an image used by any post variation can't be deleted
+    if (
+      mockDb.posts
+        .todos()
+        .some((p) => p.variations.some((v) => v.image_ids.includes(id)))
+    ) {
       throw new ApiError(409, "Image is used by posts");
     }
     mockDb.imagens.remover(id);

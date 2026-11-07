@@ -6,6 +6,7 @@ import PostsCalendar from "@/features/calendario/components/PostsCalendar";
 import { NIVEL_COR, STATUS_NIVEL } from "@/features/calendario/status";
 import type { PostAgendado } from "@/features/calendario/types";
 import { usePosts } from "@/features/posts/api";
+import { variationMatches } from "@/features/posts/types";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
 import { STATUS_POST } from "@/lib/dominio";
 import { useMemo, useState } from "react";
@@ -25,18 +26,22 @@ export default function Calendario() {
 
   const agendados = useMemo<PostAgendado[]>(() => {
     const nomes = new Map(assuntos.data?.map((a) => [a.id, a.name]));
-    return (posts.data ?? [])
-      .filter((p) => p.expected_date)
-      .map((p) => ({
-        id: p.id,
-        title: p.title,
-        assunto: nomes.get(p.subject_id) ?? "—",
-        rede: p.network,
-        formato: p.format,
-        status: p.status,
-        dataPrevista: p.expected_date!,
-      }));
-  }, [posts.data, assuntos.data]);
+    // One event per variation with a date, inside the visible period
+    return (posts.data ?? []).flatMap((p) =>
+      p.variations
+        .filter((v) => periodo && variationMatches(v, periodo))
+        .map((v) => ({
+          id: v.id,
+          postId: p.id,
+          title: p.title,
+          assunto: nomes.get(p.subject_id) ?? "—",
+          rede: v.network,
+          formato: v.format,
+          status: v.status,
+          dataPrevista: v.expected_date!,
+        })),
+    );
+  }, [posts.data, assuntos.data, periodo]);
 
   return (
     <>

@@ -3,55 +3,54 @@ import {
   cardClass,
   secondaryLinkClass,
 } from "@/components/common/styles";
-import CampoData from "@/components/form/CampoData";
 import { FormInput, FormSelect } from "@/components/form/FormField";
+import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
-import CriarArte from "@/features/arte/components/CriarArte";
 import type { Assunto } from "@/features/assuntos/types";
-import SeletorImagens from "@/features/imagens/components/SeletorImagens";
-import {
-  REDE_LABEL,
-  STATUS_POST,
-  type FormatoPost,
-  type Rede,
-} from "@/lib/dominio";
+import { REDE_LABEL, STATUS_POST_COR, type Rede } from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useRef, useState, type KeyboardEvent } from "react";
+import {
+  useFieldArray,
+  useForm,
+  useWatch,
+  type FieldErrors,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { FORMATOS_POR_REDE, LIMITE_CARACTERES, maximoImagens } from "../redes";
-import { postFormSchema, type PostFormValues } from "../schema";
-import EditorTexto from "./EditorTexto";
-
-/** Ordem das redes no formulário. */
-const REDES_FORM: readonly Rede[] = ["instagram", "linkedin", "x"];
-
-const opcaoClass = (selecionada: boolean) =>
-  cn(
-    "flex cursor-pointer flex-col gap-0.5 rounded-xl border px-4 py-3 text-start transition-colors has-focus-visible:ring-3 has-focus-visible:ring-brand-500/20",
-    selecionada
-      ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
-      : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700",
-  );
+import { LIMITE_CARACTERES } from "../redes";
+import {
+  NETWORK_ORDER,
+  newVariation,
+  postFormSchema,
+  type PostFormValues,
+  type VariationFormValues,
+} from "../schema";
+import { optionClass } from "./optionClass";
+import VariationEditor from "./VariationEditor";
 
 /**
- * Formulário do post: rede e formato (único, carrossel...), texto com editor,
- * data com calendário e imagens da biblioteca do projeto na ordem do carrossel.
+ * Post form, master-detail on the same screen: the post (title and subject)
+ * and its variations, one per network, each in a tab with its own status,
+ * date, format, images and text.
  */
 export default function PostForm({
   projetoId,
   assuntos,
   defaultValues,
+  initialNetwork,
   onSubmit,
   submitLabel,
   submitError,
 }: {
-  /** Projeto do post: as imagens vêm da biblioteca dele */
+  /** Project of the post: images come from its library */
   projetoId: string;
   assuntos: Assunto[];
   defaultValues: PostFormValues;
+  /** Tab opened first (e.g. coming from the calendar) */
+  initialNetwork?: Rede | null;
   onSubmit: (values: PostFormValues) => Promise<unknown>;
   submitLabel: string;
   submitError?: string | null;
@@ -69,43 +68,73 @@ export default function PostForm({
     resolver: zodResolver(postFormSchema),
     defaultValues,
   });
-  const rede = useWatch({ control, name: "network" });
-  const formato = useWatch({ control, name: "format" });
-  const maximo = maximoImagens(rede, formato);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "variations",
+  });
+  const variations = useWatch({ control, name: "variations" });
+  const networks = fields.map((f) => f.network);
 
-  const erro = (message?: string, valores: Record<string, unknown> = {}) =>
-    message
-      ? t(message, {
-          max: maximo,
-          limit: fmt.number(LIMITE_CARACTERES[rede]),
-          network: REDE_LABEL[rede],
-          ...valores,
-        })
-      : undefined;
+  const [active, setActive] = useState<Rede>(() =>
+    initialNetwork && networks.includes(initialNetwork)
+      ? initialNetwork
+      : (networks[0] ?? "instagram"),
+  );
+  const activeIndex = Math.max(0, networks.indexOf(active));
+  const tabRefs = useRef(new Map<Rede, HTMLButtonElement>());
+  /** Unchecked networks keep their text here, in case they come back */
+  const removed = useRef(new Map<Rede, VariationFormValues>());
 
-  /** Ao trocar o formato, ajusta as imagens: só texto não tem, único fica com a primeira. */
-  const escolherFormato = (novo: FormatoPost) => {
-    setValue("format", novo, { shouldDirty: true });
-    const imagens = getValues("image_ids");
-    const limite = maximoImagens(getValues("network"), novo);
-    if (imagens.length > limite) {
-      setValue("image_ids", imagens.slice(0, limite), { shouldDirty: true });
+  const toggleNetwork = (network: Rede) => {
+    const index = networks.indexOf(network);
+    if (index === -1) {
+      // Appended at the end; tabs and the API body use the fixed network order
+      append(removed.current.get(network) ?? newVariation(network));
+      setActive(network);
+      return;
+    }
+    if (networks.length === 1) return; // a post needs at least one network
+    removed.current.set(network, getValues(`variations.${index}`));
+    remove(index);
+    if (active === network) {
+      setActive(networks.find((n) => n !== network) ?? networks[0]);
     }
   };
 
-  /** Ao trocar a rede, mantém o formato se ela aceitar; senão usa o primeiro dela. */
-  const escolherRede = (nova: Rede) => {
-    setValue("network", nova, { shouldDirty: true });
-    const atual = getValues("format");
-    escolherFormato(
-      FORMATOS_POR_REDE[nova].includes(atual)
-        ? atual
-        : FORMATOS_POR_REDE[nova][0],
-    );
+  const hasErrors = (index: number) => Boolean(errors.variations?.[index]);
+
+  /** Invalid submit: open the first tab with an error. */
+  const onInvalid = (invalid: FieldErrors<PostFormValues>) => {
+    const index = networks.findIndex((_, i) => invalid.variations?.[i]);
+    if (index >= 0) setActive(networks[index]);
   };
 
+  // Arrow keys move between the tabs (WAI-ARIA tabs pattern)
+  const ordered = NETWORK_ORDER.filter((n) => networks.includes(n));
+  const onTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const next =
+      ordered[
+        (ordered.indexOf(active) + step + ordered.length) % ordered.length
+      ];
+    setActive(next);
+    tabRefs.current.get(next)?.focus();
+  };
+
+  const titleError = errors.title?.message;
+  const subjectError = errors.subject_id?.message;
+  const variationsError =
+    errors.variations?.root?.message ?? errors.variations?.message;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+    <form
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
+      noValidate
+      className="space-y-6"
+    >
+      {/* Master: the post */}
       <section className={`${cardClass} p-5 sm:p-6`}>
         <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90">
           {t("posts.form.postSection")}
@@ -119,177 +148,142 @@ export default function PostForm({
             required
             autoFocus
             maxLength={200}
-            error={erro(errors.title?.message, { max: 200 })}
+            error={titleError ? t(titleError, { max: 200 }) : undefined}
             {...register("title")}
           />
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            <FormSelect
-              id="post-assunto"
-              label={t("posts.form.subject")}
-              required
-              error={erro(errors.subject_id?.message)}
-              {...register("subject_id")}
-            >
-              <option value="">{t("posts.form.subjectPlaceholder")}</option>
-              {assuntos.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </FormSelect>
-            <FormSelect
-              id="post-status"
-              label={t("posts.form.status")}
-              hint={t("posts.form.statusHint")}
-              {...register("status")}
-            >
-              {STATUS_POST.map((s) => (
-                <option key={s} value={s}>
-                  {t(`domain.postStatus.${s}`)}
-                </option>
-              ))}
-            </FormSelect>
-            <Controller
-              control={control}
-              name="expected_date"
-              render={({ field }) => (
-                <CampoData
-                  id="post-data"
-                  label={t("posts.form.scheduledFor")}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
+          <FormSelect
+            id="post-assunto"
+            label={t("posts.form.subject")}
+            required
+            error={subjectError ? t(subjectError) : undefined}
+            {...register("subject_id")}
+          >
+            <option value="">{t("posts.form.subjectPlaceholder")}</option>
+            {assuntos.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </FormSelect>
+
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
+              {t("posts.form.networks")}
+            </legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {NETWORK_ORDER.map((n) => {
+                const checked = networks.includes(n);
+                return (
+                  <label key={n} className={optionClass(checked)}>
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        // The last network can't be removed
+                        disabled={checked && networks.length === 1}
+                        onChange={() => toggleNetwork(n)}
+                        className="size-4 accent-brand-500"
+                      />
+                      <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                        {REDE_LABEL[n]}
+                      </span>
+                    </span>
+                    <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                      {t("posts.form.networkHint", {
+                        limit: fmt.number(LIMITE_CARACTERES[n]),
+                      })}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+              {t("posts.form.networksHint")}
+            </p>
+            {variationsError && (
+              <p role="alert" className="mt-1.5 text-xs text-error-500">
+                {t(variationsError)}
+              </p>
+            )}
+          </fieldset>
         </div>
       </section>
 
+      {/* Detail: one variation per network */}
       <section className={`${cardClass} p-5 sm:p-6`}>
-        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90">
-          {t("posts.form.publishSection")}
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          {t("posts.form.variationsSection")}
         </h3>
-        <div className="space-y-5">
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
-              {t("posts.form.network")}
-            </legend>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {REDES_FORM.map((r) => (
-                <label key={r} className={opcaoClass(r === rede)}>
-                  <input
-                    type="radio"
-                    name="post-network"
-                    value={r}
-                    checked={r === rede}
-                    onChange={() => escolherRede(r)}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                    {REDE_LABEL[r]}
-                  </span>
-                  <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {t("posts.form.networkHint", {
-                      limit: fmt.number(LIMITE_CARACTERES[r]),
-                    })}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+        <p className="mt-1 mb-5 text-sm text-gray-500 dark:text-gray-400">
+          {t("posts.form.variationsHint")}
+        </p>
 
-          <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
-              {t("posts.form.format")}
-            </legend>
-            <div
-              className={cn(
-                "grid grid-cols-1 gap-3",
-                FORMATOS_POR_REDE[rede].length === 3
-                  ? "sm:grid-cols-3"
-                  : "sm:grid-cols-2",
-              )}
-            >
-              {FORMATOS_POR_REDE[rede].map((f) => (
-                <label key={f} className={opcaoClass(f === formato)}>
-                  <input
-                    type="radio"
-                    name="post-format"
-                    value={f}
-                    checked={f === formato}
-                    onChange={() => escolherFormato(f)}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                    {t(`posts.form.formats.${rede}.${f}.label`)}
+        <div
+          role="tablist"
+          aria-label={t("posts.form.variationsSection")}
+          className="mb-5 flex gap-2 overflow-x-auto border-b border-gray-200 dark:border-gray-800"
+        >
+          {ordered.map((n) => {
+            const index = networks.indexOf(n);
+            const selected = n === active;
+            const status = variations[index]?.status ?? "draft";
+            return (
+              <button
+                key={n}
+                ref={(el) => {
+                  if (el) tabRefs.current.set(n, el);
+                  else tabRefs.current.delete(n);
+                }}
+                type="button"
+                role="tab"
+                id={`variation-tab-${n}`}
+                aria-selected={selected}
+                aria-controls={`variation-panel-${n}`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setActive(n)}
+                onKeyDown={onTabKeyDown}
+                className={cn(
+                  "-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap",
+                  selected
+                    ? "border-brand-500 text-brand-500 dark:text-brand-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                )}
+              >
+                {REDE_LABEL[n]}
+                <Badge color={STATUS_POST_COR[status]} size="sm">
+                  {t(`domain.postStatus.${status}`)}
+                </Badge>
+                {hasErrors(index) && (
+                  <span
+                    className="size-2 rounded-full bg-error-500"
+                    title={t("posts.form.tabHasErrors")}
+                  >
+                    <span className="sr-only">
+                      {t("posts.form.tabHasErrors")}
+                    </span>
                   </span>
-                  <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {t(`posts.form.formats.${rede}.${f}.hint`)}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {errors.format?.message && (
-              <p role="alert" className="mt-1.5 text-xs text-error-500">
-                {erro(errors.format.message)}
-              </p>
-            )}
-            <Link
-              to={`/best-practices?network=${rede}`}
-              className="mt-2 inline-block text-theme-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-            >
-              {t("posts.form.seeBestPractices", { network: REDE_LABEL[rede] })}
-            </Link>
-          </fieldset>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-          {maximo > 0 && (
-            <Controller
-              control={control}
-              name="image_ids"
-              render={({ field }) => (
-                <div className="space-y-4">
-                  <SeletorImagens
-                    projetoId={projetoId}
-                    value={field.value}
-                    onChange={field.onChange}
-                    max={maximo}
-                    error={erro(errors.image_ids?.message)}
-                  />
-                  {/* Imagem única: troca a imagem; carrossel: soma slides ao fim */}
-                  <CriarArte
-                    projetoId={projetoId}
-                    rede={rede}
-                    textoInicial={() => getValues("title")}
-                    maxSlides={
-                      formato === "single" ? 1 : maximo - field.value.length
-                    }
-                    onCriadas={(imagens) => {
-                      const ids = imagens.map((i) => i.id);
-                      field.onChange(
-                        formato === "single"
-                          ? ids.slice(0, 1)
-                          : [...field.value, ...ids].slice(0, maximo),
-                      );
-                    }}
-                  />
-                </div>
-              )}
-            />
-          )}
-          {/* O texto vem depois da imagem: a arte costuma ser feita primeiro */}
-          <Controller
+        {/* Only the open tab is rendered; the others keep their values in the form */}
+        <div
+          role="tabpanel"
+          id={`variation-panel-${active}`}
+          aria-labelledby={`variation-tab-${active}`}
+        >
+          <VariationEditor
+            key={fields[activeIndex]?.id ?? active}
+            index={activeIndex}
+            network={networks[activeIndex] ?? active}
+            projectId={projetoId}
             control={control}
-            name="content"
-            render={({ field }) => (
-              <EditorTexto
-                id="post-content"
-                label={t("posts.form.content")}
-                value={field.value}
-                onChange={field.onChange}
-                network={rede}
-                error={erro(errors.content?.message)}
-              />
-            )}
+            register={register}
+            setValue={setValue}
+            getValues={getValues}
+            errors={errors}
           />
         </div>
       </section>

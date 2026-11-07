@@ -39,13 +39,20 @@ function finalizar(exec: ExecucaoMock): ExecucaoMock {
       id: postId,
       subject_id: rascunho.subject_id,
       title: rascunho.title,
-      content: rascunho.texto,
-      status: "draft", // o agente só salva rascunhos
-      expected_date: null,
-      // O agente escreve para a primeira rede pedida, com a imagem gerada
-      network: rascunho.redes[0] ?? "linkedin",
-      format: "single",
-      image_ids: [imagemId],
+      // One variation per requested network, with the generated image.
+      // The agent only saves drafts.
+      variations: (rascunho.redes.length
+        ? rascunho.redes
+        : (["linkedin"] as const)
+      ).map((network) => ({
+        id: crypto.randomUUID(),
+        network,
+        format: "single",
+        content: rascunho.texto,
+        status: "draft",
+        expected_date: null,
+        image_ids: [imagemId],
+      })),
       created_at: agora,
       updated_at: agora,
     });
