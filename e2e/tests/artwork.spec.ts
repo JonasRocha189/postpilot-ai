@@ -123,9 +123,32 @@ test("artwork editor: color, library photo and text become the post image", asyn
     await expect.poll(() => colorAt(page, 5, 1340)).toBe("red");
     expect(await colorAt(page, 1075, 1340)).toBe("blue");
 
-    // Moving the focus to the left shows only the red half
-    await dialog.getByLabel("Posição horizontal").fill("0");
-    await expect.poll(() => colorAt(page, 1075, 1340)).toBe("red");
+    // Image center on the right edge: only its red (left) half is in view (the
+    // red | blue boundary is now at x = 1080, so check a bit before it)
+    await dialog.getByLabel("Posição horizontal").fill("1");
+    await expect.poll(() => colorAt(page, 1040, 1340)).toBe("red");
+  });
+
+  await test.step("drag the photo down: the background color shows above it", async () => {
+    const dialog = page.getByRole("dialog");
+    const preview = dialog.getByRole("img", { name: /^Prévia da arte/ });
+    const box = (await preview.boundingBox())!;
+    // Start below the text (it is at the top), move down 30% of the preview
+    const start = { x: box.x + box.width / 2, y: box.y + box.height * 0.6 };
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x, start.y + box.height * 0.3, { steps: 8 });
+    await page.mouse.up();
+
+    // Top-left: background color (no photo); bottom-left: still the red photo
+    await expect.poll(() => colorAt(page, 5, 300)).not.toMatch(/red|blue/);
+    expect(await colorAt(page, 5, 1340)).toBe("red");
+    await expect(dialog.getByText("Cor em volta da imagem")).toBeVisible();
+
+    // "Cover the artwork" puts it back: centered, red | blue
+    await dialog.getByRole("button", { name: "Cobrir a arte" }).click();
+    await expect.poll(() => colorAt(page, 1075, 1340)).toBe("blue");
+    expect(await colorAt(page, 5, 300)).toBe("red");
   });
 
   await test.step("download the artwork (no upload)", async () => {
@@ -277,6 +300,91 @@ test("artwork editor: carousel slides become the post images, in order", async (
     await expect(
       page.getByRole("link", { name: subject, exact: true }),
     ).toHaveCount(0);
+    await page.goto("/projects");
+    await page.getByRole("button", { name: `Excluir ${project}` }).click();
+    await confirmDelete(page);
+    await expect(page.getByRole("heading", { name: project })).toHaveCount(0);
+  });
+});
+
+/** Number of white (text) pixels in a rectangle of the editor preview. */
+function whitePixels(page: Page, x: number, y: number, w: number, h: number) {
+  return page.evaluate(
+    ([rx, ry, rw, rh]) => {
+      const canvas = document.querySelector<HTMLCanvasElement>(
+        '[role="dialog"] canvas[role="img"]',
+      )!;
+      const data = canvas.getContext("2d")!.getImageData(rx, ry, rw, rh).data;
+      let count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) count++;
+      }
+      return count;
+    },
+    [x, y, w, h],
+  );
+}
+
+/**
+ * Free text position: dragging the text in the preview moves it (the real
+ * canvas redraws it there); a fixed position puts it back.
+ */
+test("artwork editor: drag the text to any position", async ({ page }) => {
+  const project = unique("E2E Arraste");
+  const subject = unique("E2E Assunto");
+
+  await login(page);
+  await page.goto("/projects/new");
+  await page.getByLabel(/^Nome/).fill(project);
+  await page.getByRole("button", { name: "Criar projeto" }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await page.goto("/subjects/new");
+  await page.getByLabel(/^Nome/).fill(subject);
+  await page.getByRole("button", { name: "Criar assunto" }).click();
+  await expect(page).toHaveURL(/\/subjects$/);
+
+  await page.goto("/posts/new");
+  await page.getByLabel(/^Título/).fill("Texto");
+  await page.getByLabel(/^Assunto/).selectOption({ label: subject });
+  await page.getByRole("button", { name: "Criar arte" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Usar no post" })).toBeEnabled();
+
+  // 1080 × 1350, brand color, white text in the middle
+  const topLeft = () => whitePixels(page, 0, 0, 540, 500);
+  const middle = () => whitePixels(page, 0, 575, 1080, 200);
+  await expect.poll(middle).toBeGreaterThan(0);
+  expect(await topLeft()).toBe(0);
+
+  await test.step("drag the text to the top-left corner", async () => {
+    const preview = dialog.getByRole("img", { name: /^Prévia da arte/ });
+    const box = (await preview.boundingBox())!;
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    // Several steps, like a real drag; far beyond the corner (stops at the margin)
+    await page.mouse.move(box.x - 50, box.y - 50, { steps: 8 });
+    await page.mouse.up();
+
+    await expect.poll(topLeft).toBeGreaterThan(0);
+    expect(await middle()).toBe(0);
+    await expect(dialog.getByText(/^Posição livre/)).toBeVisible();
+    // The safe margin (8% = 86 px) stays empty
+    expect(await whitePixels(page, 0, 0, 80, 80)).toBe(0);
+  });
+
+  await test.step("a fixed position puts the text back", async () => {
+    await option(dialog, "Meio").click();
+    await expect.poll(middle).toBeGreaterThan(0);
+    expect(await topLeft()).toBe(0);
+  });
+
+  await test.step("cleanup: subject and project", async () => {
+    await dialog.getByRole("button", { name: "Cancelar" }).click();
+    await page.goto("/subjects");
+    await page.getByRole("button", { name: `Excluir ${subject}` }).click();
+    await confirmDelete(page);
+    await expect(page.getByRole("link", { name: subject, exact: true })).toHaveCount(0);
     await page.goto("/projects");
     await page.getByRole("button", { name: `Excluir ${project}` }).click();
     await confirmDelete(page);

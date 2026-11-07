@@ -76,7 +76,7 @@ export default function PostDetailsModal({
               {t("common.close")}
             </Button>
             <Link
-              to={`/posts/${post.id}`}
+              to={`/posts/${post.postId}?network=${post.rede}`}
               className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600"
             >
               {t("calendar.details.openPost")}

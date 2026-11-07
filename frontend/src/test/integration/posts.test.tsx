@@ -1,5 +1,6 @@
 // Integration: posts list (filters in the URL and in the API query) and the
-// post form: network, format, text editor, calendar date and ordered images.
+// post form, master-detail: the post and one variation per network (tabs),
+// each with format, text editor, calendar date, status and ordered images.
 import PostFormPage from "@/pages/Posts/PostFormPage";
 import Posts from "@/pages/Posts/Posts";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -15,14 +16,23 @@ function seed() {
 }
 
 describe("Posts list (/posts)", () => {
-  it("shows the posts with subject, network, local date and status", async () => {
+  it("shows each post with its variations: network, format, local date and status", async () => {
     const { subject } = seed();
-    fakeApi.addPost(subject.id, {
+    const post = fakeApi.addPost(subject.id, {
       title: "Backup em nuvem",
-      status: "review",
-      network: "instagram",
-      format: "carousel",
-      expected_date: "2026-11-20",
+      variations: [
+        {
+          network: "linkedin",
+          status: "published",
+          expected_date: "2026-11-18",
+        },
+        {
+          network: "instagram",
+          format: "carousel",
+          status: "review",
+          expected_date: "2026-11-20",
+        },
+      ],
     });
 
     renderPage(<Posts />, { path: "/posts" });
@@ -30,19 +40,65 @@ describe("Posts list (/posts)", () => {
     const row = (
       await screen.findByRole("link", { name: "Backup em nuvem" })
     ).closest("tr")!;
-    expect(within(row).getByText("Em revisão")).toBeInTheDocument();
     expect(within(row).getAllByText("Cloud").length).toBeGreaterThan(0);
+    // Date-only values are shown as the same local day (not the day before)
+    const instagram = within(row).getAllByRole("link", {
+      name: /^Instagram · Carrossel · 20 de nov/,
+    });
+    expect(instagram[0]).toHaveAttribute(
+      "href",
+      `/posts/${post.id}?network=instagram`,
+    );
     expect(
-      within(row).getAllByText("Instagram · Carrossel").length,
+      within(row).getAllByRole("link", {
+        name: /^LinkedIn · Só texto · 18 de nov/,
+      }).length,
     ).toBeGreaterThan(0);
-    // Date-only value is shown as the same local day (not the day before)
-    expect(within(row).getAllByText(/20 de nov/).length).toBeGreaterThan(0);
+    expect(within(row).getAllByText("Em revisão").length).toBeGreaterThan(0);
+    expect(within(row).getAllByText("Publicado").length).toBeGreaterThan(0);
+  });
+
+  it("filters by network: a post shows up when one of its variations matches", async () => {
+    const { project, subject } = seed();
+    fakeApi.addPost(subject.id, {
+      title: "Só LinkedIn",
+      variations: [{ network: "linkedin" }],
+    });
+    fakeApi.addPost(subject.id, {
+      title: "LinkedIn e X",
+      variations: [{ network: "linkedin" }, { network: "x" }],
+    });
+    const { user, location } = renderPage(<Posts />, { path: "/posts" });
+
+    await screen.findByRole("link", { name: "Só LinkedIn" });
+    await user.selectOptions(screen.getByLabelText("Rede"), "x");
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("link", { name: "Só LinkedIn" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("link", { name: "LinkedIn e X" }),
+    ).toBeInTheDocument();
+    expect(location()).toBe("/posts?network=x");
+    const last = fakeApi.requests("GET", "/posts").at(-1)!;
+    expect(Object.fromEntries(last.url.searchParams)).toEqual({
+      project_id: project.id,
+      network: "x",
+    });
   });
 
   it("filters by status through the URL and the API query", async () => {
     const { project, subject } = seed();
-    fakeApi.addPost(subject.id, { title: "Rascunho A", status: "draft" });
-    fakeApi.addPost(subject.id, { title: "Para revisar", status: "review" });
+    fakeApi.addPost(subject.id, {
+      title: "Rascunho A",
+      variations: [{ status: "draft" }],
+    });
+    fakeApi.addPost(subject.id, {
+      title: "Para revisar",
+      variations: [{ status: "review" }],
+    });
     const { user, location } = renderPage(<Posts />, { path: "/posts" });
 
     await screen.findByRole("link", { name: "Rascunho A" });
@@ -93,8 +149,12 @@ describe("Post form (/posts/new)", () => {
     await user.tab();
     expect(data).toHaveValue("20/11/2026");
 
-    // Network (Instagram by default) and format
-    expect(screen.getByRole("radio", { name: /^Instagram/ })).toBeChecked();
+    // A new post starts with an Instagram variation (tab) and its format
+    expect(screen.getByRole("checkbox", { name: /^Instagram/ })).toBeChecked();
+    expect(screen.getByRole("tab", { name: /^Instagram/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await user.click(screen.getByRole("radio", { name: /^Carrossel/ }));
 
     // Editor: bullet at the start of the line and an emoji at the cursor
@@ -130,13 +190,133 @@ describe("Post form (/posts/new)", () => {
     expect(fakeApi.requests("POST", "/posts")[0].body).toEqual({
       title: "Checklist",
       subject_id: subject.id,
-      status: "review",
-      network: "instagram",
-      format: "carousel",
-      expected_date: "2026-11-20",
-      content: "• Dica do dia🚀",
-      image_ids: [a.id, b.id],
+      variations: [
+        {
+          network: "instagram",
+          format: "carousel",
+          status: "review",
+          expected_date: "2026-11-20",
+          content: "• Dica do dia🚀",
+          image_ids: [a.id, b.id],
+        },
+      ],
     });
+  });
+
+  it("master-detail: one post with LinkedIn and X variations, each with its own text, status and date", async () => {
+    const { subject } = seed();
+    const { user, location } = renderPage(<PostFormPage />, {
+      path: "/posts/new",
+    });
+    await user.type(await screen.findByLabelText(/^Título/), "Custos da nuvem");
+    await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
+
+    // Add LinkedIn: its tab opens; then remove Instagram
+    await user.click(screen.getByRole("checkbox", { name: /^LinkedIn/ }));
+    expect(screen.getByRole("tab", { name: /^LinkedIn/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await user.click(screen.getByRole("checkbox", { name: /^Instagram/ }));
+    expect(
+      screen.queryByRole("tab", { name: /^Instagram/ }),
+    ).not.toBeInTheDocument();
+    // The last network cannot be unchecked
+    expect(screen.getByRole("checkbox", { name: /^LinkedIn/ })).toBeDisabled();
+
+    await user.type(
+      screen.getByLabelText("Conteúdo"),
+      "Texto longo para o LinkedIn",
+    );
+    await user.selectOptions(screen.getByLabelText(/^Status/), "approved");
+    await user.type(screen.getByLabelText("Data prevista"), "20/11/2026");
+    await user.tab();
+
+    // X: its own tab, text, status and date
+    await user.click(screen.getByRole("checkbox", { name: /^X/ }));
+    expect(screen.getByLabelText("Conteúdo")).toHaveValue("");
+    expect(screen.getByLabelText(/^Status/)).toHaveValue("draft");
+    await user.type(screen.getByLabelText("Conteúdo"), "Versão curta");
+    await user.type(screen.getByLabelText("Data prevista"), "21/11/2026");
+    await user.tab();
+
+    // Back on LinkedIn, its values are still there; the tab shows the status
+    const linkedinTab = screen.getByRole("tab", { name: /^LinkedIn/ });
+    expect(linkedinTab).toHaveTextContent("Aprovado");
+    await user.click(linkedinTab);
+    expect(screen.getByLabelText("Conteúdo")).toHaveValue(
+      "Texto longo para o LinkedIn",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Criar post" }));
+    await waitFor(() => expect(location()).toBe("/posts"));
+    expect(fakeApi.requests("POST", "/posts")[0].body).toEqual({
+      title: "Custos da nuvem",
+      subject_id: subject.id,
+      variations: [
+        {
+          network: "linkedin",
+          format: "text",
+          status: "approved",
+          expected_date: "2026-11-20",
+          content: "Texto longo para o LinkedIn",
+          image_ids: [],
+        },
+        {
+          network: "x",
+          format: "text",
+          status: "draft",
+          expected_date: "2026-11-21",
+          content: "Versão curta",
+          image_ids: [],
+        },
+      ],
+    });
+  });
+
+  it("an invalid variation marks its tab and opens it on submit", async () => {
+    const { subject } = seed();
+    const { user } = renderPage(<PostFormPage />, { path: "/posts/new" });
+    await user.type(await screen.findByLabelText(/^Título/), "Fio");
+    await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
+
+    // X with too much text, then go back to the (valid) Instagram tab
+    await user.click(screen.getByRole("checkbox", { name: /^X/ }));
+    await user.click(screen.getByRole("radio", { name: /^Só texto/ }));
+    await user.click(screen.getByLabelText("Conteúdo"));
+    await user.paste("a".repeat(281));
+    await user.click(screen.getByRole("tab", { name: /^Instagram/ }));
+
+    await user.click(screen.getByRole("button", { name: "Criar post" }));
+
+    const xTab = screen.getByRole("tab", { name: /^X/ });
+    await waitFor(() => expect(xTab).toHaveAttribute("aria-selected", "true"));
+    expect(xTab).toHaveTextContent("Esta variação tem erros");
+    expect(
+      screen.getByText(
+        "Passou do limite de 280 caracteres do X (contando as hashtags).",
+      ),
+    ).toBeInTheDocument();
+    expect(fakeApi.requests("POST", "/posts")).toHaveLength(0);
+  });
+
+  it("unchecking a network and checking it again brings its text back", async () => {
+    seed();
+    const { user } = renderPage(<PostFormPage />, { path: "/posts/new" });
+    await user.click(
+      await screen.findByRole("checkbox", { name: /^LinkedIn/ }),
+    );
+    await user.type(screen.getByLabelText("Conteúdo"), "Rascunho do LinkedIn");
+
+    await user.click(screen.getByRole("checkbox", { name: /^LinkedIn/ }));
+    expect(
+      screen.queryByRole("tab", { name: /^LinkedIn/ }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: /^LinkedIn/ }));
+
+    expect(screen.getByLabelText("Conteúdo")).toHaveValue(
+      "Rascunho do LinkedIn",
+    );
   });
 
   it("on X, offers text only and enforces the 280-character limit", async () => {
@@ -145,7 +325,8 @@ describe("Post form (/posts/new)", () => {
 
     await user.type(await screen.findByLabelText(/^Título/), "Fio");
     await user.selectOptions(screen.getByLabelText(/^Assunto/), subject.id);
-    await user.click(screen.getByRole("radio", { name: /^X/ }));
+    await user.click(screen.getByRole("checkbox", { name: /^X/ }));
+    await user.click(screen.getByRole("checkbox", { name: /^Instagram/ }));
     expect(
       screen.getByRole("radio", { name: /^Várias imagens/ }),
     ).toBeInTheDocument();
@@ -246,17 +427,28 @@ describe("Post form (/posts/new)", () => {
     const image = fakeApi.addImage(project.id, { description: "Nuvem" });
     const post = fakeApi.addPost(subject.id, {
       title: "Com imagem",
-      network: "instagram",
-      format: "single",
-      expected_date: "2026-11-20",
-      image_ids: [image.id],
+      variations: [
+        { network: "linkedin", content: "Texto do LinkedIn" },
+        {
+          network: "instagram",
+          format: "single",
+          expected_date: "2026-11-20",
+          image_ids: [image.id],
+        },
+      ],
     });
+    const [linkedinId, instagramId] = post.variations.map((v) => v.id);
+    // ?network= opens that variation's tab (links from the list and the calendar)
     const { user, location } = renderPage(<PostFormPage />, {
       path: "/posts/:id",
-      route: `/posts/${post.id}`,
+      route: `/posts/${post.id}?network=instagram`,
     });
 
     expect(await screen.findByDisplayValue("Com imagem")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Instagram/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(screen.getByLabelText("Data prevista")).toHaveValue("20/11/2026");
     await user.click(screen.getByRole("button", { name: "Limpar data" }));
     expect(screen.getByLabelText("Data prevista")).toHaveValue("");
@@ -266,9 +458,24 @@ describe("Post form (/posts/new)", () => {
     await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
 
     await waitFor(() => expect(location()).toBe("/posts"));
-    expect(fakeApi.requests("PUT")[0].body).toMatchObject({
-      expected_date: null,
-      image_ids: [],
-    });
+    const body = fakeApi.requests("PUT")[0].body as {
+      variations: { network: string }[];
+    };
+    expect(body.variations).toEqual([
+      expect.objectContaining({
+        network: "linkedin",
+        content: "Texto do LinkedIn",
+      }),
+      expect.objectContaining({
+        network: "instagram",
+        expected_date: null,
+        image_ids: [],
+      }),
+    ]);
+    // The API keeps each network's variation id (metrics hang on it)
+    expect(fakeApi.db.posts[0].variations.map((v) => v.id)).toEqual([
+      linkedinId,
+      instagramId,
+    ]);
   });
 });

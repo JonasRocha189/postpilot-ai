@@ -2,10 +2,13 @@ import { confirmDelete, expect, login, PNG, test, todayBr, unique } from "./fixt
 
 /**
  * Main acceptance flow of the first part of the app: project → subject →
- * image library → post with image → list filters → calendar, then cleanup.
- * Covers the TCC requirements "CRUD of Project, Subject and Post".
+ * image library → post with two variations (master-detail) → list filters →
+ * calendar → edit the variations, then cleanup. Covers the TCC requirements
+ * "CRUD of Project, Subject and Post" and "master-detail Post → Variations".
  */
 test("content flow: project, subject, image, post, calendar", async ({ page }) => {
+  // Long flow (create, filter, calendar, edit, cleanup): 3× the default timeout
+  test.slow();
   const project = unique("E2E Projeto");
   const subject = unique("E2E Assunto");
   const title = unique("E2E Post");
@@ -44,30 +47,46 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await expect(page.getByRole("button", { name: "Ampliar imagem 1" })).toBeVisible();
   });
 
-  await test.step("create a post with the library image", async () => {
+  await test.step("create a post with Instagram and LinkedIn variations", async () => {
     await page.goto("/posts/new");
     await page.getByLabel(/^Título/).fill(title);
     await page.getByLabel(/^Assunto/).selectOption({ label: subject });
+
+    // Instagram (default variation): single image from the library, in review
+    await expect(page.getByRole("checkbox", { name: /^Instagram/ })).toBeChecked();
+    await expect(page.getByRole("radio", { name: /^Imagem única/ })).toBeChecked();
     await page.getByLabel(/^Status/).selectOption("review");
     // Calendar date field: typed as dd/mm/aaaa (a click on the calendar works too)
     await page.getByLabel("Data prevista").fill(todayBr());
     await page.getByLabel("Data prevista").press("Tab");
-    await expect(page.getByRole("radio", { name: /^Instagram/ })).toBeChecked();
-    await expect(page.getByRole("radio", { name: /^Imagem única/ })).toBeChecked();
-    await page.getByLabel("Conteúdo").fill("Texto escrito pelo teste de aceite.");
-
+    await page.getByRole("textbox", { name: "Conteúdo" }).fill("Legenda curta para o Instagram.");
     await page.getByRole("button", { name: "Escolher", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Imagem 1" }).click();
     await expect(page.getByRole("button", { name: "Trocar imagem" })).toBeVisible();
 
+    // LinkedIn: its own tab, text only, draft, same day
+    await page.getByRole("checkbox", { name: /^LinkedIn/ }).check();
+    await expect(page.getByRole("tab", { name: /^LinkedIn/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByRole("textbox", { name: "Conteúdo" })).toHaveValue("");
+    await page.getByRole("textbox", { name: "Conteúdo" }).fill("Texto mais longo, pensado para o LinkedIn.");
+    await page.getByLabel("Data prevista").fill(todayBr());
+    await page.getByLabel("Data prevista").press("Tab");
+
     await page.getByRole("button", { name: "Criar post" }).click();
     await expect(page).toHaveURL(/\/posts$/);
     const row = page.getByRole("row").filter({ hasText: title });
-    await expect(row).toContainText("Em revisão");
     await expect(row).toContainText(subject);
+    await expect(row).toContainText("Instagram · Imagem única");
+    await expect(row).toContainText("LinkedIn · Só texto");
+    await expect(row).toContainText("Em revisão");
+    await expect(row).toContainText("Rascunho");
   });
 
-  await test.step("filter posts by status (URL + API)", async () => {
+  await test.step("filter posts by status and network (URL + API)", async () => {
+    // A post matches when one of its variations matches
     await page.getByLabel("Status").selectOption("review");
     await expect(page).toHaveURL(/status=review/);
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
@@ -75,22 +94,47 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await page.getByLabel("Status").selectOption("approved");
     await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
     await page.getByRole("button", { name: "Limpar filtros" }).click();
+
+    await page.getByLabel("Rede").selectOption("x");
+    await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
+    await page.getByLabel("Rede").selectOption("linkedin");
+    await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Limpar filtros" }).click();
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
   });
 
-  await test.step("see the post on the calendar and open it", async () => {
+  await test.step("each variation is on the calendar; open the Instagram one", async () => {
     await page.getByRole("link", { name: "Calendário" }).first().click();
     await expect(page).toHaveURL(/\/calendar$/);
     // Routes load lazily: wait for the calendar before clicking (the old page may still be on screen)
     await expect(page.getByRole("heading", { name: "Calendário" })).toBeVisible();
-    await page.getByRole("grid").getByText(title).click();
+    const grid = page.getByRole("grid");
+    await expect(grid.getByText(`${title} · LinkedIn`)).toBeVisible();
+    await grid.getByText(`${title} · Instagram`).click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toContainText(subject);
     await dialog.getByRole("link", { name: "Abrir post" }).click();
-    await expect(page).toHaveURL(/\/posts\/[^/]+$/);
+    await expect(page).toHaveURL(/\/posts\/[^/]+\?network=instagram$/);
     await expect(page.getByLabel(/^Título/)).toHaveValue(title);
+    await expect(page.getByRole("tab", { name: /^Instagram/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await expect(page.getByLabel("Data prevista")).toHaveValue(todayBr());
+    await expect(page.getByRole("textbox", { name: "Conteúdo" })).toHaveValue("Legenda curta para o Instagram.");
+  });
+
+  await test.step("edit on the same screen: approve Instagram, remove LinkedIn", async () => {
+    await page.getByLabel(/^Status/).selectOption("approved");
+    await page.getByRole("checkbox", { name: /^LinkedIn/ }).uncheck();
+    await expect(page.getByRole("tab", { name: /^LinkedIn/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    await expect(page).toHaveURL(/\/posts$/);
+    const row = page.getByRole("row").filter({ hasText: title });
+    await expect(row).toContainText("Aprovado");
+    await expect(row).not.toContainText("LinkedIn");
   });
 
   await test.step("an image used by a post cannot be deleted (409)", async () => {

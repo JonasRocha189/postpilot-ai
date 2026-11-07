@@ -2,13 +2,21 @@
 // the drawing module is replaced; the size, the choices, the upload to the
 // library (presigned URL + S3 + POST /images) and the post body are real.
 import PostFormPage from "@/pages/Posts/PostFormPage";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeApi } from "../fakeApi";
 import { renderPage } from "../render";
 
 const canvas = vi.hoisted(() => ({
   desenharArte: vi.fn(),
+  // Text block of the artwork (artwork pixels): 400 × 150, centered at (540, 675)
+  areaDoTexto: vi.fn(() => ({
+    esquerda: 340,
+    topo: 600,
+    largura: 400,
+    altura: 150,
+    ancoraX: 540,
+  })),
   baixarArquivos: vi.fn<
     (arquivos: { arquivo: File; nome: string }[]) => Promise<void>
   >(() => Promise.resolve()),
@@ -122,9 +130,9 @@ describe("Artwork editor (post form, single image)", () => {
     await user.click(screen.getByRole("button", { name: "Criar post" }));
     await waitFor(() => expect(location()).toBe("/posts"));
     const post = fakeApi.requests("POST", "/posts")[0].body as {
-      image_ids: string[];
+      variations: { image_ids: string[] }[];
     };
-    expect(post.image_ids).toHaveLength(1);
+    expect(post.variations[0].image_ids).toHaveLength(1);
   });
 
   it("uses a library photo as background, cropped to cover the artwork", async () => {
@@ -133,7 +141,9 @@ describe("Artwork editor (post form, single image)", () => {
     const { user } = await abrirEditor("Backup", subject.id);
 
     // X: 1600 × 900 by default
-    await user.click(screen.getByRole("radio", { name: /^X/ }));
+    // X instead of Instagram: check X, uncheck Instagram (one variation)
+    await user.click(screen.getByRole("checkbox", { name: /^X/ }));
+    await user.click(screen.getByRole("checkbox", { name: /^Instagram/ }));
     await user.click(screen.getByRole("radio", { name: /^Imagem única/ }));
     await user.click(screen.getByRole("button", { name: "Criar arte" }));
     const dialog = await screen.findByRole("dialog");
@@ -162,7 +172,7 @@ describe("Artwork editor (post form, single image)", () => {
       largura: 1600,
       altura: 900,
       corTexto: "#FFFFFF",
-      imagem: { zoom: 1, focoX: 0.5, focoY: 0.5, escurecer: 0.3 },
+      imagem: { zoom: 1, x: 0.5, y: 0.5, escurecer: 0.3 },
     });
     expect(ultimo[2]).toMatchObject({ width: 2000, height: 1000 });
 
@@ -199,6 +209,141 @@ describe("Artwork editor (post form, single image)", () => {
     // Nothing is uploaded and the editor stays open (the user may still use it)
     expect(fakeApi.requests("POST", "/images/upload-url")).toHaveLength(0);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("drags the text to a free position; a fixed position puts it back", async () => {
+    const { subject } = seed();
+    const { user } = await abrirEditor("Arrastar", subject.id);
+    await user.click(screen.getByRole("button", { name: "Criar arte" }));
+    const dialog = await screen.findByRole("dialog");
+
+    // 1080 × 1350 preview shown at half size: 1 screen px = 2 artwork px
+    const previa = within(dialog).getByRole("img", { name: /^Prévia da arte/ });
+    vi.spyOn(previa, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 540, height: 675 }),
+    );
+    previa.setPointerCapture = vi.fn();
+    const ultimaArte = () => canvas.desenharArte.mock.calls.at(-1)![1];
+
+    // Pressing outside the text on a color background does nothing
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(previa, { pointerId: 1, clientX: 60, clientY: 60 });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+    expect(ultimaArte().ponto).toBeNull();
+
+    // Drag the text (center 270, 337 on screen) 50 left and 200 up
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 270, clientY: 337 });
+    fireEvent.pointerMove(previa, { pointerId: 1, clientX: 220, clientY: 137 });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+
+    // Block center (540, 675) → (440, 275) in artwork pixels
+    expect(ultimaArte().ponto).toEqual({
+      x: expect.closeTo(440 / 1080, 5),
+      y: expect.closeTo(275 / 1350, 5),
+    });
+    expect(
+      within(dialog).getByRole("radio", { name: "Meio" }),
+    ).not.toBeChecked();
+    expect(within(dialog).getByText(/^Posição livre/)).toBeInTheDocument();
+
+    // Dragging far beyond the edge stops at the margin (86 px + half the block)
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 270, clientY: 337 });
+    fireEvent.pointerMove(previa, {
+      pointerId: 1,
+      clientX: -900,
+      clientY: 337,
+    });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+    expect(ultimaArte().ponto.x).toBeCloseTo((86 + 200) / 1080, 5);
+
+    // A fixed position resets the free point
+    await user.click(within(dialog).getByRole("radio", { name: "Topo" }));
+    expect(ultimaArte()).toMatchObject({ ponto: null, posicao: "top" });
+    expect(within(dialog).getByRole("radio", { name: "Topo" })).toBeChecked();
+
+    // The exported artwork keeps the dragged position
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 270, clientY: 337 });
+    fireEvent.pointerMove(previa, { pointerId: 1, clientX: 270, clientY: 437 });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Usar no post" }),
+    );
+    await waitFor(() => expect(canvas.exportarSlide).toHaveBeenCalledTimes(1));
+    expect(canvas.exportarSlide.mock.calls[0][0]).toMatchObject({
+      ponto: { x: expect.closeTo(0.5, 5), y: expect.closeTo(875 / 1350, 5) },
+    });
+  });
+
+  it("drags the background image freely; the color shows around it until it covers again", async () => {
+    const { project, subject } = seed();
+    fakeApi.addImage(project.id, { description: "Data center" });
+    const { user } = await abrirEditor("Imagem", subject.id);
+    await user.click(screen.getByRole("button", { name: "Criar arte" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("radio", { name: "Imagem da biblioteca" }),
+    );
+    await user.click(
+      await within(dialog).findByRole("button", { name: "Data center" }),
+    );
+    await within(dialog).findByLabelText("Zoom");
+
+    // Covering the artwork: no color choice, nothing to reset
+    expect(
+      within(dialog).queryByRole("group", { name: "Cor em volta da imagem" }),
+    ).not.toBeInTheDocument();
+    const cobrir = within(dialog).getByRole("button", {
+      name: "Cobrir a arte",
+    });
+    expect(cobrir).toBeDisabled();
+
+    // 1080 × 1350 preview shown at half size: 1 screen px = 2 artwork px
+    const previa = within(dialog).getByRole("img", { name: /^Prévia da arte/ });
+    vi.spyOn(previa, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 540, height: 675 }),
+    );
+    previa.setPointerCapture = vi.fn();
+    const ultimaArte = () => canvas.desenharArte.mock.calls.at(-1)![1];
+
+    // Outside the text: the image moves with the pointer (also vertically,
+    // where the old crop had nothing left to show)
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(previa, { pointerId: 1, clientX: 104, clientY: 185 });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+    expect(ultimaArte().imagem).toMatchObject({
+      x: expect.closeTo(0.5 + 108 / 1080, 5),
+      y: expect.closeTo(0.5 + 270 / 1350, 5),
+    });
+    expect(ultimaArte().ponto).toBeNull(); // the text did not move
+
+    // Far beyond the edge: the image center stops at the edge
+    fireEvent.pointerDown(previa, { pointerId: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(previa, {
+      pointerId: 1,
+      clientX: -2000,
+      clientY: 50,
+    });
+    fireEvent.pointerUp(previa, { pointerId: 1 });
+    expect(ultimaArte().imagem.x).toBe(0);
+
+    // The background color now shows: it can be chosen (the text color stays)
+    const cores = await within(dialog).findByRole("group", {
+      name: "Cor em volta da imagem",
+    });
+    await user.click(within(cores).getAllByRole("button")[1]);
+    expect(ultimaArte()).toMatchObject({ cor: "#101828", corTexto: "#FFFFFF" });
+
+    // Back to covering the artwork (the darkening is kept)
+    await user.click(cobrir);
+    expect(ultimaArte().imagem).toEqual({
+      zoom: 1,
+      x: 0.5,
+      y: 0.5,
+      escurecer: 0.3,
+    });
+    expect(
+      within(dialog).queryByRole("group", { name: "Cor em volta da imagem" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the editor open and shows an error when the upload fails", async () => {
@@ -300,10 +445,11 @@ describe("Artwork editor (carousel)", () => {
 
     await user.click(screen.getByRole("button", { name: "Criar post" }));
     await waitFor(() => expect(location()).toBe("/posts"));
-    const post = fakeApi.requests("POST", "/posts")[0].body as {
-      format: string;
-      image_ids: string[];
-    };
+    const post = (
+      fakeApi.requests("POST", "/posts")[0].body as {
+        variations: { format: string; image_ids: string[] }[];
+      }
+    ).variations[0];
     expect(post.format).toBe("carousel");
     // The old image stays first; the slides come after, in order
     expect(post.image_ids).toHaveLength(4);
@@ -313,7 +459,9 @@ describe("Artwork editor (carousel)", () => {
   it("removes slides, downloads numbered files and respects the X limit", async () => {
     const { subject } = seed();
     const { user } = await abrirEditor("Fio", subject.id);
-    await user.click(screen.getByRole("radio", { name: /^X/ }));
+    // X instead of Instagram: check X, uncheck Instagram (one variation)
+    await user.click(screen.getByRole("checkbox", { name: /^X/ }));
+    await user.click(screen.getByRole("checkbox", { name: /^Instagram/ }));
     await user.click(screen.getByRole("radio", { name: /^Várias imagens/ }));
     await user.click(screen.getByRole("button", { name: "Criar arte" }));
     const dialog = await screen.findByRole("dialog");
@@ -355,9 +503,13 @@ describe("Artwork editor (carousel)", () => {
     );
     const post = fakeApi.addPost(subject.id, {
       title: "Cheio",
-      network: "x",
-      format: "carousel",
-      image_ids: imagens.map((i) => i.id),
+      variations: [
+        {
+          network: "x",
+          format: "carousel",
+          image_ids: imagens.map((i) => i.id),
+        },
+      ],
     });
     renderPage(<PostFormPage />, {
       path: "/posts/:id",

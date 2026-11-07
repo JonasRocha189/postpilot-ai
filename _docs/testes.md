@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend:** unidade (autenticação e verificação de saúde) e integração de **Projects** com PostgreSQL de verdade; Subjects, Posts (depois das variações) e Images (com S3) são os próximos.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (111 testes): unidade (autenticação, verificação de saúde, regras por rede e da importação de métricas) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images com S3 simulado, Ideas, importação de métricas) e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -29,8 +29,18 @@ Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste cha
 backend/tests/
 ├── conftest.py          # para todos: variáveis do Auth0 fixas (não depende do .env)
 ├── unit/                # sem banco e sem rede
+│   ├── test_auth.py
+│   ├── test_health.py
+│   └── test_post_rules.py   # regras por rede (formato, limite de texto, imagens) e da importação de métricas
 └── integration/
-    └── conftest.py      # contêiner do Postgres, migrations, cliente HTTP, limpeza
+    ├── conftest.py          # contêiner do Postgres, migrations, cliente HTTP, limpeza
+    ├── test_projects.py
+    ├── test_subjects.py     # CRUD, 409 com posts, autorização
+    ├── test_images.py       # S3 simulado (moto): URL pré-assinada, arquivo não enviado ou grande demais, exclusão do objeto
+    ├── test_posts.py        # variações: regras por rede, filtros na mesma variação, id mantido no PUT
+    ├── test_ideas.py        # ligação com o post, ON DELETE SET NULL
+    ├── test_metrics.py      # importação tudo ou nada
+    └── test_migrations.py   # dados antigos viram variações (downgrade → insert → upgrade)
 ```
 
 - `tests/conftest.py` define `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` e `AUTH_DEV_USER` (vazio) antes de qualquer import, então o resultado não depende do `.env` de quem roda, e o CI (sem `.env`) funciona igual.
@@ -38,6 +48,8 @@ backend/tests/
 - **Integração:** um contêiner `pgvector/pgvector:pg16` por execução (Testcontainers), com `alembic upgrade head`, então as migrations também são testadas. Cada teste começa com as tabelas vazias (`TRUNCATE`). O usuário vem do cabeçalho `X-Test-User` (padrão `user-a`), o que permite agir como dois usuários no mesmo teste; o JWT em si fica com os testes de unidade.
 - Os testes assíncronos usam o plugin do **anyio** (já vem com o FastAPI) e o `httpx.AsyncClient` com `ASGITransport`, para o app e o driver do banco (asyncpg) rodarem no mesmo loop de eventos.
 - Rode a partir de `backend/` (o `alembic.ini` é lido do diretório atual). A integração precisa do Docker ligado.
+- **S3 nos testes:** o **moto** simula o S3 em memória (`mock_aws`), sem rede e sem conta na AWS. A fixture `bucket` de `test_images.py` cria o bucket, aponta o cliente do app para ele (tira o `S3_ENDPOINT_URL` do LocalStack e limpa o cache do `_client()`) e faz o papel do navegador, colocando o arquivo no bucket antes de registrar a imagem.
+- `tests/conftest.py` também define `TC_HOST=127.0.0.1`: em alguns Windows com Docker, conectar por `localhost` falha com `WinError 64`. Pelo mesmo motivo, o `.env.example` usa `127.0.0.1` no `DATABASE_URL` e no `S3_ENDPOINT_URL`.
 
 ## Aceite (Playwright)
 

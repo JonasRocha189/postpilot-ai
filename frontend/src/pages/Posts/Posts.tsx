@@ -10,13 +10,15 @@ import {
 import Badge from "@/components/ui/badge/Badge";
 import { useAssuntos } from "@/features/assuntos/api";
 import { useExcluirPost, usePosts } from "@/features/posts/api";
-import type { Post, PostFiltros } from "@/features/posts/types";
+import { REDES } from "@/features/posts/redes";
+import type { Post, PostFiltros, PostVariation } from "@/features/posts/types";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
 import { PencilIcon, PlusIcon, TrashBinIcon } from "@/icons";
 import {
   REDE_LABEL,
   STATUS_POST,
   STATUS_POST_COR,
+  type Rede,
   type StatusPost,
 } from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
@@ -41,33 +43,64 @@ export default function Posts() {
 
   // Filtros na URL: links compartilháveis e o botão voltar funciona
   const statusParam = params.get("status");
+  const networkParam = params.get("network");
   const filtros: PostFiltros = {
     status: STATUS_POST.includes(statusParam as StatusPost)
       ? (statusParam as StatusPost)
       : undefined,
+    network: REDES.includes(networkParam as Rede)
+      ? (networkParam as Rede)
+      : undefined,
     subject_id: params.get("subject") ?? undefined,
   };
-  const temFiltro = Boolean(filtros.status || filtros.subject_id);
-
-  const assuntos = useAssuntos(projetoAtual?.id);
-  const posts = usePosts(projetoAtual?.id, filtros);
-  const nomeAssunto = (id: string) =>
-    assuntos.data?.find((a) => a.id === id)?.name ?? "—";
-  const redeEFormato = (post: Post) =>
-    `${REDE_LABEL[post.network]} · ${t(`form.formats.${post.network}.${post.format}.label`)}`;
-  const semAssuntos = assuntos.isSuccess && assuntos.data.length === 0;
-
-  const setFiltro = (chave: "status" | "subject", valor: string) => {
-    const proximo = new URLSearchParams(params);
-    if (valor) proximo.set(chave, valor);
-    else proximo.delete(chave);
-    setParams(proximo, { replace: true });
-  };
+  const temFiltro = Boolean(
+    filtros.status || filtros.network || filtros.subject_id,
+  );
 
   const data = (iso: string | null) =>
     iso
       ? fmt.date(iso, { day: "2-digit", month: "short", year: "numeric" })
       : t("noDate");
+
+  const assuntos = useAssuntos(projetoAtual?.id);
+  const posts = usePosts(projetoAtual?.id, filtros);
+  const nomeAssunto = (id: string) =>
+    assuntos.data?.find((a) => a.id === id)?.name ?? "—";
+  /** "Instagram · Carrossel · 20 nov" */
+  const variationLabel = (v: PostVariation) =>
+    [
+      REDE_LABEL[v.network],
+      t(`form.formats.${v.network}.${v.format}.label`),
+      data(v.expected_date),
+    ].join(" · ");
+  const variationsList = (post: Post) => (
+    <ul className="flex flex-col gap-1.5">
+      {post.variations.map((v) => (
+        <li key={v.id} className="flex flex-wrap items-center gap-2">
+          <Link
+            to={`/posts/${post.id}?network=${v.network}`}
+            className="text-theme-sm text-gray-700 hover:text-brand-500 dark:text-gray-300 dark:hover:text-brand-400"
+          >
+            {variationLabel(v)}
+          </Link>
+          <Badge color={STATUS_POST_COR[v.status]} size="sm">
+            {tApp(`domain.postStatus.${v.status}`)}
+          </Badge>
+        </li>
+      ))}
+    </ul>
+  );
+  const semAssuntos = assuntos.isSuccess && assuntos.data.length === 0;
+
+  const setFiltro = (
+    chave: "status" | "network" | "subject",
+    valor: string,
+  ) => {
+    const proximo = new URLSearchParams(params);
+    if (valor) proximo.set(chave, valor);
+    else proximo.delete(chave);
+    setParams(proximo, { replace: true });
+  };
 
   return (
     <>
@@ -116,6 +149,21 @@ export default function Posts() {
                 {STATUS_POST.map((s) => (
                   <option key={s} value={s}>
                     {tApp(`domain.postStatus.${s}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
+              {t("filters.network")}
+              <select
+                className={filtroClass}
+                value={filtros.network ?? ""}
+                onChange={(e) => setFiltro("network", e.target.value)}
+              >
+                <option value="">{t("filters.all")}</option>
+                {REDES.map((r) => (
+                  <option key={r} value={r}>
+                    {REDE_LABEL[r]}
                   </option>
                 ))}
               </select>
@@ -171,13 +219,9 @@ export default function Posts() {
                       <th className={`${th} hidden md:table-cell`}>
                         {t("columns.subject")}
                       </th>
-                      <th className={`${th} hidden lg:table-cell`}>
-                        {t("columns.network")}
-                      </th>
                       <th className={`${th} hidden sm:table-cell`}>
-                        {t("columns.date")}
+                        {t("columns.variations")}
                       </th>
-                      <th className={th}>{t("columns.status")}</th>
                       <th className={th}>
                         <span className="sr-only">{t("columns.actions")}</span>
                       </th>
@@ -193,32 +237,19 @@ export default function Posts() {
                           >
                             {post.title}
                           </Link>
-                          {/* No celular, as colunas ocultas aparecem aqui */}
-                          <p className="mt-1 text-theme-xs text-gray-500 sm:hidden dark:text-gray-400">
-                            {data(post.expected_date)}
-                          </p>
+                          {/* On phones, the hidden columns show up here */}
                           <p className="mt-0.5 text-theme-xs text-gray-500 md:hidden dark:text-gray-400">
                             {nomeAssunto(post.subject_id)}
                           </p>
-                          <p className="mt-0.5 text-theme-xs text-gray-500 lg:hidden dark:text-gray-400">
-                            {redeEFormato(post)}
-                          </p>
+                          <div className="mt-2 sm:hidden">
+                            {variationsList(post)}
+                          </div>
                         </td>
                         <td className={`${td} hidden md:table-cell`}>
                           {nomeAssunto(post.subject_id)}
                         </td>
-                        <td className={`${td} hidden lg:table-cell`}>
-                          {redeEFormato(post)}
-                        </td>
-                        <td
-                          className={`${td} hidden whitespace-nowrap sm:table-cell`}
-                        >
-                          {data(post.expected_date)}
-                        </td>
-                        <td className={td}>
-                          <Badge color={STATUS_POST_COR[post.status]} size="sm">
-                            {tApp(`domain.postStatus.${post.status}`)}
-                          </Badge>
+                        <td className={`${td} hidden sm:table-cell`}>
+                          {variationsList(post)}
                         </td>
                         <td className={td}>
                           <div className="flex justify-end gap-2">

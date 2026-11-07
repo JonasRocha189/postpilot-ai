@@ -5,6 +5,7 @@ import { criarRoteiro, type Roteiro } from "@/features/agente/mockRoteiro";
 import type { Assunto } from "@/features/assuntos/types";
 import type { Documento } from "@/features/documentos/types";
 import { imagemFicticia } from "@/features/imagens/ficticia";
+import type { Idea } from "@/features/ideas/types";
 import type { Imagem } from "@/features/imagens/types";
 import type { Metrica } from "@/features/metricas/types";
 import type { ModoAgente, Rede } from "@/lib/dominio";
@@ -216,37 +217,30 @@ const SEED_IMAGEM_DO_POST: Record<number, string> = {
   7: "img-checklist",
 };
 
+// One variation per network of each seed post. The second network of a post
+// is scheduled a day later, so the calendar shows variations on their own dates.
 function seedPosts(): Post[] {
   return SEED_POSTS.map(([title, subject_id, redes, dias], i) => {
     const agora = agoraIso();
+    const imagem = SEED_IMAGEM_DO_POST[i];
     return {
       id: `post-${i + 1}`,
       subject_id,
       title,
-      content: `${title}. Texto de exemplo.`,
-      status: dias < 0 ? "published" : i % 2 === 0 ? "approved" : "draft",
-      expected_date: diaDaquiA(dias),
-      network: redes[0],
-      format: SEED_IMAGEM_DO_POST[i] || redes[0] === "instagram" ? "single" : "text",
-      image_ids: SEED_IMAGEM_DO_POST[i] ? [SEED_IMAGEM_DO_POST[i]] : [],
+      variations: redes.map((rede, j) => ({
+        id: `var-${i + 1}-${rede}`,
+        network: rede,
+        format: imagem || rede === "instagram" ? "single" : "text",
+        content: `${title}. Texto de exemplo para ${rede}.`,
+        status: dias + j < 0 ? "published" : i % 2 === 0 ? "approved" : "draft",
+        expected_date: diaDaquiA(dias + j),
+        image_ids: imagem ? [imagem] : [],
+      })),
       created_at: agora,
       updated_at: agora,
     };
   });
 }
-
-/**
- * Variações por rede, só para as imagens e métricas fictícias. O backend
- * ainda não tem variações, então o Post não as carrega.
- */
-type VariacaoMock = { id: string; post_id: string; rede: Rede };
-const SEED_VARIACOES: VariacaoMock[] = SEED_POSTS.flatMap(([, , redes], i) =>
-  redes.map((rede) => ({
-    id: `var-${i + 1}-${rede}`,
-    post_id: `post-${i + 1}`,
-    rede,
-  })),
-);
 
 function seedDocumentos(): DocumentoMock[] {
   const doc = (
@@ -399,36 +393,99 @@ function seedImagens(): Imagem[] {
 /** Métricas dos posts publicados: um registro 1 dia e outro 7 dias após publicar. */
 function seedMetricas(): Metrica[] {
   const fator = { linkedin: 1, instagram: 1.6, x: 0.7 } as const;
-  const posts = seedPosts();
-  return posts
-    .filter((p) => p.status === "published" && p.expected_date)
-    .flatMap((post, i) =>
-      SEED_VARIACOES.filter((v) => v.post_id === post.id).flatMap((v) => {
-        const publicado = parseData(post.expected_date!);
-        const base = (900 + ((i * 7919) % 9) * 260) * fator[v.rede];
-        return [1, 7]
-          .map((dias) => ({
-            dias,
-            coleta: new Date(publicado.getTime() + dias * 86_400_000),
-          }))
-          .filter(({ coleta }) => coleta.getTime() <= Date.now())
-          .map(({ dias, coleta }): Metrica => {
-            const impressoes = Math.round(base * (dias === 1 ? 0.6 : 1));
-            const taxa = 0.02 + ((i * 31) % 5) / 100;
-            return {
-              id: `met-${v.id}-${dias}`,
-              variacao_id: v.id,
-              publicado_em: publicado.toISOString(),
-              impressoes,
-              curtidas: Math.round(impressoes * taxa * 0.6),
-              comentarios: Math.round(impressoes * taxa * 0.12),
-              compartilhamentos: Math.round(impressoes * taxa * 0.08),
-              cliques: Math.round(impressoes * taxa * 0.2),
-              coletado_em: coleta.toISOString(),
-            };
-          });
-      }),
-    );
+  return seedPosts()
+    .flatMap((post) => post.variations)
+    .filter((v) => v.status === "published" && v.expected_date)
+    .flatMap((v, i) => {
+      const publicado = parseData(v.expected_date!);
+      const base = (900 + ((i * 7919) % 9) * 260) * fator[v.network];
+      return [1, 7]
+        .map((dias) => ({
+          dias,
+          coleta: new Date(publicado.getTime() + dias * 86_400_000),
+        }))
+        .filter(({ coleta }) => coleta.getTime() <= Date.now())
+        .map(({ dias, coleta }): Metrica => {
+          const impressoes = Math.round(base * (dias === 1 ? 0.6 : 1));
+          const taxa = 0.02 + ((i * 31) % 5) / 100;
+          return {
+            id: `met-${v.id}-${dias}`,
+            variacao_id: v.id,
+            publicado_em: publicado.toISOString(),
+            impressoes,
+            curtidas: Math.round(impressoes * taxa * 0.6),
+            comentarios: Math.round(impressoes * taxa * 0.12),
+            compartilhamentos: Math.round(impressoes * taxa * 0.08),
+            cliques: Math.round(impressoes * taxa * 0.2),
+            coletado_em: coleta.toISOString(),
+          };
+        });
+    });
+}
+
+/** Sample ideas: open ones (manual and from the agent) and one already used. */
+function seedIdeas(): Idea[] {
+  const now = agoraIso();
+  const idea = (
+    id: string,
+    project_id: string,
+    title: string,
+    notes: string | null,
+    subject_id: string | null,
+    networks: Rede[],
+    source: Idea["source"],
+    post_id: string | null = null,
+  ): Idea => ({
+    id,
+    project_id,
+    title,
+    notes,
+    subject_id,
+    networks,
+    source,
+    post_id,
+    created_at: now,
+    updated_at: now,
+  });
+  return [
+    idea(
+      "idea-finops",
+      PROJ_MARCA,
+      "FinOps em 5 passos para PMEs",
+      "Carrossel com um passo por slide; fechar com um checklist.",
+      "ass-cloud",
+      ["linkedin", "instagram"],
+      "manual",
+    ),
+    idea(
+      "idea-natal",
+      PROJ_ACME,
+      "Golpes de fim de ano: como se proteger",
+      "Tema sazonal (dezembro). Pesquisa web: aumento de phishing nas compras de Natal.",
+      "ass-seguranca",
+      ["instagram", "x"],
+      "agent",
+    ),
+    idea(
+      "idea-bastidores",
+      PROJ_ACME,
+      "Bastidores de um deploy sem downtime",
+      null,
+      null,
+      [],
+      "agent",
+    ),
+    idea(
+      "idea-custos",
+      PROJ_MARCA,
+      "Custos escondidos da nuvem",
+      "Virou o post de mesmo nome.",
+      "ass-cloud",
+      ["linkedin", "x"],
+      "manual",
+      "post-7",
+    ),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -436,7 +493,8 @@ function seedMetricas(): Metrica[] {
 export const mockDb = {
   projetos: colecao<Projeto>("postpilot:mock:v2:projetos", seedProjetos),
   assuntos: colecao<Assunto>("postpilot:mock:v2:assuntos", seedAssuntos),
-  posts: colecao<Post>("postpilot:mock:v2:posts", seedPosts),
+  // v3: posts with variations (older browser data had one network per post)
+  posts: colecao<Post>("postpilot:mock:v3:posts", seedPosts),
   documentos: colecao<DocumentoMock>(
     "postpilot:mock:v2:documentos",
     seedDocumentos,
@@ -446,14 +504,15 @@ export const mockDb = {
     seedExecucoes,
   ),
   imagens: colecao<Imagem>("postpilot:mock:v2:imagens", seedImagens),
-  metricas: colecao<Metrica>("postpilot:mock:v2:metricas", seedMetricas),
+  metricas: colecao<Metrica>("postpilot:mock:v3:metricas", seedMetricas),
+  ideas: colecao<Idea>("postpilot:mock:v1:ideas", seedIdeas),
 };
 
 /** Encontra a variação e o post dela, ou responde 404 como a API. */
 export function variacaoDoMock(variacaoId: string) {
-  const variacao = SEED_VARIACOES.find((v) => v.id === variacaoId);
-  const post =
-    variacao && mockDb.posts.todos().find((p) => p.id === variacao.post_id);
-  if (!variacao || !post) throw new ApiError(404, "Variação não encontrada");
-  return { post, variacao };
+  for (const post of mockDb.posts.todos()) {
+    const variacao = post.variations.find((v) => v.id === variacaoId);
+    if (variacao) return { post, variacao };
+  }
+  throw new ApiError(404, "Variation not found");
 }

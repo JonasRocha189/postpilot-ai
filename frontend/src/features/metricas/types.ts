@@ -1,3 +1,5 @@
+import type { Rede } from "@/lib/dominio";
+
 // Espelha o schema do backend (ver docs/modelo-de-dados.md e docs/api.md)
 
 /**
@@ -28,3 +30,25 @@ export const CAMPOS_NUMERICOS = [
 ] as const satisfies readonly (keyof MetricaInput)[];
 
 export type CampoNumerico = (typeof CAMPOS_NUMERICOS)[number];
+
+// --- Import from a network's export (contract in English, see _docs/api.md) --
+
+/** One row of POST /metrics/import: the totals of a variation on a date. */
+export type MetricsImportRow = {
+  variation_id: string;
+  published_at: string; // ISO
+  impressions: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  clicks: number;
+};
+
+/** Body of POST /metrics/import (all rows are saved, or none: 422). */
+export type MetricsImportInput = {
+  network: Rede;
+  collected_at: string; // ISO
+  rows: MetricsImportRow[];
+};
+
+export type MetricsImportResult = { created: number };

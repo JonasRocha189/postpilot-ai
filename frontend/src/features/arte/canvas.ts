@@ -5,15 +5,16 @@ import { TAMANHO_MAXIMO } from "@/features/imagens/arquivo";
 import {
   ajustarTexto,
   ALTURA_LINHA,
+  caixaDoTexto,
   escalaFonte,
   FONTE_ARTE,
   FONTE_MINIMA,
   fonteCss,
   margem,
+  imageArea,
   PESO_FONTE,
-  recorteCover,
-  topoDoTexto,
   type Arte,
+  type CaixaTexto,
 } from "./layout";
 
 /** Imagem de fundo já decodificada. */
@@ -39,47 +40,25 @@ export function desenharArte(
   ctx.fillRect(0, 0, largura, altura);
 
   if (arte.imagem && fundo) {
-    const r = recorteCover(
+    const area = imageArea(
       { largura: fundo.width, altura: fundo.height },
       arte,
       arte.imagem,
     );
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(fundo, r.sx, r.sy, r.sw, r.sh, 0, 0, largura, altura);
+    // The canvas clips whatever goes past the artwork edges
+    ctx.drawImage(fundo, area.left, area.top, area.width, area.height);
     if (arte.imagem.escurecer > 0) {
+      // Darken only the image (the background color around it stays as chosen)
       ctx.fillStyle = `rgba(0, 0, 0, ${arte.imagem.escurecer})`;
-      ctx.fillRect(0, 0, largura, altura);
+      ctx.fillRect(area.left, area.top, area.width, area.height);
     }
   }
 
-  const texto = arte.texto.trim();
-  if (!texto) return;
-
-  const m = margem(arte);
-  const caixa = { largura: largura - 2 * m, altura: altura - 2 * m };
-  const { fonte, linhas } = ajustarTexto(
-    texto,
-    caixa,
-    escalaFonte(arte, arte.fonte),
-    escalaFonte(arte, FONTE_MINIMA),
-    (t, px) => {
-      ctx.font = fonteCss(px);
-      return ctx.measureText(t).width;
-    },
-  );
+  const posicionado = posicionarTexto(ctx, arte);
+  if (!posicionado) return;
+  const { fonte, linhas, caixa } = posicionado;
   const alturaLinha = fonte * ALTURA_LINHA;
-  const topo = topoDoTexto(
-    arte.posicao,
-    altura,
-    linhas.length * alturaLinha,
-    m,
-  );
-  const x =
-    arte.alinhamento === "left"
-      ? m
-      : arte.alinhamento === "right"
-        ? largura - m
-        : largura / 2;
 
   ctx.font = fonteCss(fonte);
   ctx.fillStyle = arte.corTexto;
@@ -91,10 +70,51 @@ export function desenharArte(
     ctx.shadowBlur = Math.round(fonte * 0.15);
   }
   linhas.forEach((linha, i) => {
-    ctx.fillText(linha, x, topo + alturaLinha * (i + 0.5));
+    ctx.fillText(linha, caixa.ancoraX, caixa.topo + alturaLinha * (i + 0.5));
   });
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
+}
+
+type TextoPosicionado = { fonte: number; linhas: string[]; caixa: CaixaTexto };
+
+/**
+ * Quebra o texto, ajusta a fonte e calcula onde o bloco fica. A largura do
+ * bloco é a da linha mais larga, então a área de arraste cobre só o texto.
+ */
+function posicionarTexto(
+  ctx: CanvasRenderingContext2D,
+  arte: Arte,
+): TextoPosicionado | null {
+  const texto = arte.texto.trim();
+  if (!texto) return null;
+
+  const m = margem(arte);
+  const medir = (t: string, px: number) => {
+    ctx.font = fonteCss(px);
+    return ctx.measureText(t).width;
+  };
+  const { fonte, linhas } = ajustarTexto(
+    texto,
+    { largura: arte.largura - 2 * m, altura: arte.altura - 2 * m },
+    escalaFonte(arte, arte.fonte),
+    escalaFonte(arte, FONTE_MINIMA),
+    medir,
+  );
+  const bloco = {
+    largura: Math.max(...linhas.map((linha) => medir(linha, fonte))),
+    altura: linhas.length * fonte * ALTURA_LINHA,
+  };
+  return { fonte, linhas, caixa: caixaDoTexto(arte, bloco, m) };
+}
+
+/**
+ * Bloco de texto da arte (pixels da arte), para saber se o usuário apertou
+ * sobre o texto na prévia. null quando não há texto.
+ */
+export function areaDoTexto(arte: Arte): CaixaTexto | null {
+  const ctx = document.createElement("canvas").getContext("2d");
+  return ctx ? (posicionarTexto(ctx, arte)?.caixa ?? null) : null;
 }
 
 /** Espera a fonte da arte carregar (senão o canvas usa a fonte reserva). */

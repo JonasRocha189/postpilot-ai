@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   ajustarTexto,
+  caixaDoTexto,
   corQueContrasta,
+  dentroDaCaixa,
   escalaFonte,
+  limitarPonto,
+  coversArtwork,
+  imageArea,
   quebrarLinhas,
-  recorteCover,
-  sobraCover,
   TAMANHOS_ARTE,
   topoDoTexto,
 } from "./layout";
@@ -86,54 +89,47 @@ describe("escalaFonte", () => {
   });
 });
 
-describe("recorteCover", () => {
-  const centro = { zoom: 1, focoX: 0.5, focoY: 0.5 };
+describe("imageArea", () => {
+  const photo = { largura: 2000, altura: 1000 };
+  const artwork = { largura: 1080, altura: 1350 };
+  const centered = { zoom: 1, x: 0.5, y: 0.5 };
 
-  it("crops the sides of a landscape photo for a 4:5 artwork", () => {
-    // 2000×1000 photo → 1080×1350: the height limits, width is cropped
-    const r = recorteCover(
-      { largura: 2000, altura: 1000 },
-      { largura: 1080, altura: 1350 },
-      centro,
-    );
-    expect(r.sh).toBeCloseTo(1000);
-    expect(r.sw).toBeCloseTo(800); // 1000 × 4/5
-    expect(r.sx).toBeCloseTo(600); // centered: (2000 - 800) / 2
-    expect(r.sy).toBeCloseTo(0);
+  it("covers a 4:5 artwork with a landscape photo, centered, without distortion", () => {
+    // The height limits: scale 1.35 → 2700 × 1350, the sides go past the edges
+    const area = imageArea(photo, artwork, centered);
+    expect(area.width).toBeCloseTo(2700);
+    expect(area.height).toBeCloseTo(1350);
+    expect(area.left).toBeCloseTo(-810); // (1080 − 2700) / 2
+    expect(area.top).toBeCloseTo(0);
+    expect(area.width / area.height).toBeCloseTo(2);
+    expect(coversArtwork(area, artwork)).toBe(true);
   });
 
-  it("keeps the proportion of the artwork (no distortion)", () => {
-    const r = recorteCover(
-      { largura: 640, altura: 480 },
-      { largura: 1600, altura: 900 },
-      { zoom: 1.7, focoX: 0.2, focoY: 0.9 },
+  it("moves freely with the center, which stays inside the artwork", () => {
+    const left = imageArea(photo, artwork, { ...centered, x: 0 });
+    expect(left.left).toBeCloseTo(-1350); // center on the left edge
+    const below = imageArea(photo, artwork, { ...centered, y: 0.9 });
+    expect(below.top).toBeCloseTo(1215 - 675);
+    expect(coversArtwork(below, artwork)).toBe(false);
+    // Past the edge: the center stops at the edge
+    expect(imageArea(photo, artwork, { ...centered, x: -2 }).left).toBeCloseTo(
+      left.left,
     );
-    expect(r.sw / r.sh).toBeCloseTo(1600 / 900);
-    expect(r.sx).toBeGreaterThanOrEqual(0);
-    expect(r.sy + r.sh).toBeLessThanOrEqual(480 + 1e-9);
   });
 
-  it("moves the visible part with the focus and zooms in", () => {
-    const imagem = { largura: 2000, altura: 1000 };
-    const arte = { largura: 1080, altura: 1350 };
-    expect(recorteCover(imagem, arte, { ...centro, focoX: 0 }).sx).toBe(0);
-    expect(recorteCover(imagem, arte, { ...centro, focoX: 1 }).sx).toBeCloseTo(
-      1200,
-    );
-    const perto = recorteCover(imagem, arte, { ...centro, zoom: 2 });
-    expect(perto.sh).toBeCloseTo(500);
-  });
-});
-
-describe("sobraCover", () => {
-  it("tells how much of the scaled photo is left outside the artwork", () => {
-    const sobra = sobraCover(
-      { largura: 2000, altura: 1000 },
-      { largura: 1080, altura: 1350 },
-      1,
-    );
-    expect(sobra.x).toBeCloseTo(1620); // 2000 × 1.35 − 1080
-    expect(sobra.y).toBeCloseTo(0);
+  it("zooms in, and out down to the minimum (the color shows around it)", () => {
+    expect(
+      imageArea(photo, artwork, { ...centered, zoom: 2 }).height,
+    ).toBeCloseTo(2700);
+    const small = imageArea(photo, artwork, { ...centered, zoom: 0.5 });
+    expect(small.width).toBeCloseTo(1350);
+    expect(small.height).toBeCloseTo(675);
+    expect(small.top).toBeCloseTo((1350 - 675) / 2);
+    expect(coversArtwork(small, artwork)).toBe(false);
+    // Below the minimum (0.2) it is limited
+    expect(
+      imageArea(photo, artwork, { ...centered, zoom: 0 }).height,
+    ).toBeCloseTo(1350 * 0.2);
   });
 });
 
@@ -142,6 +138,111 @@ describe("topoDoTexto", () => {
     expect(topoDoTexto("top", 1000, 200, 80)).toBe(80);
     expect(topoDoTexto("middle", 1000, 200, 80)).toBe(400);
     expect(topoDoTexto("bottom", 1000, 200, 80)).toBe(720);
+  });
+});
+
+describe("caixaDoTexto", () => {
+  // 1000 × 800 artwork, 80 px margin, 200 × 100 text block
+  const base = {
+    largura: 1000,
+    altura: 800,
+    alinhamento: "center" as const,
+    posicao: "middle" as const,
+    ponto: null,
+  };
+  const bloco = { largura: 200, altura: 100 };
+
+  it("follows the fixed position and alignment without a free point", () => {
+    expect(caixaDoTexto(base, bloco, 80)).toEqual({
+      esquerda: 400,
+      topo: 350,
+      largura: 200,
+      altura: 100,
+      ancoraX: 500,
+    });
+    const esquerdaBase = caixaDoTexto(
+      { ...base, alinhamento: "left", posicao: "bottom" },
+      bloco,
+      80,
+    );
+    expect(esquerdaBase).toMatchObject({
+      esquerda: 80,
+      topo: 620,
+      ancoraX: 80,
+    });
+    const direitaTopo = caixaDoTexto(
+      { ...base, alinhamento: "right", posicao: "top" },
+      bloco,
+      80,
+    );
+    expect(direitaTopo).toMatchObject({
+      esquerda: 720,
+      topo: 80,
+      ancoraX: 920,
+    });
+  });
+
+  it("centers the block on the free point; alignment moves the anchor only", () => {
+    const livre = { ...base, ponto: { x: 0.3, y: 0.25 } };
+    expect(caixaDoTexto(livre, bloco, 80)).toMatchObject({
+      esquerda: 200, // 300 - 100
+      topo: 150, // 200 - 50
+      ancoraX: 300,
+    });
+    expect(
+      caixaDoTexto({ ...livre, alinhamento: "left" }, bloco, 80),
+    ).toMatchObject({ esquerda: 200, ancoraX: 200 });
+    expect(
+      caixaDoTexto({ ...livre, alinhamento: "right" }, bloco, 80),
+    ).toMatchObject({ esquerda: 200, ancoraX: 400 });
+  });
+
+  it("keeps a dragged block inside the margins", () => {
+    const canto = { ...base, ponto: { x: 0, y: 1 } };
+    expect(caixaDoTexto(canto, bloco, 80)).toMatchObject({
+      esquerda: 80,
+      topo: 620, // 800 - 80 - 100
+    });
+  });
+});
+
+describe("limitarPonto", () => {
+  it("stops the point where the block touches the margin", () => {
+    const arte = { largura: 1000, altura: 800 };
+    expect(
+      limitarPonto({ x: -0.5, y: 2 }, arte, { largura: 200, altura: 100 }, 80),
+    ).toEqual({ x: 0.18, y: 0.8375 }); // centers 180 and 670
+    expect(
+      limitarPonto({ x: 0.4, y: 0.5 }, arte, { largura: 200, altura: 100 }, 80),
+    ).toEqual({ x: 0.4, y: 0.5 });
+  });
+
+  it("centers a block bigger than the usable area", () => {
+    expect(
+      limitarPonto(
+        { x: 0.1, y: 0.1 },
+        { largura: 1000, altura: 800 },
+        { largura: 900, altura: 100 },
+        80,
+      ).x,
+    ).toBe(0.5);
+  });
+});
+
+describe("dentroDaCaixa", () => {
+  const caixa = {
+    esquerda: 100,
+    topo: 100,
+    largura: 200,
+    altura: 50,
+    ancoraX: 200,
+  };
+
+  it("hits the block, with an optional margin around it", () => {
+    expect(dentroDaCaixa(caixa, 150, 120)).toBe(true);
+    expect(dentroDaCaixa(caixa, 95, 120)).toBe(false);
+    expect(dentroDaCaixa(caixa, 95, 120, 10)).toBe(true);
+    expect(dentroDaCaixa(caixa, 150, 200, 10)).toBe(false);
   });
 });
 

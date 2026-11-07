@@ -124,6 +124,11 @@ const router = createBrowserRouter([
                     ...page(() => import("@/pages/Posts/PostFormPage")),
                   },
                   { path: "/images", ...page(() => import("@/pages/Imagens")) },
+                  { path: "/ideas", ...page(() => import("@/pages/Ideas")) },
+                  {
+                    path: "/metrics",
+                    ...page(() => import("@/pages/Metrics")),
+                  },
                   {
                     path: "/calendar",
                     ...page(() => import("@/pages/Calendario")),

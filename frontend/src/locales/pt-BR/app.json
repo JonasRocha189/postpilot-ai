@@ -20,7 +20,9 @@
     "subjects": "Assuntos",
     "documents": "Documentos",
     "agent": "Agente",
-    "agentRuns": "Execuções"
+    "agentRuns": "Execuções",
+    "ideas": "Ideias",
+    "metrics": "Métricas"
   },
   "projects": {
     "title": "Projetos",
@@ -330,7 +332,8 @@
       "status": "Status",
       "subject": "Assunto",
       "all": "Todos",
-      "clear": "Limpar filtros"
+      "clear": "Limpar filtros",
+      "network": "Rede"
     },
     "columns": {
       "title": "Título",
@@ -338,7 +341,8 @@
       "date": "Data prevista",
       "status": "Status",
       "actions": "Ações",
-      "network": "Rede"
+      "network": "Rede",
+      "variations": "Variações por rede"
     },
     "delete": {
       "title": "Excluir \"{name}\"?",
@@ -363,7 +367,8 @@
         "formatNotAvailable": "Este formato não está disponível no {network}.",
         "tooManyImages": "Use no máximo {max} imagens neste formato.",
         "needsOneImage": "Posts aprovados ou publicados precisam de uma imagem.",
-        "needsTwoImages": "Carrosséis aprovados ou publicados precisam de pelo menos 2 imagens."
+        "needsTwoImages": "Carrosséis aprovados ou publicados precisam de pelo menos 2 imagens.",
+        "variationRequired": "Escolha pelo menos uma rede."
       },
       "created": "Post criado. Agora você pode adicionar imagens a cada variação.",
       "image": {
@@ -449,7 +454,12 @@
         "visibleHint": "Os primeiros {count} caracteres aparecem antes do “ver mais”.",
         "visibleAll": "O post aparece inteiro no feed.",
         "counter": "{count} / {limit} caracteres"
-      }
+      },
+      "networks": "Redes",
+      "networksHint": "Marque as redes do post. Cada uma ganha uma variação com texto, formato, imagens, status e data próprios.",
+      "variationsSection": "Variações por rede",
+      "variationsHint": "O mesmo post adaptado para cada rede.",
+      "tabHasErrors": "Esta variação tem erros"
     }
   },
   "documents": {
@@ -657,7 +667,9 @@
     "goToLibrary": "Enviar imagens",
     "loadingImage": "Carregando a imagem…",
     "imageError": "Não foi possível carregar esta imagem. Tente outra ou recarregue a página.",
-    "dragHint": "A imagem é ajustada para cobrir a arte inteira. Arraste a prévia ou use os controles para escolher a parte que aparece.",
+    "dragHint": "Arraste a prévia (fora do texto) para mover a imagem para qualquer lugar, como o texto. Com zoom de 100% ela cobre a arte inteira; abaixo disso, a cor de fundo aparece em volta.",
+    "coverArtwork": "Cobrir a arte",
+    "colorAroundImage": "Cor em volta da imagem",
     "zoom": "Zoom",
     "horizontal": "Posição horizontal",
     "vertical": "Posição vertical",
@@ -680,6 +692,8 @@
       "middle": "Meio",
       "bottom": "Base"
     },
+    "dragTextHint": "Ou arraste o texto na prévia para colocá-lo onde quiser.",
+    "positionFree": "Posição livre (texto arrastado). Escolha uma opção acima para voltar a uma posição fixa.",
     "defaultDescription": "Arte criada no editor",
     "cancel": "Cancelar",
     "download": "Baixar imagem",
@@ -1113,5 +1127,101 @@
     "placeholder": "dd/mm/aaaa",
     "clear": "Limpar data",
     "open": "Abrir calendário"
+  },
+  "ideas": {
+    "title": "Ideias",
+    "subtitle": "Possíveis posts do projeto {project}, antes de escrever.",
+    "new": "Nova ideia",
+    "filterLabel": "Mostrar ideias",
+    "filters": {
+      "open": "Abertas",
+      "used": "Viraram post",
+      "all": "Todas"
+    },
+    "loadError": "Não foi possível carregar as ideias. Tente novamente.",
+    "emptyOpen": "Nenhuma ideia aberta. Anote a próxima!",
+    "empty": "Nenhuma ideia aqui.",
+    "agentHint": "O agente, no modo Ideação, também deixa sugestões nesta página.",
+    "fromAgent": "Sugerida pelo agente",
+    "used": "Virou post",
+    "openPost": "Abrir post",
+    "createPost": "Criar post",
+    "createPostLabel": "Criar post a partir de {name}",
+    "edit": "Editar",
+    "editLabel": "Editar {name}",
+    "deleteLabel": "Excluir {name}",
+    "delete": {
+      "title": "Excluir “{name}”?",
+      "message": "A ideia será removida. Isso não pode ser desfeito.",
+      "messageUsed": "A ideia será removida. O post criado a partir dela continua.",
+      "confirm": "Excluir"
+    },
+    "form": {
+      "newTitle": "Nova ideia",
+      "editTitle": "Editar ideia",
+      "title": "Título",
+      "titlePlaceholder": "Ex.: FinOps em 5 passos para PMEs",
+      "notes": "Anotações",
+      "notesHint": "Ângulo, referências, formato pensado… Opcional.",
+      "subject": "Assunto",
+      "noSubject": "Sem assunto por enquanto",
+      "networks": "Redes sugeridas",
+      "create": "Criar ideia",
+      "save": "Salvar ideia",
+      "saveError": "Não foi possível salvar a ideia. Tente novamente.",
+      "errors": {
+        "titleRequired": "Informe o título da ideia."
+      }
+    }
+  },
+  "metricsImport": {
+    "title": "Métricas",
+    "subtitle": "Importe as métricas exportadas de cada rede para acompanhar o desempenho dos posts.",
+    "network": "Rede",
+    "step1": "1. Exporte as métricas do {network}",
+    "howTo": {
+      "linkedin": "No LinkedIn, abra as análises da página ou do perfil (Conteúdo), escolha o período e exporte. Salve como CSV antes de enviar.",
+      "instagram": "No Meta Business Suite, abra Insights → Conteúdo, escolha o período e exporte em CSV.",
+      "x": "No X, abra Analytics (conta Premium), escolha o período e exporte os dados dos posts em CSV."
+    },
+    "columnsHint": "O arquivo precisa das colunas de data e impressões; curtidas, comentários, compartilhamentos e cliques entram se existirem. Os nomes em inglês ou português de cada rede são reconhecidos. O modelo mostra o formato esperado.",
+    "template": "Baixar modelo CSV",
+    "step2": "2. Envie o arquivo",
+    "file": "Arquivo CSV do {network}",
+    "collectedOn": "Data da coleta",
+    "collectedHint": "Dia em que você exportou. Os números são o total acumulado até esse dia.",
+    "readError": "Não foi possível ler o arquivo. Envie um CSV.",
+    "missingColumns": "Faltam colunas no arquivo: {columns}. Baixe o modelo para ver o formato.",
+    "step3": "3. Confira e associe aos posts",
+    "summary": "{file}: {rows} linhas, {ready} prontas para importar, {errors} com erro.",
+    "matchHint": "Cada linha é associada à variação do {network} publicada no mesmo dia. Confira e ajuste; só aparecem variações publicadas.",
+    "noCandidates": "Nenhuma variação do {network} publicada neste projeto. Marque o post como publicado antes de importar.",
+    "columns": {
+      "line": "Linha",
+      "date": "Publicado em",
+      "post": "Post no arquivo",
+      "match": "Post no PostPilot"
+    },
+    "fields": {
+      "impressions": "Impressões",
+      "likes": "Curtidas",
+      "comments": "Comentários",
+      "shares": "Compart.",
+      "clicks": "Cliques"
+    },
+    "matchLabel": "Post do PostPilot da linha {line}",
+    "skip": "Não importar",
+    "discard": "Descartar",
+    "import": "Importar {count} linhas",
+    "importing": "Importando...",
+    "importError": "Não foi possível importar. Nada foi salvo; tente novamente.",
+    "imported": "{count} registros de métricas importados.",
+    "errors": {
+      "invalidDate": "Data inválida.",
+      "invalidNumber": "Número inválido.",
+      "collectedBeforePublished": "Publicado depois da data da coleta."
+    },
+    "import_one": "Importar 1 linha",
+    "imported_one": "1 registro de métricas importado."
   }
 }
