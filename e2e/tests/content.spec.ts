@@ -92,14 +92,20 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
 
     await page.getByLabel("Status").selectOption("approved");
+    await expect(page).toHaveURL(/status=approved/);
     await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
+    // Wait for the cleared URL before the next filter (the router updates in a transition)
     await page.getByRole("button", { name: "Limpar filtros" }).click();
+    await expect(page).not.toHaveURL(/status=/);
 
     await page.getByLabel("Rede").selectOption("x");
+    await expect(page).toHaveURL(/network=x/);
     await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
     await page.getByLabel("Rede").selectOption("linkedin");
+    await expect(page).toHaveURL(/network=linkedin/);
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Limpar filtros" }).click();
+    await expect(page).not.toHaveURL(/network=/);
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
   });
 
