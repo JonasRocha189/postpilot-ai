@@ -1,10 +1,27 @@
 # Agente e RAG
 
-> Status: **planejado**.
+> Status: **em implementação** (a partir de 09/11). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
+
+## Stack
+
+| Papel | Escolha | Pacote |
+| --- | --- | --- |
+| Loop do agente | `create_agent` do LangChain (construído sobre o LangGraph) | `langchain` (traz `langgraph`) |
+| Chat (tool calling) | OpenAI, com **fallback automático** para o Groq (modelo aberto, plano gratuito) quando a OpenAI falha ou atinge limite | `langchain-openai`, `langchain-groq` |
+| Embeddings | OpenAI `text-embedding-3-small` (1536 dimensões; a dimensão vem da configuração) | `langchain-openai` |
+| Geração de imagem | OpenAI, versão mínima: uma imagem **sem texto** para a biblioteca do projeto; o texto entra depois no editor de arte | `openai` |
+| Busca web | Tavily (plano gratuito), chamado com `httpx` | — |
+| Busca nos documentos | **Própria:** pgvector (HNSW) + `tsvector` (GIN) + RRF em SQL | `pgvector` |
+| Extração de texto | PDF e DOCX (TXT direto) | `pypdf`, `python-docx` |
+| Rastreio | LangSmith, **só em produção**; desligado nos testes e no CI (`LANGSMITH_TRACING=false`) | `langsmith` |
+
+- Os modelos concretos só são criados em `ai/models.py`, a partir das variáveis de ambiente; o resto do código usa as interfaces do LangChain (`BaseChatModel`, `Embeddings`), então trocar de modelo é configuração.
+- **Chaves** (`OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY`, `LANGSMITH_API_KEY`) só no `.env` local e na Render, nunca no frontend. Na OpenAI, limite mensal de gasto configurado na conta.
+- A integração PGVector do LangChain **não** é usada: não tem full-text e cria tabelas próprias.
 
 ## Loop do agente
 
-Implementado manualmente sobre o tool calling do SDK do provedor, **sem LangChain nem LlamaIndex** (ver [decisões](decisoes.md)).
+`create_agent` do LangChain: o LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder. O backend acompanha o fluxo de eventos da execução para gravar cada passo em `agent_steps` assim que a tool termina.
 
 ```mermaid
 sequenceDiagram
@@ -41,7 +58,7 @@ sequenceDiagram
 - **Máximo de 8 iterações.** Ao atingir o limite, a execução termina com `limit_reached` e o usuário é avisado. Várias tools pedidas pelo LLM na mesma resposta (ex.: adaptar para LinkedIn e para X) contam como uma iteração.
 - **Erro numa tool:** a execução termina com `error`, e o passo que falhou guarda a mensagem em `error`.
 - **Cada pedido é independente:** a conversa na tela é uma sequência de execuções; o agente não recebe o histórico das anteriores.
-- **Prompts de sistema** separados por modo em `app/ai/agent/prompts/`.
+- **Prompts de sistema** separados por modo em `ai/agent/prompts/`.
 - **Segurança:** o `user_id` e o `project_id` são injetados pelo backend em toda tool. Eles não aparecem no schema que o LLM vê: o agente só enxerga os dados do projeto em que foi chamado, e os documentos de um cliente nunca entram nos posts de outro.
 - **Voz da marca:** o público-alvo e o tom de voz vêm do assunto; quando o assunto não define, valem os do projeto.
 - **Rastreabilidade:** cada passo (tool, argumentos, duração, erro) vira log estruturado e registro em `AgentStep`.
@@ -55,11 +72,11 @@ sequenceDiagram
 
 ## Tools
 
-Uma por arquivo em `app/ai/tools/`, com schema de entrada em Pydantic. Nomes em inglês (ver [decisão 20](decisoes.md)); as descrições que o LLM recebe podem ficar no idioma dos prompts.
+Uma por arquivo em `ai/tools/`, `@tool` do LangChain com schema de entrada em Pydantic. Nomes em inglês (ver [decisão 20](decisoes.md)); as descrições que o LLM recebe podem ficar no idioma dos prompts.
 
 | Tool | O que faz |
 | --- | --- |
-| `search_web(query)` | Busca no Tavily ou Brave, sempre retornando as fontes |
+| `search_web(query)` | Busca no Tavily, sempre retornando as fontes |
 | `get_project()` | Dados do projeto atual: nome, descrição, público-alvo e tom de voz padrão |
 | `list_subjects()` | Lista os assuntos do projeto |
 | `get_subject(id)` | Detalhes do assunto, com público-alvo e tom de voz já resolvidos (do assunto ou, se vazios, do projeto) |
@@ -70,16 +87,19 @@ Uma por arquivo em `app/ai/tools/`, com schema de entrada em Pydantic. Nomes em 
 | `generate_image(prompt, format)` | Gera imagem sem texto dentro dela e salva no S3 |
 | `save_draft(post)` | Salva o post com status `draft` (único status que o agente pode usar) |
 
-## Provedores
+## Plano de implementação
 
-O agente depende apenas das interfaces abaixo. As implementações ficam em `app/ai/providers/`.
+Uma branch e um PR por etapa; cada merge vai para produção pelo pipeline.
 
-| Interface | Responsabilidade |
-| --- | --- |
-| `LLMProvider` | Chat com tool calling (provedor **a definir**) |
-| `EmbeddingProvider` | Vetores para chunks e consultas |
-| `ImageProvider` | Geração de imagem |
-| `VectorStore` | Busca híbrida (implementação: `PgVectorStore`) |
+| Dia | Branch | Entrega |
+| --- | --- | --- |
+| 09/11 | `feat/ai-documents` | Decisão 34 e docs, dependências e configuração, migration (`documents`, `chunks`, `agent_runs`, `agent_steps`, extensão `vector`), API de documentos (URL de upload, processamento, lista, exclusão) |
+| 10/11 | `feat/ai-search-tools` | Busca híbrida (RRF) e tools de leitura: `get_project`, `list_subjects`, `get_subject`, `search_documents`, `search_past_posts` |
+| 11–12/11 | `feat/ai-agent` | `create_agent` com fallback OpenAI → Groq, `/agent/runs` (202 + polling), passos em `agent_steps`, `save_draft`, `adapt_for_network`, `search_web`, `generate_image` (mínima), `analyze_performance`, prompts por modo, LangSmith |
+| 13/11 | `feat/ai-frontend` | Tipos do frontend em inglês, páginas ligadas à API real, testes |
+| 14/11 | — | Produção (chaves na Render), teste ponta a ponta, docs |
+
+Se o prazo apertar (ordem de corte do CLAUDE.md): sai primeiro `analyze_performance`, depois `generate_image`. Documentos, RAG, busca web, o loop e `save_draft` nunca são cortados.
 
 ## Pipeline de documentos (RAG)
 

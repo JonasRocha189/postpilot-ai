@@ -14,9 +14,9 @@ flowchart TB
 
     auth0["Auth0<br/><i>Identidade e OAuth 2.0</i>"]
     s3["AWS S3<br/><i>Documentos e imagens</i>"]
-    llm["Provedor de LLM<br/><i>Tool calling e embeddings</i>"]
+    llm["OpenAI + Groq (fallback)<br/><i>Chat, embeddings e imagem</i>"]
     img["Provedor de imagem<br/><i>Geração de imagens</i>"]
-    web["Tavily / Brave<br/><i>Busca na web</i>"]
+    web["Tavily<br/><i>Busca na web</i>"]
     redes["Redes sociais<br/><i>LinkedIn, Instagram, X</i>"]
 
     usuario -- "Usa pelo navegador (HTTPS)" --> postpilot
@@ -94,7 +94,7 @@ flowchart TB
         loop["agent/<br/><i>loop (máx. 8 iterações),<br/>prompts por modo</i>"]
         tools["tools/<br/><i>uma tool por arquivo</i>"]
         rag["rag/<br/><i>extração, chunking,<br/>PgVectorStore</i>"]
-        providers["providers/<br/><i>LLMProvider, EmbeddingProvider,<br/>ImageProvider</i>"]
+        providers["models.py<br/><i>modelos do LangChain:<br/>chat e embeddings</i>"]
     end
 
     storage["storage/<br/><i>cliente S3, URLs pré-assinadas</i>"]

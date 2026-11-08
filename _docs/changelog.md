@@ -14,6 +14,10 @@ Formato de cada entrada:
 
 ## 2026-11-08
 
+### Alterado
+
+- IA: **decisão 34**: agente com LangChain 1.x + LangGraph (`create_agent`), chat na OpenAI com fallback para o Groq, embeddings e imagem na OpenAI, Tavily e LangSmith; substitui o loop manual (decisões 1 e 4). Busca híbrida continua própria. Plano de implementação em `_docs/agente-e-rag.md`; CLAUDE.md, README e arquitetura atualizados.
+
 ### Adicionado
 
 - Infra: **backend na Render** (`postpilot-apit.onrender.com`), web service a partir da imagem do GHCR (pacote público), plano gratuito em US East, ligado ao Neon (migrations aplicadas no primeiro deploy) e ao S3. Variáveis de produção documentadas em `_docs/implantacao.md`.
