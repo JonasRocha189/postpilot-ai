@@ -1,6 +1,6 @@
 # Agente e RAG
 
-> Status: **em implementação** (a partir de 09/11). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
+> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
 
 ## Stack
 
@@ -123,6 +123,14 @@ sequenceDiagram
     API->>E: Gera embeddings
     API->>DB: Grava Chunks e status ready (ou error)
 ```
+
+### Como está implementado
+
+- `ai/rag/extract.py`: texto do PDF (pypdf, página a página), do DOCX (python-docx, parágrafos e uma linha por linha de tabela) e do TXT (UTF-8, com ou sem BOM, ou Latin-1). Arquivo corrompido ou sem texto (PDF escaneado) vira `ExtractionError`, com mensagem para o usuário.
+- `ai/rag/chunking.py`: chunks de até **1.200 caracteres** (cerca de 300 tokens) com **200 de sobreposição**, quebrando por parágrafo, depois por frase e, em último caso, entre palavras. Por caracteres, sem tokenizador; o splitter do LangChain fica num pacote à parte (`langchain-text-splitters`), então foi escrito um próprio, coberto por testes.
+- `ai/models.py`: `get_embeddings()` cria o `OpenAIEmbeddings` a partir da configuração (com o repositório de certificados do sistema, como no Auth0). Sem `OPENAI_API_KEY`, o processamento responde `503`.
+- `ai/rag/ingest.py`: `process_document` roda em segundo plano (`BackgroundTasks` do FastAPI) com sessão própria (`get_session_factory`): baixa do S3, extrai, divide, gera os embeddings em lote, substitui os chunks e marca `ready`; em erro, desfaz a transação e marca `error`. Os logs registram o id e o número de chunks, nunca o conteúdo.
+- O `search_vector` é coluna gerada pelo Postgres (`to_tsvector('portuguese', content)`), então nunca fica desatualizado.
 
 ## Busca híbrida
 
