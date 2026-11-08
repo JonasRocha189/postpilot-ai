@@ -12,6 +12,16 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-08
+
+### Adicionado
+
+- Infra: **backend na Render** (`postpilot-apit.onrender.com`), web service a partir da imagem do GHCR (pacote público), plano gratuito em US East, ligado ao Neon (migrations aplicadas no primeiro deploy) e ao S3. Variáveis de produção documentadas em `_docs/implantacao.md`.
+
+### Corrigido
+
+- Frontend: o rewrite de `/api/*` no `vercel.json` aponta para o endereço real do serviço na Render (`postpilot-apit.onrender.com`).
+
 ## 2026-11-07
 
 ### Adicionado
@@ -20,7 +30,7 @@ Formato de cada entrada:
 - Infra: contas da Neon (PostgreSQL 16 + pgvector), Render e Vercel; domínio `postpilot.jonas-rocha.com` (CNAME na Cloudflare para a Vercel, HTTPS da Vercel) e URLs de produção no Auth0.
 - Backend: **imagem Docker** (`backend/Dockerfile`): dois estágios, `uv sync --locked --no-dev`, Python 3.12, usuário sem privilégios, porta da variável `PORT` e migrations antes do uvicorn. `.dockerignore` deixa de fora `.venv`, `.env`, testes e caches.
 - Backend: **logs em JSON no stdout** com structlog (requisito 10): `request_id` (cabeçalho `X-Request-ID`, devolvido na resposta), `user_id` do token e uma linha por requisição (método, caminho, status e duração); uvicorn, Alembic e os loggers padrão saem no mesmo formato. `LOG_JSON=false` deixa os logs legíveis localmente. Nova dependência: `structlog`. Testes de unidade do middleware, inclusive que o token nunca é registrado (116 testes no backend).
-- Frontend: **`vercel.json`** com o rewrite de `/api/*` para o backend na Render (`postpilot-api.onrender.com`, mesma origem, sem CORS), fallback da SPA para `index.html` (rotas como `/posts` e o retorno do login em `/login` deixam de dar 404), cache longo para `/assets/*` e cabeçalhos de segurança (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`). Primeiro deploy manual com a Vercel CLI.
+- Frontend: **`vercel.json`** com o rewrite de `/api/*` para o backend na Render (`postpilot-apit.onrender.com`, mesma origem, sem CORS), fallback da SPA para `index.html` (rotas como `/posts` e o retorno do login em `/login` deixam de dar 404), cache longo para `/assets/*` e cabeçalhos de segurança (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`). Primeiro deploy manual com a Vercel CLI.
 - CI/CD: **pipeline no GitHub Actions** (`.github/workflows/ci-cd.yml`): lint, typecheck e testes do backend (unidade e integração com Testcontainers) e do frontend, aceite com Playwright; na `main`, imagem do backend no GHCR (tag do SHA), deploy na Render (Deploy Hook com a imagem do commit) e na Vercel, e smoke test no ambiente publicado. Badge do pipeline no README.
 
 ### Alterado
