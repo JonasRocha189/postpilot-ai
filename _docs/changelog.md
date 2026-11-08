@@ -21,6 +21,8 @@ Formato de cada entrada:
 ### Corrigido
 
 - Frontend: o rewrite de `/api/*` no `vercel.json` aponta para o endereço real do serviço na Render (`postpilot-apit.onrender.com`).
+- CI/CD: o `vercel deploy` roda a partir da raiz do repositório; de dentro de `frontend/`, a Vercel somava o Root Directory do projeto e procurava `frontend/frontend`. Primeira execução completa do pipeline na `main` (imagem, Render, Vercel e smoke test).
+- Produção: as variáveis da Vercel tinham o `VITE_AUTH0_AUDIENCE` do domínio antigo (todas as chamadas davam `401`) e a connection string do Neon em `VITE_AUTH0_DB_CONNECTION`, o que a deixava no JavaScript público. Variáveis corrigidas, senha do Neon trocada e regra registrada em `_docs/implantacao.md` (segredo nunca em `VITE_*`).
 
 ## 2026-11-07
 
