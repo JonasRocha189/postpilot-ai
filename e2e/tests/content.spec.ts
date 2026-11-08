@@ -92,14 +92,23 @@ test("content flow: project, subject, image, post, calendar", async ({ page }) =
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
 
     await page.getByLabel("Status").selectOption("approved");
+    await expect(page).toHaveURL(/status=approved/);
     await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
+    // The URL changes at once, but the page re-renders later (router transition):
+    // wait for the select to show "all" again, or the next filter starts from the old params
     await page.getByRole("button", { name: "Limpar filtros" }).click();
+    await expect(page).not.toHaveURL(/status=/);
+    await expect(page.getByLabel("Status")).toHaveValue("");
 
     await page.getByLabel("Rede").selectOption("x");
+    await expect(page).toHaveURL(/network=x/);
     await expect(page.getByText("Nenhum post com esses filtros.")).toBeVisible();
     await page.getByLabel("Rede").selectOption("linkedin");
+    await expect(page).toHaveURL(/network=linkedin/);
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Limpar filtros" }).click();
+    await expect(page).not.toHaveURL(/network=/);
+    await expect(page.getByLabel("Rede")).toHaveValue("");
     await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
   });
 

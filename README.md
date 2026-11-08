@@ -1,5 +1,7 @@
 # PostPilot
 
+[![CI/CD](https://github.com/JonasRocha189/postpilot-ai/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/JonasRocha189/postpilot-ai/actions/workflows/ci-cd.yml)
+
 > Gerador de posts para redes sociais com agente de IA e RAG.
 > Projeto Integrado (TCC) — Pós-graduação em Desenvolvimento FullStack, PUC Minas
 > Autor: Jonas Rocha · [jonas.rvrocha@gmail.com](mailto:jonas.rvrocha@gmail.com)

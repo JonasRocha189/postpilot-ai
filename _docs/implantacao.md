@@ -1,6 +1,6 @@
 # Implantação, CI/CD e IaC
 
-> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON e o `vercel.json` (frontend publicado). Faltam o pipeline e o serviço na Render. Não altere recursos em produção sem revisar antes o `terraform plan`.
+> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON, o `vercel.json` (frontend publicado) e o pipeline (`.github/workflows/ci-cd.yml`). Faltam o serviço na Render, os GitHub Secrets do deploy e o backup agendado. Não altere recursos em produção sem revisar antes o `terraform plan`.
 
 ## Modelo de implantação
 
@@ -57,19 +57,38 @@ flowchart TB
 
 ## Pipeline (GitHub Actions)
 
+Um só arquivo, `.github/workflows/ci-cd.yml`, com seis jobs:
+
 ```mermaid
 flowchart LR
-    lint["1. Lint e typecheck<br/><i>Ruff, mypy, ESLint, tsc</i>"]
-    test["2. Testes<br/><i>unidade + integração</i>"]
-    build["3. Build e push<br/><i>imagem no GHCR, só na main</i>"]
-    deploy["4. Deploy<br/><i>Deploy Hook da Render<br/>vercel deploy --prod</i>"]
-    e2e["5. Aceite<br/><i>Playwright no ambiente publicado</i>"]
+    backend["backend<br/><i>Ruff, mypy, pytest<br/>unidade + integração</i>"]
+    frontend["frontend<br/><i>ESLint, tsc, Vitest, build</i>"]
+    e2e["e2e<br/><i>Playwright com a API fictícia</i>"]
+    image["image<br/><i>build e push no GHCR</i>"]
+    deploy["deploy<br/><i>Deploy Hook da Render<br/>vercel deploy --prod</i>"]
+    smoke["smoke<br/><i>health check e páginas<br/>no ambiente publicado</i>"]
 
-    lint --> test --> build --> deploy --> e2e
+    backend --> image
+    frontend --> image
+    e2e --> image
+    image --> deploy --> smoke
 ```
 
-- Em pull requests, só as etapas 1 e 2.
+| Job | O que faz |
+| --- | --- |
+| `backend` | `uv sync --locked` (Python 3.12, o mesmo da imagem), `ruff check`, `ruff format --check`, `mypy`, testes de unidade e de integração (Testcontainers sobe o `pgvector/pgvector` no próprio runner) |
+| `frontend` | `npm ci`, ESLint, `tsc -b`, Vitest e `vite build` |
+| `e2e` | Playwright (Chromium) contra o frontend com a API e o login fictícios; em caso de falha, o relatório fica como artefato por 7 dias |
+| `image` | Build do `backend/Dockerfile` e push para `ghcr.io/jonasrocha189/postpilot-backend` com as tags do SHA do commit e `latest` (cache das camadas no GitHub Actions) |
+| `deploy` | Chama o Deploy Hook da Render com `imgURL` apontando para a imagem do SHA (não para `latest`) e depois `vercel deploy --prod` (a Vercel faz o build com as variáveis `VITE_*` do painel). Roda no environment `production` do GitHub, um deploy por vez |
+| `smoke` | Espera até 10 min o `/api/v1/health/ready` responder (pull da imagem, migrations, Render acordando) e confere que `/`, `/posts` e `/login` devolvem o app |
+
+- **Em pull requests**, só `backend`, `frontend` e `e2e`; os outros aparecem como *skipped*. Na `main`, todos, nessa ordem.
 - O deploy automático da Vercel e da Render fica **desligado**: só o pipeline publica, e só com lint e testes passando.
+- **Rollback:** cada imagem tem o SHA do commit na tag, então voltar uma versão é chamar o Deploy Hook com a imagem anterior (ou redeploy pelo painel da Render).
+- **Segredos do pipeline** (GitHub → Settings → Secrets and variables → Actions): `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` (os dois últimos estão em `frontend/.vercel/project.json`). O push no GHCR usa o `GITHUB_TOKEN` da própria execução.
+- **Pacote no GHCR público**, para a Render baixar a imagem sem credenciais; a imagem não tem segredos (o `.dockerignore` exclui o `.env`).
+- **Limite do smoke test:** confere que a API e as páginas respondem, não qual versão está no ar. O aceite completo com Playwright no ambiente publicado precisa de um usuário de teste no Auth0 (próximo passo).
 
 ## Artefatos de IaC
 
