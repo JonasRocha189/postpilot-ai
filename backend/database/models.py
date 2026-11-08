@@ -2,10 +2,22 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import ARRAY
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import (
+    Computed,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from database.config import settings
 from database.db import Base, TimestampMixin
 
 
@@ -222,3 +234,137 @@ class Metric(UUIDMixin, TimestampMixin, Base):
     comments: Mapped[int]
     shares: Mapped[int]
     clicks: Mapped[int]
+
+
+class DocumentType(enum.StrEnum):
+    """File types accepted for the RAG."""
+
+    PDF = "pdf"
+    DOCX = "docx"
+    TXT = "txt"
+
+
+class DocumentStatus(enum.StrEnum):
+    """Processing: pending (waiting for the upload) -> processing -> ready or error."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    ERROR = "error"
+
+
+class Document(UUIDMixin, TimestampMixin, Base):
+    """A file uploaded to a project, used only by that project's RAG."""
+
+    __tablename__ = "documents"
+
+    user_id: Mapped[str] = mapped_column(String(255), index=True)
+    # No cascade: a project with documents can't be deleted (409)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    type: Mapped[DocumentType] = mapped_column(
+        Enum(DocumentType, name="document_type", values_callable=_enum_values)
+    )
+    size_bytes: Mapped[int]
+    # Only the S3 key, never the URL
+    s3_key: Mapped[str] = mapped_column(String(500))
+    status: Mapped[DocumentStatus] = mapped_column(
+        Enum(DocumentStatus, name="document_status", values_callable=_enum_values),
+        default=DocumentStatus.PENDING,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text)
+    chunk_count: Mapped[int | None]
+
+
+class Chunk(UUIDMixin, Base):
+    """A piece of a document's text, with its embedding and full-text vector."""
+
+    __tablename__ = "chunks"
+    __table_args__ = (
+        # Vector search (cosine distance) and full-text search
+        Index(
+            "ix_chunks_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        Index("ix_chunks_search_vector", "search_vector", postgresql_using="gin"),
+    )
+
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), index=True
+    )
+    # Order of the chunk in the document (0, 1, 2...)
+    position: Mapped[int]
+    content: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float]] = mapped_column(Vector(settings.embedding_dimensions))
+    # Filled in by Postgres from `content`; never written by the app
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR, Computed("to_tsvector('portuguese', content)", persisted=True)
+    )
+
+
+class AgentMode(enum.StrEnum):
+    """Ideation suggests topics; creation writes the post."""
+
+    IDEATION = "ideation"
+    CREATION = "creation"
+
+
+class RunStatus(enum.StrEnum):
+    """running -> completed, error (a tool failed) or limit_reached (8 iterations)."""
+
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+    LIMIT_REACHED = "limit_reached"
+
+
+class AgentRun(UUIDMixin, TimestampMixin, Base):
+    """One request to the agent. `created_at` is when it started."""
+
+    __tablename__ = "agent_runs"
+
+    user_id: Mapped[str] = mapped_column(String(255), index=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    mode: Mapped[AgentMode] = mapped_column(
+        Enum(AgentMode, name="agent_mode", values_callable=_enum_values)
+    )
+    request: Mapped[str] = mapped_column(Text)
+    status: Mapped[RunStatus] = mapped_column(
+        Enum(RunStatus, name="run_status", values_callable=_enum_values),
+        default=RunStatus.RUNNING,
+    )
+    # The agent's final answer
+    response: Mapped[str | None] = mapped_column(Text)
+    # Draft saved by the agent (creation mode)
+    post_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("posts.id", ondelete="SET NULL"))
+    iterations: Mapped[int] = mapped_column(default=0)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    steps: Mapped[list["AgentStep"]] = relationship(
+        back_populates="run", order_by="AgentStep.step_number", cascade="all, delete-orphan"
+    )
+
+
+class AgentStep(UUIDMixin, Base):
+    """One tool call of a run: arguments, result, duration and error."""
+
+    __tablename__ = "agent_steps"
+    __table_args__ = (UniqueConstraint("run_id", "step_number"),)
+
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("agent_runs.id", ondelete="CASCADE"), index=True
+    )
+    step_number: Mapped[int]
+    tool: Mapped[str] = mapped_column(String(100))
+    arguments: Mapped[dict[str, object]] = mapped_column(JSONB)
+    # Full result: only in the database and the logs; the screen shows the summary
+    result: Mapped[object | None] = mapped_column(JSONB)
+    result_summary: Mapped[str | None] = mapped_column(Text)
+    duration_ms: Mapped[int | None]
+    error: Mapped[str | None] = mapped_column(Text)
+
+    run: Mapped[AgentRun] = relationship(back_populates="steps")
