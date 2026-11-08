@@ -143,6 +143,9 @@ O projeto da Vercel usa Root Directory `frontend` e o preset Vite (`npm run buil
 | `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` | Cabeçalhos de segurança em todas as respostas (o `DENY` impede embutir o app num iframe; o Auth0 redireciona a página inteira, então não é afetado) |
 
 - Em produção, `VITE_API_URL` fica **vazio**: o cliente HTTP chama `/api/v1` na mesma origem.
+- **Variáveis da Vercel (Production), todas públicas:** `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE` (`https://postpilot.jonas-rocha.com/api`) e `VITE_AUTH0_DB_CONNECTION` (`Username-Password-Authentication`, o nome da conexão de usuários do Auth0, **não** o Postgres). Tipo **Config**: a Vercel avisa que o prefixo `VITE_` expõe o valor, e aqui isso é o esperado.
+- **Nunca coloque segredo numa variável `VITE_*`:** o Vite grava o valor no JavaScript público, e qualquer um lê pelo DevTools; deployments antigos da Vercel continuam servindo o bundle antigo. Segredos ficam só na Render (backend) e no GitHub Secrets (pipeline). Se um segredo vazar num bundle, troque-o na origem (ex.: senha do Neon), não basta corrigir a variável. Para conferir o bundle publicado: baixar o `/assets/index-*.js` e procurar `npg_` ou `postgres`.
+- Uma variável **Sensitive** da Vercel não volta a ser Config: remova e crie de novo (`vercel env add <nome> --environment production --type config --value <valor>`, que evita colar da área de transferência).
 - **Limite com a Render gratuita:** se o backend estiver dormindo, a primeira chamada pelo rewrite pode estourar o tempo de espera da Vercel; as seguintes funcionam (o TanStack Query tenta de novo).
 - Deploy manual, a partir de `frontend/`: `npx vercel@latest login` (uma vez) e `npx vercel@latest deploy --prod`. A pasta `.vercel/` (ligação com o projeto) fica no `.gitignore`.
 
