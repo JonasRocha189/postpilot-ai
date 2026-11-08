@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (116 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images com S3 simulado, Ideas, importação de métricas) e da migration das variações.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (148 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas) e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -32,6 +32,7 @@ backend/tests/
 │   ├── test_auth.py
 │   ├── test_health.py
 │   ├── test_post_rules.py   # regras por rede (formato, limite de texto, imagens) e da importação de métricas
+│   ├── test_rag.py          # extração (PDF, DOCX, TXT), chunking com sobreposição, modelo de embeddings
 │   └── test_request.py      # logs JSON: request_id (cabeçalho X-Request-ID), user_id, 500 e token nunca registrado
 └── integration/
     ├── conftest.py          # contêiner do Postgres, migrations, cliente HTTP, limpeza
@@ -41,6 +42,7 @@ backend/tests/
     ├── test_posts.py        # variações: regras por rede, filtros na mesma variação, id mantido no PUT
     ├── test_ideas.py        # ligação com o post, ON DELETE SET NULL
     ├── test_metrics.py      # importação tudo ou nada
+    ├── test_documents.py    # URL de upload, processamento em segundo plano (ready/error), reprocessar, 409, 422, 503, autorização
     └── test_migrations.py   # dados antigos viram variações (downgrade → insert → upgrade)
 ```
 
@@ -50,6 +52,7 @@ backend/tests/
 - Os testes assíncronos usam o plugin do **anyio** (já vem com o FastAPI) e o `httpx.AsyncClient` com `ASGITransport`, para o app e o driver do banco (asyncpg) rodarem no mesmo loop de eventos.
 - Rode a partir de `backend/` (o `alembic.ini` é lido do diretório atual). A integração precisa do Docker ligado.
 - **S3 nos testes:** o **moto** simula o S3 em memória (`mock_aws`), sem rede e sem conta na AWS. A fixture `bucket` de `test_images.py` cria o bucket, aponta o cliente do app para ele (tira o `S3_ENDPOINT_URL` do LocalStack e limpa o cache do `_client()`) e faz o papel do navegador, colocando o arquivo no bucket antes de registrar a imagem.
+- **IA nos testes:** os embeddings vêm de `tests/fakes.py` (`FakeEmbeddings`: o mesmo texto gera sempre o mesmo vetor, a partir de um hash), no lugar da OpenAI; o `DeterministicFakeEmbedding` do LangChain não foi usado porque exige numpy. A dependência `require_embeddings` é trocada em `app.dependency_overrides`. O processamento de documentos roda em segundo plano com sessões de `get_session_factory`, que o `conftest.py` aponta para o banco do teste; o cliente de teste só responde depois da tarefa terminar, então o resultado é conferido logo em seguida.
 - `tests/conftest.py` também define `TC_HOST=127.0.0.1`: em alguns Windows com Docker, conectar por `localhost` falha com `WinError 64`. Pelo mesmo motivo, o `.env.example` usa `127.0.0.1` no `DATABASE_URL` e no `S3_ENDPOINT_URL`.
 
 ## Aceite (Playwright)

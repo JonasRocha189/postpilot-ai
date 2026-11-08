@@ -21,7 +21,7 @@ from testcontainers.community.postgres import PostgresContainer
 from alembic import command
 from api.deps import get_current_user_id
 from database.config import settings
-from database.db import Base, get_db
+from database.db import Base, get_db, get_session_factory
 from main import app
 
 
@@ -58,6 +58,8 @@ async def client(database_url: str) -> AsyncIterator[AsyncClient]:
 
     app.dependency_overrides[get_db] = test_db
     app.dependency_overrides[get_current_user_id] = test_user
+    # Background tasks (document processing) use the test database too
+    app.dependency_overrides[get_session_factory] = lambda: sessions
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as http:
         yield http

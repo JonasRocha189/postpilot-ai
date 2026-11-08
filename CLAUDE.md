@@ -22,7 +22,7 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 | Frontend | React + Vite + TypeScript, Tailwind CSS, template TailAdmin (versão gratuita; não misturar com shadcn/ui), React Router, TanStack Query, React Hook Form + Zod, ApexCharts (já vem no TailAdmin) |
 | Backend | Python 3.12+, FastAPI, SQLAlchemy 2.x (async), Alembic, Pydantic v2, pydantic-settings |
 | Banco | PostgreSQL 16 + pgvector (índice HNSW) + full-text search (`tsvector`) para busca híbrida |
-| IA | LLM com tool calling via SDK oficial (provedor **a definir**, atrás de abstração), embeddings, geração de imagem, busca web via Tavily ou Brave |
+| IA | LangChain 1.x + LangGraph (`create_agent`), chat na OpenAI com fallback para o Groq, embeddings e geração de imagem na OpenAI, busca web via Tavily, rastreio no LangSmith (decisão 34) |
 | Autenticação | Auth0 (OAuth 2.0 / OIDC, Authorization Code + PKCE no frontend, validação de JWT no backend) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
 | Infra | Vercel (frontend), Render (backend, Docker), Neon (PostgreSQL + pgvector), plano gratuito (decisão 28) |
@@ -31,7 +31,7 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 | Testes | pytest, Vitest + Testing Library, Testcontainers (`pgvector/pgvector`), moto/LocalStack, Playwright |
 | Qualidade | Ruff, mypy, ESLint, Prettier, pre-commit |
 
-**Não use LangChain nem LlamaIndex.** O loop do agente é implementado manualmente com tool calling do SDK, por decisão de aprendizado.
+**Agente com LangChain e LangGraph** (decisão 34, que substitui o loop manual). Não use LlamaIndex nem a integração PGVector do LangChain: a busca híbrida é SQL próprio.
 
 **Domínio de produção:** `https://postpilot.jonas-rocha.com`, apontando para a Vercel (`/` frontend; `/api/*` reescrito para o backend na Render). A home `jonas-rocha.com` não pertence a este projeto.
 
@@ -40,21 +40,18 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 ```
 .
 ├── backend/
-│   ├── app/
-│   │   ├── api/            # routers FastAPI (um arquivo por recurso)
-│   │   ├── core/           # config, segurança (JWT Auth0), logging
-│   │   ├── db/             # sessão, base, migrations (Alembic)
-│   │   ├── models/         # modelos SQLAlchemy
-│   │   ├── schemas/        # schemas Pydantic
-│   │   ├── services/       # regras de negócio
-│   │   ├── repositories/   # acesso a dados
-│   │   ├── ai/
-│   │   │   ├── providers/  # LLMProvider, EmbeddingProvider, ImageProvider + implementações
-│   │   │   ├── agent/      # loop do agente, prompts por modo, registro de tools
-│   │   │   ├── tools/      # uma tool por arquivo
-│   │   │   └── rag/        # extração, chunking, VectorStore (PgVectorStore)
-│   │   ├── storage/        # cliente S3, URLs pré-assinadas
-│   │   └── main.py
+│   ├── api/                # deps (auth), health, middleware, v1/routers (um arquivo por recurso)
+│   ├── core/               # logs (structlog)
+│   ├── database/           # config (pydantic-settings), sessão, modelos SQLAlchemy
+│   ├── schemas/            # schemas Pydantic
+│   ├── storage/            # cliente S3, URLs pré-assinadas
+│   ├── ai/
+│   │   ├── models.py       # modelos do LangChain: chat (OpenAI + fallback Groq), embeddings
+│   │   ├── agent/          # create_agent, prompts por modo, gravação dos passos
+│   │   ├── tools/          # uma tool por arquivo (@tool)
+│   │   └── rag/            # extração, chunking, busca híbrida (pgvector + tsvector + RRF)
+│   ├── alembic/            # migrations
+│   ├── main.py
 │   ├── tests/
 │   │   ├── unit/
 │   │   ├── integration/
@@ -94,7 +91,7 @@ uv run alembic revision --autogenerate -m "descricao"
 uv run fastapi dev main.py               # http://127.0.0.1:8000/api/docs
 uv run pytest tests/unit
 uv run pytest tests/integration          # requer Docker (Testcontainers); rode a partir de backend/
-uv run ruff check . && uv run ruff format . && uv run mypy app
+uv run ruff check . && uv run ruff format . && uv run mypy .
 
 # Frontend
 cd frontend
@@ -135,11 +132,11 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
 
 ## Agente
 
-- Loop: o LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder.
+- Loop: `create_agent` do LangChain (sobre o LangGraph). O LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder.
 - **Máximo de 8 iterações** por execução. Ao atingir o limite, encerre e informe o usuário.
-- Prompts de sistema separados para **Ideação** (`ideation`) e **Criação** (`creation`), em `app/ai/agent/prompts/`.
-- Tools (uma por arquivo em `app/ai/tools/`, com schema de entrada em Pydantic):
-  - `search_web(query)`: Tavily ou Brave, sempre retornando as fontes
+- Prompts de sistema separados para **Ideação** (`ideation`) e **Criação** (`creation`), em `ai/agent/prompts/`.
+- Tools (uma por arquivo em `ai/tools/`, `@tool` com schema de entrada em Pydantic):
+  - `search_web(query)`: Tavily, sempre retornando as fontes
   - `get_project()`, `list_subjects()` e `get_subject(id)` (público e tom resolvidos: do subject ou, se vazios, do projeto)
   - `search_documents(query)`: RAG híbrido (vetorial + full-text)
   - `search_past_posts(subject)`: exemplos de estilo, apenas posts `approved` ou `published`
@@ -154,8 +151,10 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
 
 ## Provedores de IA
 
-- O código do agente depende **apenas das interfaces** `LLMProvider`, `EmbeddingProvider`, `ImageProvider` e `VectorStore`, nunca de um SDK diretamente.
-- O provedor de LLM ainda **não foi decidido**. Não acople nada a um provedor específico fora de `app/ai/providers/`.
+- O agente depende das interfaces do LangChain (`BaseChatModel`, `Embeddings`). Os modelos concretos são criados só em `ai/models.py`, a partir da configuração (modelo e chaves por variáveis de ambiente).
+- **Chat:** OpenAI, com fallback automático para o Groq quando a OpenAI falha ou atinge limite. **Embeddings** e **imagem:** OpenAI. **Busca web:** Tavily. **Rastreio:** LangSmith, só em produção (`LANGSMITH_TRACING=false` nos testes e no CI).
+- Chaves (`OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY`, `LANGSMITH_API_KEY`) só no `.env` local e na Render. **Nunca** em variável `VITE_*` nem no frontend.
+- Nos testes, use os modelos falsos do LangChain (chat e embeddings determinísticos).
 - Trocar o modelo de embeddings exige reprocessar todos os chunks. A dimensão do vetor vem da configuração.
 
 ## RAG

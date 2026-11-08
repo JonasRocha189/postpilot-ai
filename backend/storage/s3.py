@@ -63,6 +63,12 @@ async def object_size(key: str) -> int | None:
     return head["ContentLength"]
 
 
+async def download_object(key: str) -> bytes:
+    """The object's content (documents are at most a few MB)."""
+    response = await asyncio.to_thread(_client().get_object, Bucket=settings.s3_bucket, Key=key)
+    return await asyncio.to_thread(response["Body"].read)
+
+
 async def delete_object(key: str) -> None:
     """Delete the object (S3 does not fail if it is already gone)."""
     await asyncio.to_thread(_client().delete_object, Bucket=settings.s3_bucket, Key=key)

@@ -63,7 +63,7 @@
 | Frontend | React, Vite, TypeScript, Tailwind CSS, template TailAdmin, TanStack Query, React Hook Form + Zod, ApexCharts |
 | Backend (API) | Python, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2 |
 | Banco de dados | PostgreSQL 16 + pgvector, com busca híbrida (vetorial + full-text) |
-| IA | LLM com tool calling (provedor a definir), embeddings, geração de imagem, busca web (Tavily ou Brave) |
+| IA | LangChain + LangGraph, OpenAI (chat, embeddings e imagem) com fallback para o Groq, busca web com Tavily, rastreio no LangSmith |
 | Autenticação | Auth0 (OAuth 2.0 / OpenID Connect, Authorization Code + PKCE) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
 | Infraestrutura | Vercel (frontend), Render (backend em Docker), Neon (PostgreSQL) |
@@ -84,7 +84,7 @@ Navegador ──HTTPS──> Vercel
                                      └── Provedores de IA (LLM, embeddings, imagem, busca web)
 ```
 
-O loop do agente é implementado diretamente sobre o tool calling do SDK do provedor, sem LangChain ou LlamaIndex. O código depende apenas de interfaces (`LLMProvider`, `EmbeddingProvider`, `ImageProvider`, `VectorStore`), o que permite trocar de provedor.
+O agente usa o `create_agent` do LangChain (sobre o LangGraph), com o chat na OpenAI e fallback automático para o Groq. O código depende das interfaces do LangChain (`BaseChatModel`, `Embeddings`), então trocar de modelo é configuração. A busca nos documentos é própria: pgvector + full-text em SQL ([decisão 34](_docs/decisoes.md)).
 
 A documentação técnica está em [`_docs/`](_docs/README.md): [modelos C4](_docs/arquitetura.md) (contexto, contêineres, componentes), [diagrama de classes](_docs/modelo-de-dados.md), [agente e RAG](_docs/agente-e-rag.md), [API](_docs/api.md), [modelo de implantação](_docs/implantacao.md), [decisões](_docs/decisoes.md) e [changelog](_docs/changelog.md).
 

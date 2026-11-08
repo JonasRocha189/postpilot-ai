@@ -74,8 +74,8 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | **Documents** | | |
 | GET | `/documents` 🅿 | Lista os documentos do projeto (mais recentes primeiro), com status de processamento |
 | POST | `/documents/upload-url` | Corpo `{project_id, name, type, size_bytes}`. Valida tipo (`pdf`, `docx`, `txt`) e tamanho (até 10 MB), cria o Document como `pending` e responde `{document, upload_url}`. A URL pré-assinada exige o `Content-Type` do tipo |
-| POST | `/documents/{id}/process` | Avisa que o upload terminou: muda para `processing` e processa em segundo plano (extração, chunking, embeddings). Responde o Document |
-| DELETE | `/documents/{id}` | Remove o documento, o objeto S3 e os chunks |
+| POST | `/documents/{id}/process` | Avisa que o upload terminou: confere o arquivo no S3, muda para `processing` e **responde `202`** com o Document; o processamento (download, extração, chunking, embeddings) roda em segundo plano e termina em `ready` (com `chunk_count`) ou `error` (com `error_message`). Pode ser chamado de novo para reprocessar (os chunks são substituídos). `409` se já estiver em `processing`; `422` se o arquivo não foi enviado ou passou do limite (o objeto é apagado); `503` se a IA não estiver configurada (sem `OPENAI_API_KEY`) |
+| DELETE | `/documents/{id}` | Remove o documento, o objeto S3 e os chunks (cascade). Um projeto com documentos não pode ser excluído (`409`) |
 | **Agent** | | |
 | POST | `/agent/runs` | Corpo `{project_id, mode, request}`. Cria a execução e **responde `202` na hora** com `status: "running"`; o loop roda em segundo plano |
 | GET | `/agent/runs` 🅿 | Histórico de execuções do projeto (mais recentes primeiro) |
