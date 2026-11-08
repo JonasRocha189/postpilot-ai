@@ -64,4 +64,6 @@ Pasta `e2e/` com `package.json` próprio. Dois modos:
 - Projetos: `desktop` (Chrome) e `mobile` (Pixel 7, só `responsive.spec.ts`, que também confere que não há rolagem horizontal).
 - Os testes criam dados com nomes únicos (`E2E …`) e apagam tudo no final, então podem rodar contra o banco de desenvolvimento.
 - Sem Auth0 configurado, o botão **Entrar** abre a sessão fictícia. Contra o ambiente publicado (com Auth0), o login precisará de um usuário de teste (próximo passo, junto com o CI).
+- **No CI** (job `e2e` de `.github/workflows/ci-cd.yml`), roda no modo isolado em cada pull request; o relatório de uma falha fica como artefato da execução por 7 dias. Os testes de unidade e integração do backend e do frontend rodam nos jobs `backend` e `frontend` (ver [implantação](implantacao.md#pipeline-github-actions)).
+- **Filtros e URL:** o React Router muda a URL na hora, mas a página só renderiza de novo depois (transição). Depois de "Limpar filtros", espere o próprio `<select>` voltar para "Todos" (`toHaveValue("")`), não só a URL; senão o filtro seguinte parte dos parâmetros antigos (no runner do CI, mais lento, isso aparecia).
 - Em caso de falha: `npx playwright show-report` (trace, screenshot e vídeo do passo que falhou).
