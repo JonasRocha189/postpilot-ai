@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_user_id
 from database.db import get_db
-from database.models import Image, Project, Subject
+from database.models import Document, Image, Project, Subject
 from schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -80,8 +80,9 @@ async def delete_project(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    """Delete a project. 409 if it still has subjects or images."""
+    """Delete a project. 409 if it still has subjects, images or documents."""
     project = await get_owned_project(project_id, user_id, db)
+
     has_subjects = await db.scalar(
         select(Subject.id).where(Subject.project_id == project.id).limit(1)
     )
@@ -90,6 +91,12 @@ async def delete_project(
     has_images = await db.scalar(select(Image.id).where(Image.project_id == project.id).limit(1))
     if has_images is not None:
         raise HTTPException(status_code=409, detail="Project has images")
+    has_documents = await db.scalar(
+        select(Document.id).where(Document.project_id == project.id).limit(1)
+    )
+    if has_documents is not None:
+        raise HTTPException(status_code=409, detail="Project has documents")
+
     await db.delete(project)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -34,3 +34,12 @@ async def get_db() -> AsyncIterator[AsyncSession]:
     """FastAPI Dependency to get a database session."""
     async with SessionLocal() as session:
         yield session
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """FastAPI Dependency for background work, which needs its own sessions.
+
+    The request's session is closed when the response is sent; a background
+    task opens new ones from this factory (tests point it at their database).
+    """
+    return SessionLocal
