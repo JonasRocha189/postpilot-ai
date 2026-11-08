@@ -204,7 +204,7 @@ Pipeline no GitHub Actions:
 ## Infraestrutura
 
 - **Vercel:** frontend (Root Directory `frontend`), domínio `postpilot.jonas-rocha.com`, rewrite de `/api/*` para a Render (mesma origem, sem CORS).
-- **Render:** backend como web service Docker (Root Directory `backend`), health check em `/api/v1/health/ready`. O plano gratuito dorme sem uso (primeira requisição lenta).
+- **Render:** backend como web service a partir da imagem do GHCR (`postpilot-apit.onrender.com`), health check em `/api/v1/health/ready`, deploy pelo Deploy Hook do pipeline. O plano gratuito dorme sem uso (primeira requisição lenta).
 - **Neon:** PostgreSQL com pgvector.
 - **Backup:** job agendado no GitHub Actions com `pg_dump` enviando para o S3.
 - **AWS (Terraform):** bucket privado com Block Public Access, SSE-S3, CORS liberando apenas o domínio de produção (e `localhost` em dev), lifecycle para uploads incompletos; usuário IAM com menor privilégio (`GetObject`, `PutObject`, `DeleteObject` e `ListBucket` só neste bucket); AWS Budget com alerta.

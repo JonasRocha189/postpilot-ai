@@ -1,6 +1,6 @@
 # Implantação, CI/CD e IaC
 
-> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON, o `vercel.json` (frontend publicado) e o pipeline (`.github/workflows/ci-cd.yml`). Faltam o serviço na Render, os GitHub Secrets do deploy e o backup agendado. Não altere recursos em produção sem revisar antes o `terraform plan`.
+> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON, o `vercel.json` (frontend publicado), o pipeline (`.github/workflows/ci-cd.yml`) e o backend na Render (`postpilot-apit.onrender.com`, ligado ao Neon). Faltam os GitHub Secrets do deploy e o backup agendado. Não altere recursos em produção sem revisar antes o `terraform plan`.
 
 ## Modelo de implantação
 
@@ -86,7 +86,7 @@ flowchart LR
 - **Em pull requests**, só `backend`, `frontend` e `e2e`; os outros aparecem como *skipped*. Na `main`, todos, nessa ordem.
 - O deploy automático da Vercel e da Render fica **desligado**: só o pipeline publica, e só com lint e testes passando.
 - **Rollback:** cada imagem tem o SHA do commit na tag, então voltar uma versão é chamar o Deploy Hook com a imagem anterior (ou redeploy pelo painel da Render).
-- **Segredos do pipeline** (GitHub → Settings → Secrets and variables → Actions): `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` (os dois últimos estão em `frontend/.vercel/project.json`). O push no GHCR usa o `GITHUB_TOKEN` da própria execução.
+- **Segredos do pipeline** (GitHub → Settings → Secrets and variables → Actions): `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` (`orgId` e `id` do projeto em `.vercel/repo.json`, criado na raiz pela Vercel CLI, ou em Settings → General no painel da Vercel). O push no GHCR usa o `GITHUB_TOKEN` da própria execução.
 - **Pacote no GHCR público**, para a Render baixar a imagem sem credenciais; a imagem não tem segredos (o `.dockerignore` exclui o `.env`).
 - **Limite do smoke test:** confere que a API e as páginas respondem, não qual versão está no ar. O aceite completo com Playwright no ambiente publicado precisa de um usuário de teste no Auth0 (próximo passo).
 
@@ -137,7 +137,7 @@ O projeto da Vercel usa Root Directory `frontend` e o preset Vite (`npm run buil
 
 | Regra | Efeito |
 | --- | --- |
-| `/api/:path*` → `https://postpilot-api.onrender.com/api/:path*` | A Vercel repassa as chamadas da API para a Render (caminho, query string, cabeçalhos como `Authorization` e corpo). O navegador só fala com `postpilot.jonas-rocha.com` |
+| `/api/:path*` → `https://postpilot-apit.onrender.com/api/:path*` | A Vercel repassa as chamadas da API para a Render (caminho, query string, cabeçalhos como `Authorization` e corpo). O navegador só fala com `postpilot.jonas-rocha.com` |
 | `/(.*)` → `/index.html` | Fallback da SPA: arquivos que existem (`/assets/*`, `favicon`) são servidos antes; as outras rotas (`/posts`, `/login`, retorno do Auth0) caem no `index.html` e o React Router assume |
 | Cabeçalho `Cache-Control` em `/assets/*` | Cache de um ano (`immutable`): o Vite põe um hash no nome desses arquivos. O `index.html` não fica em cache, então um deploy novo aparece na hora |
 | `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` | Cabeçalhos de segurança em todas as respostas (o `DENY` impede embutir o app num iframe; o Auth0 redireciona a página inteira, então não é afetado) |
@@ -145,6 +145,26 @@ O projeto da Vercel usa Root Directory `frontend` e o preset Vite (`npm run buil
 - Em produção, `VITE_API_URL` fica **vazio**: o cliente HTTP chama `/api/v1` na mesma origem.
 - **Limite com a Render gratuita:** se o backend estiver dormindo, a primeira chamada pelo rewrite pode estourar o tempo de espera da Vercel; as seguintes funcionam (o TanStack Query tenta de novo).
 - Deploy manual, a partir de `frontend/`: `npx vercel@latest login` (uma vez) e `npx vercel@latest deploy --prod`. A pasta `.vercel/` (ligação com o projeto) fica no `.gitignore`.
+
+## Render (backend)
+
+Web service criado pelo painel a partir da imagem do GHCR (**Existing Image**: `ghcr.io/jonasrocha189/postpilot-backend:latest`, pacote público), plano **Free**, região **Virginia (US East)**, a mesma do S3 e do Neon. Endereço: `https://postpilot-apit.onrender.com` (o "apit" veio de um erro de digitação na criação; o subdomínio não muda ao renomear o serviço, e o usuário nunca o vê, porque fica atrás do rewrite da Vercel).
+
+- **Health check:** `/api/v1/health/ready` (confere o banco). Deploy automático desligado; o pipeline publica pelo **Deploy Hook**, passando a imagem do commit em `imgURL`.
+- **Variáveis de ambiente** (definidas no painel, nunca a partir do `.env` local, que tem valores de desenvolvimento):
+
+| Variável | Valor |
+| --- | --- |
+| `DATABASE_URL` | Connection string **direta** (sem pooling) do Neon, no formato `postgresql+asyncpg://<usuário>:<senha>@<host>/<banco>?ssl=require` |
+| `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` | Tenant do Auth0 e `https://postpilot.jonas-rocha.com/api` |
+| `S3_BUCKET`, `S3_REGION` | `postpilot-prod-<conta>` e `us-east-1` (saídas do Terraform) |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Chave do usuário IAM `postpilot-backend` (`terraform output -raw backend_secret_access_key \| clip`, sem mostrar na tela) |
+| `CORS_ORIGINS` | `[]` (mesma origem pela Vercel) |
+| `LOG_JSON` | `true` |
+
+- **Ficam de fora:** `S3_ENDPOINT_URL` (vazio = AWS de verdade), `AUTH_DEV_USER` (o padrão vazio exige token) e `PORT` (a Render define).
+- **Atenção ao `DATABASE_URL`:** o Neon entrega `postgresql://...?sslmode=require&channel_binding=require`. O driver asyncpg não aceita `sslmode` nem `channel_binding` (`TypeError: connect() got an unexpected keyword argument 'sslmode'`), então troque o prefixo por `postgresql+asyncpg://` e deixe só `?ssl=require`, com um único `?`.
+- **Conferência:** `/api/v1/health/ready` responde `{"status":"ok","checks":{"database":"ok"}}`, `/api/v1/projects` sem token responde `401` e toda resposta traz o cabeçalho `X-Request-ID`.
 
 ## Imagem do backend
 
