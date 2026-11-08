@@ -136,7 +136,6 @@ jobs:
           node-version: 24
       # Vercel builds with the VITE_* variables set in its dashboard
       - name: Deploy frontend (Vercel)
-        working-directory: frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
