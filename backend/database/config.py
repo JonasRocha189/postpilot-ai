@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings, read from environment variables or the `.env` file."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # extra="ignore": .env also holds variables read by other libraries (e.g. LANGSMITH_*)
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Logs: JSON lines on stdout (production); LOG_JSON=false for readable local logs
     log_level: str = "INFO"
@@ -30,6 +31,21 @@ class Settings(BaseSettings):
     auth0_audience: str = ""
     # Local only: user id used when a request has no token. Leave empty in production.
     auth_dev_user: str = ""
+
+    # AI (decision 34). Keys only in .env and on Render, never in the frontend.
+    openai_api_key: str = ""
+    chat_model: str = "gpt-5-mini"
+    groq_api_key: str = ""
+    # Used automatically when the OpenAI call fails or hits a limit
+    fallback_chat_model: str = "llama-3.3-70b-versatile"
+    # Changing the embedding model or size means reprocessing every chunk
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1536
+    image_model: str = "gpt-image-1-mini"
+    tavily_api_key: str = ""
+    agent_max_iterations: int = 8
+    # Documents for the RAG (PDF, DOCX, TXT)
+    document_max_bytes: int = 10 * 1024 * 1024
 
     @model_validator(mode="after")
     def require_auth(self) -> "Settings":
