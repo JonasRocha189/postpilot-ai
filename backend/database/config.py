@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     chat_model: str = "gpt-5-mini"
     groq_api_key: str = ""
     # Used automatically when the OpenAI call fails or hits a limit
-    fallback_chat_model: str = "llama-3.3-70b-versatile"
+    fallback_chat_model: str = "openai/gpt-oss-120b"
     # Changing the embedding model or size means reprocessing every chunk
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536

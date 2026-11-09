@@ -1,6 +1,6 @@
 # Agente e RAG
 
-> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão), busca híbrida e as tools de leitura (`get_project`, `list_subjects`, `get_subject`, `search_documents`, `search_past_posts`). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
+> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão), busca híbrida, as tools de leitura, o **loop do agente** (fallback OpenAI → Groq, limite de 8 iterações, passos gravados ao vivo), a API `/agent/runs` e as tools `save_draft`, `adapt_for_network` e `search_web`. Primeira execução real feita localmente em 09/11 (34 s, 5 tools, fontes citadas). Faltam `generate_image` e `analyze_performance`. Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
 
 ## Stack
 
@@ -21,14 +21,25 @@
 
 ## Loop do agente
 
-`create_agent` do LangChain: o LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder. O backend acompanha o fluxo de eventos da execução para gravar cada passo em `agent_steps` assim que a tool termina.
+`create_agent` do LangChain: o LLM recebe o pedido e as tools, decide qual chamar, recebe o resultado e repete até responder. Implementado em `ai/agent/runner.py` (`run_agent`), com três middlewares do LangChain em volta do loop:
+
+| Middleware | Papel |
+| --- | --- |
+| `ModelCallLimitMiddleware(run_limit=8)` | No máximo 8 chamadas ao modelo (iterações). Se a 8ª ainda pede tools, a execução termina em `limit_reached` |
+| `ModelFallbackMiddleware(Groq)` | Quando a chamada à OpenAI falha (fora do ar, limite), o Groq (`openai/gpt-oss-120b`) responde no lugar |
+| `StepRecorder` (próprio) | `awrap_model_call` conta as iterações; `awrap_tool_call` cronometra cada tool e grava o `AgentStep` assim que ela termina (num `finally`, então o passo com erro também é gravado) e escreve o log |
+
+- **Numeração:** o passo recebe o número quando a chamada começa, porque tools pedidas juntas podem terminar fora de ordem.
+- **Tempo máximo:** 180 s por execução (`RUN_TIMEOUT_SECONDS`); passou disso, `error`.
+- **Execução interrompida:** se um deploy ou reinício derruba o processo no meio, a execução ficaria `running` para sempre. Ao ler (`GET`), uma execução `running` há mais de 4 minutos é fechada como `error` ("interrompida"), para a tela parar de esperar.
+- **LangSmith:** cada execução vai com `run_name = agent-run-{id}` e a tag do modo, para achar o rastro quando o tracing está ligado.
 
 ```mermaid
 sequenceDiagram
     actor U as Usuário
     participant API as Backend
     participant A as Loop do agente
-    participant LLM as LLMProvider
+    participant LLM as Chat (OpenAI / Groq)
     participant T as Tools
     participant DB as PostgreSQL
 
@@ -56,7 +67,7 @@ sequenceDiagram
 
 - **Execução em segundo plano, passos ao vivo.** `POST /agent/runs` responde `202` na hora com `status: "running"` e o loop roda em segundo plano, gravando cada `AgentStep` assim que a tool termina. A tela consulta `GET /agent/runs/{id}` a cada ~0,7 s até o status final e mostra os passos conforme aparecem. Sem WebSocket nem SSE, e funciona com 2 réplicas, porque o estado fica no banco.
 - **Máximo de 8 iterações.** Ao atingir o limite, a execução termina com `limit_reached` e o usuário é avisado. Várias tools pedidas pelo LLM na mesma resposta (ex.: adaptar para LinkedIn e para X) contam como uma iteração.
-- **Erro numa tool:** a execução termina com `error`, e o passo que falhou guarda a mensagem em `error`.
+- **Erro numa tool:** uma exceção encerra a execução com `error`, e o passo guarda a mensagem em `error`. Erros de uso (id inválido, texto acima do limite) não são exceções: a tool devolve `{"error": "…"}` com uma dica e o modelo corrige a chamada.
 - **Cada pedido é independente:** a conversa na tela é uma sequência de execuções; o agente não recebe o histórico das anteriores.
 - **Prompts de sistema** separados por modo em `ai/agent/prompts/`.
 - **Segurança:** o `user_id` e o `project_id` são injetados pelo backend em toda tool. Eles não aparecem no schema que o LLM vê: o agente só enxerga os dados do projeto em que foi chamado, e os documentos de um cliente nunca entram nos posts de outro.
@@ -67,8 +78,10 @@ sequenceDiagram
 
 | Modo | Objetivo | Tools mais usadas |
 | --- | --- | --- |
-| Ideação (`ideation`) | Sugerir temas | `search_web`, `search_past_posts`, `analyze_performance`, `list_subjects` |
-| Criação (`creation`) | Escrever o post completo | `get_subject`, `search_documents`, `search_past_posts`, `adapt_for_network`, `generate_image`, `save_draft` |
+| Ideação (`ideation`) | Sugerir temas | `get_project`, `list_subjects`, `search_past_posts`, `search_documents`, `search_web` (só leitura: nunca salva) |
+| Criação (`creation`) | Escrever e salvar o post | as de leitura + `adapt_for_network` e `save_draft` |
+
+As tools de cada modo ficam em `ai/tools/registry.py` (`TOOLS_BY_MODE`); um teste garante que a ideação não tem tools de escrita. Os prompts (`ai/agent/prompts/ideation.md` e `creation.md`) dizem a ordem de trabalho, citam as tools pelo nome e proíbem inventar fatos.
 
 ## Tools
 
@@ -76,16 +89,16 @@ Uma por arquivo em `ai/tools/`, `@tool` do LangChain com schema de entrada em Py
 
 | Tool | O que faz |
 | --- | --- |
-| `search_web(query)` | Busca no Tavily, sempre retornando as fontes |
+| `search_web(query)` | Tavily: até 5 resultados com título, URL e trecho (500 caracteres). Se o Tavily falhar, responde "continue sem ela" e a execução segue |
 | `get_project()` | Dados do projeto atual: nome, descrição, público-alvo e tom de voz padrão |
 | `list_subjects()` | Lista os assuntos do projeto |
 | `get_subject(id)` | Detalhes do assunto, com público-alvo e tom de voz já resolvidos (do assunto ou, se vazios, do projeto) |
 | `search_documents(query)` | RAG híbrido nos documentos do projeto |
 | `search_past_posts(subject)` | Exemplos de estilo do projeto, só de posts aprovados ou publicados |
 | `analyze_performance()` | Agregados do projeto por assunto, dia, horário, rede e imagem. Com menos de 5 posts no grupo, informa que os dados são insuficientes |
-| `adapt_for_network(text, network)` | Ajusta formato e limite de caracteres da rede |
+| `adapt_for_network(text, network)` | Sem IA: devolve o limite de caracteres da rede (o mesmo `CHAR_LIMIT` do formulário), o tamanho do texto, se cabe, quanto passou e o estilo que funciona na rede. O modelo reescreve e confere de novo |
 | `generate_image(prompt, format)` | Gera imagem sem texto dentro dela e salva no S3 |
-| `save_draft(post)` | Salva o post com status `draft` (único status que o agente pode usar) |
+| `save_draft(title, subject_id, variations)` | Salva o post com uma variação por rede, sempre `draft`, validado com as mesmas regras do formulário (`PostIn`). Formato `text` (LinkedIn e X) ou `single` sem imagem (Instagram, que não tem só texto). Liga o post à execução (`post_id`) |
 
 ## Plano de implementação
 
@@ -95,8 +108,9 @@ Uma branch e um PR por etapa; cada merge vai para produção pelo pipeline.
 | --- | --- | --- |
 | 09/11 | `feat/ai-documents` | Decisão 34 e docs, dependências e configuração, migration (`documents`, `chunks`, `agent_runs`, `agent_steps`, extensão `vector`), API de documentos (URL de upload, processamento, lista, exclusão) |
 | 10/11 | `feat/ai-search-tools` | Busca híbrida (RRF) e tools de leitura: `get_project`, `list_subjects`, `get_subject`, `search_documents`, `search_past_posts` |
-| 11–12/11 | `feat/ai-agent` | `create_agent` com fallback OpenAI → Groq, `/agent/runs` (202 + polling), passos em `agent_steps`, `save_draft`, `adapt_for_network`, `search_web`, `generate_image` (mínima), `analyze_performance`, prompts por modo, LangSmith |
-| 13/11 | `feat/ai-frontend` | Tipos do frontend em inglês, páginas ligadas à API real, testes |
+| 08–09/11 | `feat/ai-agent` | `create_agent` com fallback OpenAI → Groq, `/agent/runs` (202 + polling), passos em `agent_steps`, `save_draft`, `adapt_for_network`, `search_web`, prompts por modo ✅ |
+| 09–10/11 | `feat/ai-agent-2` | `generate_image` (mínima), `analyze_performance`, LangSmith na Render |
+| 09/11 | `feat/ai-frontend` | Tipos do frontend em inglês, páginas ligadas à API real, testes ✅ |
 | 14/11 | — | Produção (chaves na Render), teste ponta a ponta, docs |
 
 Se o prazo apertar (ordem de corte do CLAUDE.md): sai primeiro `analyze_performance`, depois `generate_image`. Documentos, RAG, busca web, o loop e `save_draft` nunca são cortados.

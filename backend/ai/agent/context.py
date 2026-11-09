@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 class AgentContext:
     """The run's user, project and resources."""
 
+    run_id: uuid.UUID
     user_id: str
     project_id: uuid.UUID
     # Each tool call opens its own short session

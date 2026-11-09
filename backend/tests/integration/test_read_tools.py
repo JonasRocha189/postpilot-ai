@@ -92,7 +92,11 @@ def context(
     sessions: async_sessionmaker[AsyncSession], project_id: uuid.UUID, user_id: str = "user-a"
 ) -> AgentContext:
     return AgentContext(
-        user_id=user_id, project_id=project_id, sessions=sessions, embeddings=EMBEDDINGS
+        run_id=uuid.uuid4(),
+        user_id=user_id,
+        project_id=project_id,
+        sessions=sessions,
+        embeddings=EMBEDDINGS,
     )
 
 
