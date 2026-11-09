@@ -76,6 +76,7 @@ Os divisores vêm da propriedade `divider` dos itens em `layout/AppSidebar.tsx`.
 ## Decisões
 
 - **Sem formulários próprios de login e cadastro.** `/login` e `/signup` só levam ao Auth0, que hospeda login, cadastro e redefinição de senha.
+- **Saída por inatividade.** O `RequireAuth` monta o `IdleLogout` (`lib/auth/useIdleLogout.ts`): 30 minutos sem atividade em nenhuma aba encerram a sessão (`logout` do Auth0), com aviso e contagem regressiva no último minuto. Como o refresh token fica no `localStorage`, sem isso a sessão continuaria aberta por dias num computador compartilhado. O login marca o início da sessão; o logout limpa o registro.
 - **Modo de desenvolvimento sem Auth0.** Sem `VITE_AUTH0_DOMAIN` e `VITE_AUTH0_CLIENT_ID`, o `npm run dev` entra com um usuário fictício (ver `frontend/.env.example`). No build de produção isso nunca acontece: sem configuração, o login fica indisponível.
 - **Roteador com data router** (`createBrowserRouter`), necessário para o `errorElement` e para o carregamento sob demanda (`lazy`) de cada página.
 - **Imagens numa biblioteca por projeto** ([decisão 22](decisoes.md)). O post aponta para imagens da biblioteca, em ordem (`image_ids`); o seletor do formulário abre a biblioteca num modal renderizado fora do `<form>` (`components/common/Portal.tsx`).

@@ -1,6 +1,7 @@
 import i18n from "@/i18n";
 import { useAuth0 } from "@auth0/auth0-react";
 import { auth0Config, authMode, DEFAULT_RETURN_TO } from "./config";
+import { clearActivity, markActivity } from "./idle";
 
 export type AuthUser = {
   sub?: string;
@@ -55,6 +56,7 @@ function mockAuthState(): AuthState {
   const isAuthenticated = readMockSession();
   const enter = async (returnTo = DEFAULT_RETURN_TO) => {
     writeMockSession(true);
+    markActivity();
     window.location.assign(returnTo);
   };
   return {
@@ -65,6 +67,7 @@ function mockAuthState(): AuthState {
     signup: enter,
     logout: async () => {
       writeMockSession(false);
+      clearActivity();
       window.location.assign("/login");
     },
   };
@@ -105,10 +108,12 @@ export function useAuth(): AuthState {
         appState: { returnTo },
         authorizationParams: { screen_hint: "signup" },
       }),
-    logout: () =>
-      auth0.logout({
+    logout: () => {
+      clearActivity();
+      return auth0.logout({
         logoutParams: { returnTo: `${window.location.origin}/login` },
-      }),
+      });
+    },
   };
 }
 

@@ -1,7 +1,8 @@
 import Button from "@/components/ui/button/Button";
 import { authMode, DEFAULT_RETURN_TO } from "@/lib/auth/config";
+import { clearIdleLogoutFlag, wasIdleLogout } from "@/lib/auth/idle";
 import { useAuth } from "@/lib/auth/useAuth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useLocation } from "react-router";
 import LoadingScreen from "./LoadingScreen";
@@ -33,6 +34,12 @@ export default function AuthEntry({ mode }: { mode: Mode }) {
   const location = useLocation();
   const [redirecting, setRedirecting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [idleLogout] = useState(wasIdleLogout);
+
+  // Show the reason once: a later visit to /login starts clean
+  useEffect(() => {
+    if (idleLogout) clearIdleLogoutFlag();
+  }, [idleLogout]);
 
   const returnTo =
     (location.state as { from?: string } | null)?.from ?? DEFAULT_RETURN_TO;
@@ -73,6 +80,15 @@ export default function AuthEntry({ mode }: { mode: Mode }) {
           <p className="mb-5 rounded-lg border border-warning-500 bg-warning-50 p-3 text-sm text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/15 dark:text-orange-400">
             <strong>{t("devModeTitle")}</strong>{" "}
             {t("devModeText", { file: ".env.example" })}
+          </p>
+        )}
+
+        {idleLogout && (
+          <p
+            role="status"
+            className="mb-5 rounded-lg border border-brand-300 bg-brand-50 p-3 text-sm text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-400"
+          >
+            {t("idle.loggedOut")}
           </p>
         )}
 

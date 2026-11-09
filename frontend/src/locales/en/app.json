@@ -141,6 +141,13 @@
       "action": "Create account",
       "switchText": "Already have an account?",
       "switchLink": "Sign in"
+    },
+    "idle": {
+      "title": "Are you still there?",
+      "text": "For your security, you will be signed out in {{seconds}} s due to inactivity.",
+      "stay": "Stay signed in",
+      "logoutNow": "Sign out now",
+      "loggedOut": "You were signed out after 30 minutes of inactivity. Sign in again to continue."
     }
   },
   "userMenu": {
