@@ -16,16 +16,19 @@ Formato de cada entrada:
 
 ### Adicionado
 
+- IA: **o agente** (`ai/agent/runner.py`): `create_agent` do LangChain com `ModelCallLimitMiddleware` (8 iterações), `ModelFallbackMiddleware` (OpenAI → Groq `openai/gpt-oss-120b`) e um middleware próprio que conta as iterações e grava cada tool em `agent_steps` assim que ela termina, com log; prompts por modo; tempo máximo de 180 s. API `/agent/runs` (`POST` responde `202` e roda em segundo plano, histórico, detalhe com os passos; execução interrompida por deploy é fechada ao ler). Tools de escrita: `save_draft` (sempre `draft`, mesmas regras do formulário, liga o post à execução), `adapt_for_network` (limite e estilo de cada rede, sem IA) e `search_web` (Tavily, com fontes). 39 testes novos (219 no backend), com modelo de chat roteirizado. Primeira execução real local: 34 s, 5 tools, fontes citadas.
 - Frontend: **indicador de saúde do sistema** no cabeçalho: consulta `GET /health/ready` a cada minuto (e ao voltar para a aba) e mostra Online, Instável (API no ar, banco fora: `503`), Offline (sem resposta) ou Demonstração (modo fictício); ao clicar, mostra a latência da API, o estado do banco, a hora da verificação e "Verificar agora". Espera até 70 s pela primeira resposta, porque a Render gratuita leva até um minuto para acordar. 3 testes de integração.
+
+### Alterado
+
+- IA: o modelo de fallback do Groq passa a ser `openai/gpt-oss-120b`; o `llama-3.3-70b-versatile` foi retirado pelo Groq.
+- Frontend: **Documentos e Agente ligados à API real**: os tipos (`ProjectDocument`, `AgentRun`, `AgentStep`, `AgentRunInput`) e os campos passam a ser os da API em inglês (`type`, `size_bytes`, `error_message`, `chunk_count`; `mode`, `request`, `response`, `steps`, `step_number`, `arguments`, `result_summary`, `duration_ms`, `started_at`, `finished_at`), e os nomes das tools nos rótulos e no agente fictício são os do backend (`search_documents`, `save_draft`…). Os dados do modo fictício no navegador mudam de versão (`v3`) para não quebrar com os campos antigos. Fluxo de documentos conferido contra o backend local (URL de upload → S3 → processamento → `ready`).
 
 ### Removido
 
 - Frontend: **páginas de demonstração do TailAdmin** (grupo "Template (referência)" do menu e as rotas `/template/*`): 67 arquivos e 12 dependências usadas só por elas (`jsvectormap`, `leaflet`, `maplibre-gl`, `react-map-gl`, `prismjs`, `react-dnd`, `react-dnd-html5-backend`, `@popperjs/core`, `@floating-ui/react` e os `@types` correspondentes).
 
-### Alterado
-
-- Frontend: **Documentos e Agente ligados à API real**: os tipos (`ProjectDocument`, `AgentRun`, `AgentStep`, `AgentRunInput`) e os campos passam a ser os da API em inglês (`type`, `size_bytes`, `error_message`, `chunk_count`; `mode`, `request`, `response`, `steps`, `step_number`, `arguments`, `result_summary`, `duration_ms`, `started_at`, `finished_at`), e os nomes das tools nos rótulos e no agente fictício são os do backend (`search_documents`, `save_draft`…). Os dados do modo fictício no navegador mudam de versão (`v3`) para não quebrar com os campos antigos. Fluxo de documentos conferido contra o backend local (URL de upload → S3 → processamento → `ready`).
-
+## 2026-11-08
 
 ### Alterado
 
