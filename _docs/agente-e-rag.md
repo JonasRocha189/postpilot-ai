@@ -1,6 +1,6 @@
 # Agente e RAG
 
-> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão), busca híbrida, as tools de leitura, o **loop do agente** (fallback OpenAI → Groq, limite de 8 iterações, passos gravados ao vivo), a API `/agent/runs` e as tools `save_draft`, `adapt_for_network` e `search_web`. Primeira execução real feita localmente em 09/11 (34 s, 5 tools, fontes citadas). Faltam `generate_image` e `analyze_performance`. Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
+> Status: **implementado**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão), busca híbrida, as tools de leitura, o **loop do agente** (fallback OpenAI → Groq, limite de 8 iterações, passos gravados ao vivo), a API `/agent/runs` e todas as tools, incluindo `generate_image` e `analyze_performance`. Primeira execução real feita localmente em 09/11 (34 s, 5 tools, fontes citadas). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
 
 ## Stack
 
@@ -78,8 +78,8 @@ sequenceDiagram
 
 | Modo | Objetivo | Tools mais usadas |
 | --- | --- | --- |
-| Ideação (`ideation`) | Sugerir temas | `get_project`, `list_subjects`, `search_past_posts`, `search_documents`, `search_web` (só leitura: nunca salva) |
-| Criação (`creation`) | Escrever e salvar o post | as de leitura + `adapt_for_network` e `save_draft` |
+| Ideação (`ideation`) | Sugerir temas | `get_project`, `list_subjects`, `search_past_posts`, `search_documents`, `search_web`, `analyze_performance` (só leitura: nunca salva) |
+| Criação (`creation`) | Escrever e salvar o post | as de leitura + `adapt_for_network`, `generate_image` e `save_draft` |
 
 As tools de cada modo ficam em `ai/tools/registry.py` (`TOOLS_BY_MODE`); um teste garante que a ideação não tem tools de escrita. Os prompts (`ai/agent/prompts/ideation.md` e `creation.md`) dizem a ordem de trabalho, citam as tools pelo nome e proíbem inventar fatos.
 
@@ -95,10 +95,10 @@ Uma por arquivo em `ai/tools/`, `@tool` do LangChain com schema de entrada em Py
 | `get_subject(id)` | Detalhes do assunto, com público-alvo e tom de voz já resolvidos (do assunto ou, se vazios, do projeto) |
 | `search_documents(query)` | RAG híbrido nos documentos do projeto |
 | `search_past_posts(subject)` | Exemplos de estilo do projeto, só de posts aprovados ou publicados |
-| `analyze_performance()` | Agregados do projeto por assunto, dia, horário, rede e imagem. Com menos de 5 posts no grupo, informa que os dados são insuficientes |
+| `analyze_performance()` | Sem IA: pega a coleta mais recente de cada variação com métricas e agrupa por assunto, rede, dia da semana, período do dia (madrugada, manhã, tarde, noite) e com ou sem imagem. Dia e hora no fuso de São Paulo, calculados pelo Postgres. Cada grupo traz a média de impressões e de taxa de engajamento (interações ÷ impressões, a mesma regra da tela de métricas). Grupo com menos de 5 posts mostra só o tamanho (`enough_data: false`); com menos de 5 no total, responde que os dados são insuficientes. A agregação é uma função pura (`summarize`), testada sem banco |
 | `adapt_for_network(text, network)` | Sem IA: devolve o limite de caracteres da rede (o mesmo `CHAR_LIMIT` do formulário), o tamanho do texto, se cabe, quanto passou e o estilo que funciona na rede. O modelo reescreve e confere de novo |
-| `generate_image(prompt, format)` | Gera imagem sem texto dentro dela e salva no S3 |
-| `save_draft(title, subject_id, variations)` | Salva o post com uma variação por rede, sempre `draft`, validado com as mesmas regras do formulário (`PostIn`). Formato `text` (LinkedIn e X) ou `single` sem imagem (Instagram, que não tem só texto). Liga o post à execução (`post_id`) |
+| `generate_image(prompt, format)` | OpenAI `gpt-image-1-mini` (qualidade `IMAGE_QUALITY`, padrão `low`, cerca de US$ 0,005 por imagem). `format`: `square` (1024×1024), `portrait` (1024×1536) ou `landscape` (1536×1024). O prompt sempre ganha "sem texto, letras, logos ou marcas d'água". O PNG vai para o S3 e entra na biblioteca de imagens do projeto (`images`). **No máximo 1 por execução** (conferido nos passos gravados), para controlar o custo. Se o provedor falhar ou recusar o prompt, ou sem chave, devolve um erro e o post segue sem imagem |
+| `save_draft(title, subject_id, variations, image_id?)` | Salva o post com uma variação por rede, sempre `draft`, validado com as mesmas regras do formulário (`PostIn`). Com `image_id` (de `generate_image`), todas as variações viram `single` com a imagem; a imagem precisa ser do projeto. Sem imagem: `text` (LinkedIn e X) ou `single` sem imagem (Instagram, que não tem só texto). Liga o post à execução (`post_id`) |
 
 ## Plano de implementação
 
@@ -109,7 +109,7 @@ Uma branch e um PR por etapa; cada merge vai para produção pelo pipeline.
 | 09/11 | `feat/ai-documents` | Decisão 34 e docs, dependências e configuração, migration (`documents`, `chunks`, `agent_runs`, `agent_steps`, extensão `vector`), API de documentos (URL de upload, processamento, lista, exclusão) |
 | 10/11 | `feat/ai-search-tools` | Busca híbrida (RRF) e tools de leitura: `get_project`, `list_subjects`, `get_subject`, `search_documents`, `search_past_posts` |
 | 08–09/11 | `feat/ai-agent` | `create_agent` com fallback OpenAI → Groq, `/agent/runs` (202 + polling), passos em `agent_steps`, `save_draft`, `adapt_for_network`, `search_web`, prompts por modo ✅ |
-| 09–10/11 | `feat/ai-agent-2` | `generate_image` (mínima), `analyze_performance`, LangSmith na Render |
+| 09/11 | `feat/ai-agent-2` | `generate_image` (mínima), `analyze_performance`, `image_id` no `save_draft`, prompts atualizados ✅ |
 | 09/11 | `feat/ai-frontend` | Tipos do frontend em inglês, páginas ligadas à API real, testes ✅ |
 | 14/11 | — | Produção (chaves na Render), teste ponta a ponta, docs |
 
