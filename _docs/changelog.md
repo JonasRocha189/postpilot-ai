@@ -20,6 +20,7 @@ Formato de cada entrada:
 
 ### Adicionado
 
+- IA: **busca híbrida e tools de leitura do agente**: `search_chunks` combina similaridade vetorial (pgvector, cosseno) e full-text em português (`websearch_to_tsquery` + `ts_rank`) com Reciprocal Rank Fusion, só nos documentos `ready` do projeto do usuário; tools `get_project`, `list_subjects`, `get_subject` (público e tom resolvidos), `search_documents` e `search_past_posts` (só aprovados e publicados), com `user_id` e `project_id` injetados pelo `ToolRuntime` do LangChain, fora do schema que o LLM vê. 32 testes novos (180 no backend).
 - IA: **documentos para o RAG** (decisão 34): migration com `documents`, `chunks` (pgvector com índice HNSW e `tsvector` gerado com índice GIN), `agent_runs` e `agent_steps`; API `/documents` (URL de upload pré-assinada, processamento em segundo plano com extração de PDF/DOCX/TXT, chunking com sobreposição e embeddings da OpenAI, lista e exclusão); projeto com documentos não pode ser excluído (`409`). Novas dependências: `langchain`, `langchain-openai`, `langchain-groq`, `openai`, `pgvector`, `pypdf`, `python-docx`. 32 testes novos (148 no backend), com embeddings falsos e S3 simulado.
 - Infra: **backend na Render** (`postpilot-apit.onrender.com`), web service a partir da imagem do GHCR (pacote público), plano gratuito em US East, ligado ao Neon (migrations aplicadas no primeiro deploy) e ao S3. Variáveis de produção documentadas em `_docs/implantacao.md`.
 
