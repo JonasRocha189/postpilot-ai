@@ -12,7 +12,20 @@ Formato de cada entrada:
 
 ---
 
-## 2026-11-08
+## 2026-11-09
+
+### Adicionado
+
+- Frontend: **indicador de saúde do sistema** no cabeçalho: consulta `GET /health/ready` a cada minuto (e ao voltar para a aba) e mostra Online, Instável (API no ar, banco fora: `503`), Offline (sem resposta) ou Demonstração (modo fictício); ao clicar, mostra a latência da API, o estado do banco, a hora da verificação e "Verificar agora". Espera até 70 s pela primeira resposta, porque a Render gratuita leva até um minuto para acordar. 3 testes de integração.
+
+### Removido
+
+- Frontend: **páginas de demonstração do TailAdmin** (grupo "Template (referência)" do menu e as rotas `/template/*`): 67 arquivos e 12 dependências usadas só por elas (`jsvectormap`, `leaflet`, `maplibre-gl`, `react-map-gl`, `prismjs`, `react-dnd`, `react-dnd-html5-backend`, `@popperjs/core`, `@floating-ui/react` e os `@types` correspondentes).
+
+### Alterado
+
+- Frontend: **Documentos e Agente ligados à API real**: os tipos (`ProjectDocument`, `AgentRun`, `AgentStep`, `AgentRunInput`) e os campos passam a ser os da API em inglês (`type`, `size_bytes`, `error_message`, `chunk_count`; `mode`, `request`, `response`, `steps`, `step_number`, `arguments`, `result_summary`, `duration_ms`, `started_at`, `finished_at`), e os nomes das tools nos rótulos e no agente fictício são os do backend (`search_documents`, `save_draft`…). Os dados do modo fictício no navegador mudam de versão (`v3`) para não quebrar com os campos antigos. Fluxo de documentos conferido contra o backend local (URL de upload → S3 → processamento → `ready`).
+
 
 ### Alterado
 
