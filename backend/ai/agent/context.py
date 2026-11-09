@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from langchain_core.embeddings import Embeddings
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from ai.models import ImageGenerator
+
 
 @dataclass(frozen=True)
 class AgentContext:
@@ -23,3 +25,5 @@ class AgentContext:
     # Each tool call opens its own short session
     sessions: async_sessionmaker[AsyncSession]
     embeddings: Embeddings
+    # None when image generation is not configured: the agent writes text only
+    images: ImageGenerator | None = None

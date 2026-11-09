@@ -5,8 +5,11 @@ The rest of the code depends only on LangChain's interfaces (`Embeddings`,
 Tests replace them with LangChain's fake models.
 """
 
+import base64
 import ssl
+from collections.abc import Awaitable, Callable
 from functools import lru_cache
+from typing import Literal
 
 import httpx
 import truststore
@@ -14,9 +17,15 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from openai import AsyncOpenAI, DefaultAsyncHttpx2Client
 from pydantic import SecretStr
 
 from database.config import settings
+
+ImageSize = Literal["1024x1024", "1024x1536", "1536x1024"]
+# (prompt, size) -> the bytes of a PNG image. Tests pass a fake one.
+# A Callable (not a Protocol) because LangChain validates the agent context with Pydantic.
+ImageGenerator = Callable[[str, ImageSize], Awaitable[bytes]]
 
 
 class AIConfigError(RuntimeError):
@@ -75,3 +84,31 @@ def get_chat_models() -> tuple[BaseChatModel, ...]:
     if not models:
         raise AIConfigError("Set OPENAI_API_KEY or GROQ_API_KEY")
     return tuple(models)
+
+
+@lru_cache
+def get_image_generator() -> ImageGenerator:
+    """Image generation on OpenAI (gpt-image models always answer in base64)."""
+    if not settings.openai_api_key:
+        raise AIConfigError("OPENAI_API_KEY is not set")
+    client = AsyncOpenAI(
+        api_key=settings.openai_api_key,
+        max_retries=1,
+        # An image takes from 10 to 60 seconds
+        http_client=DefaultAsyncHttpx2Client(verify=_ssl_context(), timeout=120),
+    )
+
+    async def generate(prompt: str, size: ImageSize) -> bytes:
+        response = await client.images.generate(
+            model=settings.image_model,
+            prompt=prompt,
+            size=size,
+            quality=settings.image_quality,
+            n=1,
+        )
+        data = response.data[0].b64_json if response.data else None
+        if not data:
+            raise RuntimeError("The image API returned no image")
+        return base64.b64decode(data)
+
+    return generate

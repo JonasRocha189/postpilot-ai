@@ -7,11 +7,11 @@ from sqlalchemy import select, update
 
 from ai.agent.context import AgentContext
 from api.v1.routers.posts import set_variations
-from database.models import AgentRun, Network, Post, PostFormat, PostStatus, Subject
+from database.models import AgentRun, Image, Network, Post, PostFormat, PostStatus, Subject
 from schemas.posts import PostIn, VariationIn
 
-# The agent writes text only; images are chosen by the user (Instagram has no
-# text-only format, so its draft is a single-image post still without the image)
+# Without an image: text where the network allows it (Instagram has no text-only
+# format, so its draft is a single-image post still waiting for the image)
 DRAFT_FORMAT: dict[Network, PostFormat] = {
     Network.LINKEDIN: PostFormat.TEXT,
     Network.INSTAGRAM: PostFormat.SINGLE,
@@ -27,9 +27,20 @@ class DraftVariation(BaseModel):
 
 
 async def save_draft_data(
-    ctx: AgentContext, title: str, subject_id: str, variations: list[DraftVariation]
+    ctx: AgentContext,
+    title: str,
+    subject_id: str,
+    variations: list[DraftVariation],
+    image_id: str | None = None,
 ) -> dict[str, Any]:
-    """Save the post as a draft, with one variation per network, linked to the run."""
+    """Save the post as a draft, with one variation per network, linked to the run.
+
+    With an image, every variation is a single-image post using it.
+    """
+    try:
+        image = uuid.UUID(image_id) if image_id else None
+    except ValueError:
+        return {"error": "Invalid image id. Use the image_id returned by generate_image."}
     try:
         body = PostIn(
             subject_id=uuid.UUID(subject_id),
@@ -38,8 +49,9 @@ async def save_draft_data(
                 # Always a draft: approving and publishing is the user's job
                 VariationIn(
                     network=v.network,
-                    format=DRAFT_FORMAT[v.network],
+                    format=PostFormat.SINGLE if image else DRAFT_FORMAT[v.network],
                     content=v.content,
+                    image_ids=[image] if image else [],
                     status=PostStatus.DRAFT,
                 )
                 for v in variations
@@ -62,6 +74,16 @@ async def save_draft_data(
         )
         if subject is None:
             return {"error": "Subject not found in this project. Use an id from list_subjects."}
+        if image is not None:
+            owned = await db.scalar(
+                select(Image.id).where(
+                    Image.id == image,
+                    Image.project_id == ctx.project_id,
+                    Image.user_id == ctx.user_id,
+                )
+            )
+            if owned is None:
+                return {"error": "Image not found in this project. Save without image_id."}
         post = Post(
             user_id=ctx.user_id, subject_id=body.subject_id, title=body.title, variations=[]
         )
@@ -76,6 +98,7 @@ async def save_draft_data(
             "title": post.title,
             "networks": [v.network.value for v in body.variations],
             "status": PostStatus.DRAFT.value,
+            "image_id": str(image) if image else None,
         }
 
 
@@ -85,6 +108,7 @@ async def save_draft(
     subject_id: Annotated[str, "id from list_subjects"],
     variations: Annotated[list[DraftVariation], "the final text for each network"],
     runtime: ToolRuntime[AgentContext],
+    image_id: Annotated[str | None, "image_id from generate_image, if you made one"] = None,
 ) -> dict[str, Any]:
     """Save the finished post as a draft for the user to review.
 
@@ -92,4 +116,4 @@ async def save_draft(
     already adapted to that network. Call it once, at the end. The post is always
     saved as a draft: the user approves and publishes it.
     """
-    return await save_draft_data(runtime.context, title, subject_id, variations)
+    return await save_draft_data(runtime.context, title, subject_id, variations, image_id)

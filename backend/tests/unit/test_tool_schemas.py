@@ -42,12 +42,14 @@ def test_the_arguments_the_llm_fills_in() -> None:
         "search_documents": ["query"],
         "search_past_posts": ["subject_id"],
         "search_web": ["query"],
+        "analyze_performance": [],
         "adapt_for_network": ["network", "text"],
-        "save_draft": ["subject_id", "title", "variations"],
+        "generate_image": ["format", "prompt"],
+        "save_draft": ["image_id", "subject_id", "title", "variations"],
     }
 
 
 def test_ideation_never_writes() -> None:
     names = {tool.name for tool in TOOLS_BY_MODE[AgentMode.IDEATION]}
-    assert names.isdisjoint({"save_draft", "adapt_for_network"})
+    assert names.isdisjoint({"save_draft", "adapt_for_network", "generate_image"})
     assert "save_draft" in {tool.name for tool in TOOLS_BY_MODE[AgentMode.CREATION]}

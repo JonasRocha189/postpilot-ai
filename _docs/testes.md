@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (219 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings, fusão RRF, o schema das tools que o LLM vê, os modelos de chat por chave configurada, `adapt_for_network` e `search_web` com transporte HTTP falso) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas), da busca híbrida, das tools do agente, do motor do agente com modelo roteirizado e da API `/agent/runs`, e da migration das variações.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (235 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings, fusão RRF, o schema das tools que o LLM vê, os modelos de chat por chave configurada, `adapt_for_network` e `search_web` com transporte HTTP falso, a agregação de desempenho) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas), da busca híbrida, das tools do agente, do motor do agente com modelo roteirizado e da API `/agent/runs`, e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -37,6 +37,7 @@ backend/tests/
 │   ├── test_tool_schemas.py # o que o LLM vê de cada tool: nunca user_id, project_id ou runtime; ideação não escreve
 │   ├── test_chat_models.py  # OpenAI primeiro, Groq como fallback, IA desligada sem chaves
 │   ├── test_write_tools.py  # adapt_for_network e search_web (Tavily com transporte HTTP falso)
+│   ├── test_performance.py  # analyze_performance: taxa de engajamento, períodos do dia, amostra mínima, ordem dos grupos
 │   └── test_request.py      # logs JSON: request_id (cabeçalho X-Request-ID), user_id, 500 e token nunca registrado
 └── integration/
     ├── conftest.py          # contêiner do Postgres, migrations, cliente HTTP, limpeza
@@ -51,6 +52,7 @@ backend/tests/
     ├── test_read_tools.py   # tools de leitura: voz resolvida, ids inválidos, isolamento entre projetos e usuários
     ├── test_agent_runner.py # motor do agente com modelo roteirizado: passos, limite, tool com erro, fallback
     ├── test_agent_api.py    # /agent/runs: 202 e polling, rascunho ligado à execução, execução interrompida, 503, autorização
+    ├── test_image_and_performance_tools.py # generate_image (S3 simulado, 1 por execução, falha), save_draft com imagem, desempenho com a coleta mais recente e fuso local
     └── test_migrations.py   # dados antigos viram variações (downgrade → insert → upgrade)
 ```
 
@@ -60,6 +62,7 @@ backend/tests/
 - Os testes assíncronos usam o plugin do **anyio** (já vem com o FastAPI) e o `httpx.AsyncClient` com `ASGITransport`, para o app e o driver do banco (asyncpg) rodarem no mesmo loop de eventos.
 - Rode a partir de `backend/` (o `alembic.ini` é lido do diretório atual). A integração precisa do Docker ligado.
 - **S3 nos testes:** o **moto** simula o S3 em memória (`mock_aws`), sem rede e sem conta na AWS. A fixture `bucket` de `test_images.py` cria o bucket, aponta o cliente do app para ele (tira o `S3_ENDPOINT_URL` do LocalStack e limpa o cache do `_client()`) e faz o papel do navegador, colocando o arquivo no bucket antes de registrar a imagem.
+- **Imagem nos testes:** o gerador de imagens entra no `AgentContext` (`images`); os testes passam um falso que grava os prompts e devolve um PNG mínimo, e o S3 é o do moto. Nenhum teste chama a API de imagens.
 - **Modelo de chat nos testes:** `tests/fakes.py` tem o `ScriptedChatModel` (subclasse do `GenericFakeChatModel` do LangChain que aceita `bind_tools`), que responde uma lista fixa de mensagens: texto ou pedidos de tools (`calls(...)`), e o `BrokenChatModel`, que sempre falha (para o fallback). As tools e o banco são reais, então os passos gravados são os de verdade. Na API, a dependência `require_chat_models` é trocada pelo modelo roteirizado.
 - **IA nos testes:** os embeddings vêm de `tests/fakes.py` (`FakeEmbeddings`: o mesmo texto gera sempre o mesmo vetor, a partir de um hash), no lugar da OpenAI; o `DeterministicFakeEmbedding` do LangChain não foi usado porque exige numpy. A dependência `require_embeddings` é trocada em `app.dependency_overrides`. O processamento de documentos roda em segundo plano com sessões de `get_session_factory`, que o `conftest.py` aponta para o banco do teste; o cliente de teste só responde depois da tarefa terminar, então o resultado é conferido logo em seguida.
 - `tests/conftest.py` também define `TC_HOST=127.0.0.1`: em alguns Windows com Docker, conectar por `localhost` falha com `WinError 64`. Pelo mesmo motivo, o `.env.example` usa `127.0.0.1` no `DATABASE_URL` e no `S3_ENDPOINT_URL`.

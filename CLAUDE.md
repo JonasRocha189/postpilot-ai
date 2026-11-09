@@ -143,7 +143,7 @@ No banco, salve **apenas a chave do objeto S3** (ex.: `users/{id}/projects/{id}/
   - `analyze_performance()`: agregados de métricas por subject, dia, horário, rede e imagem
   - `adapt_for_network(text, network)`: limites e formato de cada rede
   - `generate_image(prompt, format)`: sem texto dentro da imagem
-  - `save_draft(post)`
+  - `save_draft(post, image_id?)`
 - **Toda tool recebe o `user_id` e o `project_id` do contexto** (token e projeto validado na requisição), nunca do LLM. O LLM jamais escolhe de qual usuário ou projeto ler dados.
 - O agente **só salva como `draft`**. Aprovar e publicar é sempre ação do usuário.
 - Cada passo (tool, argumentos, duração, erro) vira log estruturado e um registro em `AgentStep`.

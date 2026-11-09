@@ -69,6 +69,17 @@ async def download_object(key: str) -> bytes:
     return await asyncio.to_thread(response["Body"].read)
 
 
+async def upload_object(key: str, data: bytes, content_type: str) -> None:
+    """Write an object from the backend (the images the agent generates)."""
+    await asyncio.to_thread(
+        _client().put_object,
+        Bucket=settings.s3_bucket,
+        Key=key,
+        Body=data,
+        ContentType=content_type,
+    )
+
+
 async def delete_object(key: str) -> None:
     """Delete the object (S3 does not fail if it is already gone)."""
     await asyncio.to_thread(_client().delete_object, Bucket=settings.s3_bucket, Key=key)

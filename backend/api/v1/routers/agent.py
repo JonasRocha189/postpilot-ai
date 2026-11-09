@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from ai.agent.context import AgentContext
 from ai.agent.runner import RUN_TIMEOUT_SECONDS, run_agent
-from ai.models import AIConfigError, get_chat_models
+from ai.models import AIConfigError, ImageGenerator, get_chat_models, get_image_generator
 from ai.tools.registry import TOOLS_BY_MODE
 from api.deps import get_current_user_id
 from api.v1.routers.documents import require_embeddings
@@ -35,6 +35,14 @@ def require_chat_models() -> Sequence[BaseChatModel]:
         raise HTTPException(status_code=503, detail="AI is not configured") from exc
 
 
+def optional_image_generator() -> ImageGenerator | None:
+    """The image generator, or None: without it the agent still writes the text."""
+    try:
+        return get_image_generator()
+    except AIConfigError:
+        return None
+
+
 async def expire_stale_runs(runs: Sequence[AgentRun], db: AsyncSession) -> None:
     """Close runs that will never finish, so the screen stops waiting for them."""
     now = datetime.now(UTC)
@@ -56,6 +64,7 @@ async def start_run(
     sessions: async_sessionmaker[AsyncSession] = Depends(get_session_factory),
     models: Sequence[BaseChatModel] = Depends(require_chat_models),
     embeddings: Embeddings = Depends(require_embeddings),
+    images: ImageGenerator | None = Depends(optional_image_generator),
 ) -> AgentRun:
     """Start the agent on the project. Answers at once with `running`.
 
@@ -81,6 +90,7 @@ async def start_run(
         project_id=body.project_id,
         sessions=sessions,
         embeddings=embeddings,
+        images=images,
     )
     background.add_task(run_agent, ctx, body.mode, body.request, models, TOOLS_BY_MODE[body.mode])
     return run

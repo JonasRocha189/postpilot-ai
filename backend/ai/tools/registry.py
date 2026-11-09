@@ -3,6 +3,8 @@
 from langchain_core.tools import BaseTool
 
 from ai.tools.adapt_for_network import adapt_for_network
+from ai.tools.analyze_performance import analyze_performance
+from ai.tools.generate_image import generate_image
 from ai.tools.get_project import get_project
 from ai.tools.get_subject import get_subject
 from ai.tools.list_subjects import list_subjects
@@ -20,13 +22,14 @@ READ_TOOLS: list[BaseTool] = [
     search_documents,
     search_past_posts,
     search_web,
+    analyze_performance,
 ]
 
 TOOLS_BY_MODE: dict[AgentMode, list[BaseTool]] = {
     # Ideation suggests topics: it reads, but never writes
     AgentMode.IDEATION: READ_TOOLS,
     # Creation writes the post and saves it (always as a draft)
-    AgentMode.CREATION: [*READ_TOOLS, adapt_for_network, save_draft],
+    AgentMode.CREATION: [*READ_TOOLS, adapt_for_network, generate_image, save_draft],
 }
 
 ALL_TOOLS: list[BaseTool] = TOOLS_BY_MODE[AgentMode.CREATION]

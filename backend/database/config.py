@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -42,6 +44,8 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
     image_model: str = "gpt-image-1-mini"
+    # Cost per image grows with the quality (low is about US$ 0.005 at 1024x1024)
+    image_quality: Literal["low", "medium", "high"] = "low"
     tavily_api_key: str = ""
     agent_max_iterations: int = 8
     # Documents for the RAG (PDF, DOCX, TXT)
