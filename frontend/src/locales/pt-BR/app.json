@@ -141,6 +141,13 @@
       "action": "Criar conta",
       "switchText": "Já tem conta?",
       "switchLink": "Entrar"
+    },
+    "idle": {
+      "title": "Você ainda está aí?",
+      "text": "Por segurança, você sairá da conta em {{seconds}} s por inatividade.",
+      "stay": "Continuar conectado",
+      "logoutNow": "Sair agora",
+      "loggedOut": "Você saiu da conta após 30 minutos sem atividade. Entre de novo para continuar."
     }
   },
   "userMenu": {

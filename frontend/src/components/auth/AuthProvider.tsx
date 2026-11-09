@@ -1,6 +1,7 @@
 import { ScrollToTop } from "@/components/common/ScrollToTop";
 import { setTokenGetter } from "@/lib/api/http";
 import { auth0Config, authMode, DEFAULT_RETURN_TO } from "@/lib/auth/config";
+import { markActivity } from "@/lib/auth/idle";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router";
@@ -42,9 +43,11 @@ export default function AuthProvider() {
       // Mantém a sessão ao recarregar a página, sem depender de cookies de terceiros
       useRefreshTokens
       cacheLocation="localstorage"
-      onRedirectCallback={(appState) =>
-        navigate(appState?.returnTo ?? DEFAULT_RETURN_TO, { replace: true })
-      }
+      onRedirectCallback={(appState) => {
+        // Fresh login: the inactivity timer starts now
+        markActivity();
+        navigate(appState?.returnTo ?? DEFAULT_RETURN_TO, { replace: true });
+      }}
     >
       <ApiTokenBridge />
       {content}

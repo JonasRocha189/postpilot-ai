@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth/useAuth";
 import { Navigate, Outlet, useLocation } from "react-router";
+import IdleLogout from "./IdleLogout";
 import LoadingScreen from "./LoadingScreen";
 
 /** Protege as rotas filhas: sem sessão, redireciona para /login e volta depois. */
@@ -19,5 +20,10 @@ export default function RequireAuth() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <IdleLogout />
+      <Outlet />
+    </>
+  );
 }
