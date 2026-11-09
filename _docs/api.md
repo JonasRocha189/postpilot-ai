@@ -77,9 +77,9 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | POST | `/documents/{id}/process` | Avisa que o upload terminou: confere o arquivo no S3, muda para `processing` e **responde `202`** com o Document; o processamento (download, extração, chunking, embeddings) roda em segundo plano e termina em `ready` (com `chunk_count`) ou `error` (com `error_message`). Pode ser chamado de novo para reprocessar (os chunks são substituídos). `409` se já estiver em `processing`; `422` se o arquivo não foi enviado ou passou do limite (o objeto é apagado); `503` se a IA não estiver configurada (sem `OPENAI_API_KEY`) |
 | DELETE | `/documents/{id}` | Remove o documento, o objeto S3 e os chunks (cascade). Um projeto com documentos não pode ser excluído (`409`) |
 | **Agent** | | |
-| POST | `/agent/runs` | Corpo `{project_id, mode, request}`. Cria a execução e **responde `202` na hora** com `status: "running"`; o loop roda em segundo plano |
-| GET | `/agent/runs` 🅿 | Histórico de execuções do projeto (mais recentes primeiro) |
-| GET | `/agent/runs/{id}` | Execução com os passos gravados até o momento. O frontend consulta a cada ~0,7 s enquanto `status = "running"` para mostrar os passos ao vivo |
+| POST | `/agent/runs` | Corpo `{project_id, mode, request}` (`mode`: `ideation` ou `creation`; `request` com até 2.000 caracteres). Cria a execução e **responde `202` na hora** com `status: "running"`; o loop roda em segundo plano. `503` se a IA não estiver configurada (sem `OPENAI_API_KEY` nem `GROQ_API_KEY`) |
+| GET | `/agent/runs` 🅿 | Histórico de execuções do projeto (as 50 mais recentes, com os passos) |
+| GET | `/agent/runs/{id}` | Execução com os passos gravados até o momento. O frontend consulta a cada ~0,7 s enquanto `status = "running"` para mostrar os passos ao vivo. Uma execução `running` há mais de 4 minutos (interrompida por um deploy) é fechada como `error` |
 
 ## Corpo de `POST /posts` e `PUT /posts/{id}`
 
@@ -228,3 +228,4 @@ Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); cada variaç
 - `result_summary` é um texto curto para a tela; o resultado completo da tool fica só no banco e nos logs.
 - `iterations` conta as voltas do loop: várias tools pedidas pelo LLM na mesma resposta contam como uma.
 - `post_id` é preenchido quando o agente salva um rascunho (modo `creation`).
+- `started_at` é o momento em que a execução foi criada; o resultado completo de cada tool (`result`) fica só no banco e nos logs.

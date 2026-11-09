@@ -12,6 +12,16 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-09
+
+### Adicionado
+
+- IA: **o agente** (`ai/agent/runner.py`): `create_agent` do LangChain com `ModelCallLimitMiddleware` (8 iterações), `ModelFallbackMiddleware` (OpenAI → Groq `openai/gpt-oss-120b`) e um middleware próprio que conta as iterações e grava cada tool em `agent_steps` assim que ela termina, com log; prompts por modo; tempo máximo de 180 s. API `/agent/runs` (`POST` responde `202` e roda em segundo plano, histórico, detalhe com os passos; execução interrompida por deploy é fechada ao ler). Tools de escrita: `save_draft` (sempre `draft`, mesmas regras do formulário, liga o post à execução), `adapt_for_network` (limite e estilo de cada rede, sem IA) e `search_web` (Tavily, com fontes). 39 testes novos (219 no backend), com modelo de chat roteirizado. Primeira execução real local: 34 s, 5 tools, fontes citadas.
+
+### Alterado
+
+- IA: o modelo de fallback do Groq passa a ser `openai/gpt-oss-120b`; o `llama-3.3-70b-versatile` foi retirado pelo Groq.
+
 ## 2026-11-08
 
 ### Alterado
