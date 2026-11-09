@@ -178,6 +178,7 @@ async def test_a_run_left_running_for_too_long_is_closed(
     ],
 )
 async def test_the_request_is_validated(client: AsyncClient, body: dict[str, str]) -> None:
+    use_model(AIMessage("Ok."))
     project_id = await create_project(client)
     payload = {"project_id": project_id, "mode": "creation", "request": "Um post", **body}
 

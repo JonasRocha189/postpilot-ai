@@ -24,6 +24,10 @@ Formato de cada entrada:
 - IA: o modelo de fallback do Groq passa a ser `openai/gpt-oss-120b`; o `llama-3.3-70b-versatile` foi retirado pelo Groq.
 - Frontend: **Documentos e Agente ligados à API real**: os tipos (`ProjectDocument`, `AgentRun`, `AgentStep`, `AgentRunInput`) e os campos passam a ser os da API em inglês (`type`, `size_bytes`, `error_message`, `chunk_count`; `mode`, `request`, `response`, `steps`, `step_number`, `arguments`, `result_summary`, `duration_ms`, `started_at`, `finished_at`), e os nomes das tools nos rótulos e no agente fictício são os do backend (`search_documents`, `save_draft`…). Os dados do modo fictício no navegador mudam de versão (`v3`) para não quebrar com os campos antigos. Fluxo de documentos conferido contra o backend local (URL de upload → S3 → processamento → `ready`).
 
+### Corrigido
+
+- Testes do backend: as chaves de IA (`OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY`) ficam vazias e o LangSmith desligado em todos os testes (`tests/conftest.py`), como no CI. Antes, três testes de validação de `/agent/runs` passavam na máquina com chaves no `.env` e falhavam no CI (`503` antes do `422`).
+
 ### Removido
 
 - Frontend: **páginas de demonstração do TailAdmin** (grupo "Template (referência)" do menu e as rotas `/template/*`): 67 arquivos e 12 dependências usadas só por elas (`jsvectormap`, `leaflet`, `maplibre-gl`, `react-map-gl`, `prismjs`, `react-dnd`, `react-dnd-html5-backend`, `@popperjs/core`, `@floating-ui/react` e os `@types` correspondentes).

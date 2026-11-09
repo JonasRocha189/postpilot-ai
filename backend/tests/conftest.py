@@ -12,3 +12,10 @@ os.environ.setdefault("TC_HOST", "127.0.0.1")
 os.environ["AUTH0_DOMAIN"] = "test-tenant.auth0.com"
 os.environ["AUTH0_AUDIENCE"] = "https://api.postpilot.test"
 os.environ["AUTH_DEV_USER"] = ""
+
+
+# AI off by default: no test may depend on (or spend) the developer's real keys
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = ""
+os.environ["TAVILY_API_KEY"] = ""
+os.environ["LANGSMITH_TRACING"] = "false"
