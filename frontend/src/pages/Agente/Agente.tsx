@@ -20,11 +20,11 @@ export default function Agente() {
   const { t: tApp } = useTranslation("app");
   const { projetoAtual } = useProjetoAtual();
   const [params, setParams] = useSearchParams();
-  const modo: ModoAgente = params.get("mode") === "creation" ? "creation" : "ideation";
+  const mode: ModoAgente = params.get("mode") === "creation" ? "creation" : "ideation";
 
-  // Execuções feitas nesta visita, por projeto (cada pedido é independente)
+  // Execuções feitas nesta visita, por projeto (cada request é independente)
   const [conversa, setConversa] = useState<{ id: string; projetoId: string }[]>([]);
-  const [pedido, setPedido] = useState("");
+  const [request, setPedido] = useState("");
   const executar = useExecutarAgente();
   const fimRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +34,7 @@ export default function Agente() {
 
   // Rola até a última mensagem quando a conversa ou os passos mudam
   // (não rola ao abrir a página, com a conversa vazia)
-  const passosVisiveis = ultima.data?.passos.length ?? 0;
+  const passosVisiveis = ultima.data?.steps.length ?? 0;
   const temConversa = doProjeto.length > 0;
   useEffect(() => {
     if (temConversa) fimRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -42,10 +42,10 @@ export default function Agente() {
 
   const enviar = (e?: FormEvent) => {
     e?.preventDefault();
-    const texto = pedido.trim();
+    const texto = request.trim();
     if (!texto || ocupado || !projetoAtual) return;
     executar.mutate(
-      { project_id: projetoAtual.id, modo, pedido: texto },
+      { project_id: projetoAtual.id, mode, request: texto },
       {
         onSuccess: (execucao) => {
           setConversa((atual) => [...atual, { id: execucao.id, projetoId: execucao.project_id }]);
@@ -55,7 +55,7 @@ export default function Agente() {
     );
   };
 
-  const sugestoes = t(`suggestions.${modo}`, { returnObjects: true }) as string[];
+  const sugestoes = t(`suggestions.${mode}`, { returnObjects: true }) as string[];
 
   return (
     <>
@@ -74,11 +74,11 @@ export default function Agente() {
                 key={m}
                 type="button"
                 role="radio"
-                aria-checked={modo === m}
+                aria-checked={mode === m}
                 onClick={() => setParams({ mode: m }, { replace: true })}
                 className={cn(
                   "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                  modo === m
+                  mode === m
                     ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-800 dark:text-white"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white",
                 )}
@@ -97,10 +97,10 @@ export default function Agente() {
               <AiIcon className="size-7" />
             </span>
             <h3 className="mt-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-              {t(`intro.${modo}.title`)}
+              {t(`intro.${mode}.title`)}
             </h3>
             <p className="mx-auto mt-2 max-w-lg text-sm text-gray-500 dark:text-gray-400">
-              {t(`intro.${modo}.message`)}
+              {t(`intro.${mode}.message`)}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {sugestoes.map((s) => (
@@ -130,13 +130,13 @@ export default function Agente() {
         )}
 
         <form onSubmit={enviar} className={`${cardClass} p-3`}>
-          <label htmlFor="pedido" className="sr-only">
+          <label htmlFor="request" className="sr-only">
             {t("inputLabel")}
           </label>
           <textarea
-            id="pedido"
+            id="request"
             rows={3}
-            value={pedido}
+            value={request}
             maxLength={MAX_PEDIDO}
             onChange={(e) => setPedido(e.target.value)}
             onKeyDown={(e) => {
@@ -146,7 +146,7 @@ export default function Agente() {
                 enviar();
               }
             }}
-            placeholder={t(`placeholder.${modo}`)}
+            placeholder={t(`placeholder.${mode}`)}
             className="w-full resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-0 focus:outline-hidden dark:text-white/90 dark:placeholder:text-white/30"
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-2 pt-3 dark:border-gray-800">
@@ -158,7 +158,7 @@ export default function Agente() {
             </p>
             <Button
               size="sm"
-              disabled={!pedido.trim() || ocupado}
+              disabled={!request.trim() || ocupado}
               startIcon={<PaperPlaneIcon className="size-4" />}
             >
               {ocupado ? t("working") : t("send")}

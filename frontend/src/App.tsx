@@ -14,58 +14,6 @@ const page = (
   lazy: async () => ({ Component: (await load()).default }),
 });
 
-// Páginas de demonstração do TailAdmin, mantidas como referência visual.
-// Remover antes da entrega.
-const templateRoutes: RouteObject[] = [
-  {
-    path: "/template/ecommerce",
-    ...page(() => import("@/pages/Dashboard/Ecommerce")),
-  },
-  { path: "/template/calendar", ...page(() => import("@/pages/Calendar")) },
-  { path: "/template/profile", ...page(() => import("@/pages/UserProfiles")) },
-  {
-    path: "/template/form-elements",
-    ...page(() => import("@/pages/Forms/FormElements")),
-  },
-  {
-    path: "/template/basic-tables",
-    ...page(() => import("@/pages/Tables/BasicTables")),
-  },
-  { path: "/template/blank", ...page(() => import("@/pages/OtherPage/Blank")) },
-  {
-    path: "/template/alerts",
-    ...page(() => import("@/pages/UiElements/Alerts")),
-  },
-  {
-    path: "/template/avatars",
-    ...page(() => import("@/pages/UiElements/Avatars")),
-  },
-  {
-    path: "/template/badge",
-    ...page(() => import("@/pages/UiElements/Badges")),
-  },
-  {
-    path: "/template/buttons",
-    ...page(() => import("@/pages/UiElements/Buttons")),
-  },
-  {
-    path: "/template/images",
-    ...page(() => import("@/pages/UiElements/Images")),
-  },
-  {
-    path: "/template/videos",
-    ...page(() => import("@/pages/UiElements/Videos")),
-  },
-  {
-    path: "/template/line-chart",
-    ...page(() => import("@/pages/Charts/LineChart")),
-  },
-  {
-    path: "/template/bar-chart",
-    ...page(() => import("@/pages/Charts/BarChart")),
-  },
-];
-
 const router = createBrowserRouter([
   {
     element: <AuthProvider />,
@@ -163,7 +111,6 @@ const router = createBrowserRouter([
                   },
                 ],
               },
-              ...templateRoutes,
             ],
           },
         ],

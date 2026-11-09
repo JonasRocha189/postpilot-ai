@@ -102,6 +102,11 @@ const handlers = [
   }),
 
   // --- projects ------------------------------------------------------------
+  // Health check (no token): the header badge asks for it every minute
+  http.get(`${API}/health/ready`, () =>
+    HttpResponse.json({ status: "ok", checks: { database: "ok" } }),
+  ),
+
   http.get(`${API}/projects`, () =>
     HttpResponse.json(
       [...db.projects].sort((a, b) => a.name.localeCompare(b.name)),

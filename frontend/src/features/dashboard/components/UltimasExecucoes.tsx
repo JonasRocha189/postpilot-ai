@@ -31,16 +31,16 @@ export default function UltimasExecucoes({
             >
               <div className="shrink-0 sm:w-20">
                 <Badge color="primary" size="sm">
-                  {t(`domain.agentMode.${execucao.modo}`)}
+                  {t(`domain.agentMode.${execucao.mode}`)}
                 </Badge>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-theme-sm text-gray-800 dark:text-white/90">
-                  {execucao.pedido}
+                  {execucao.request}
                 </p>
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                   {fmt.relative(execucao.iniciadaEm)} ·{" "}
-                  {t("dashboard.agentRuns.steps", { count: execucao.passos })}
+                  {t("dashboard.agentRuns.steps", { count: execucao.steps })}
                 </p>
               </div>
               <div className="shrink-0">

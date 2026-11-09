@@ -6,7 +6,6 @@ import { Link, useLocation } from "react-router";
 import {
   AiIcon,
   BoltIcon,
-  BoxCubeIcon,
   CalenderIcon,
   ChartAltIcon,
   ChevronDownIcon,
@@ -16,11 +15,7 @@ import {
   GridIcon,
   ImageIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
   ShootingStarIcon,
-  TableIcon,
   TaskIcon,
   TimeIcon,
   UserCircleIcon,
@@ -31,8 +26,6 @@ type NavItem = {
   name: string;
   /** Chave do namespace "app" (itens do PostPilot) */
   appKey?: string;
-  /** Chave do namespace "common" (itens do template) */
-  key?: string;
   icon: React.ReactNode;
   path?: string;
   /** Desenha uma linha antes do item, separando grupos do menu */
@@ -135,74 +128,13 @@ const navItems: NavItem[] = [
   },
 ];
 
-// Páginas de demonstração do TailAdmin (referência visual). Remover antes da entrega.
-const othersItems: NavItem[] = [
-  {
-    name: "Páginas",
-    key: "pages",
-    icon: <PageIcon fontSize={24} />,
-    subItems: [
-      { name: "Ecommerce", key: "ecommerceHome", path: "/template/ecommerce" },
-      { name: "Calendar", key: "calendar", path: "/template/calendar" },
-      { name: "User Profile", key: "userProfile", path: "/template/profile" },
-      { name: "Blank Page", key: "blankPage", path: "/template/blank" },
-    ],
-  },
-  {
-    name: "Forms",
-    key: "forms",
-    icon: <ListIcon fontSize={24} />,
-    subItems: [
-      {
-        name: "Form Elements",
-        key: "formElements",
-        path: "/template/form-elements",
-      },
-    ],
-  },
-  {
-    name: "Tables",
-    key: "tables",
-    icon: <TableIcon fontSize={24} />,
-    subItems: [
-      {
-        name: "Basic Tables",
-        key: "basicTables",
-        path: "/template/basic-tables",
-      },
-    ],
-  },
-  {
-    icon: <PieChartIcon fontSize={24} />,
-    name: "Charts",
-    key: "charts",
-    subItems: [
-      { name: "Line Chart", key: "lineChart", path: "/template/line-chart" },
-      { name: "Bar Chart", key: "barChart", path: "/template/bar-chart" },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon fontSize={24} />,
-    name: "UI Elements",
-    key: "uiElements",
-    subItems: [
-      { name: "Alerts", key: "alerts", path: "/template/alerts" },
-      { name: "Avatar", key: "avatar", path: "/template/avatars" },
-      { name: "Badge", key: "badge", path: "/template/badge" },
-      { name: "Buttons", key: "buttons", path: "/template/buttons" },
-      { name: "Images", key: "images", path: "/template/images" },
-      { name: "Videos", key: "videos", path: "/template/videos" },
-    ],
-  },
-];
-
-const TODOS_OS_CAMINHOS = [...navItems, ...othersItems].flatMap((item) => [
+const TODOS_OS_CAMINHOS = navItems.flatMap((item) => [
   ...(item.path ? [item.path] : []),
   ...(item.subItems?.map((s) => s.path) ?? []),
 ]);
 
 type OpenSubmenu = {
-  type: "main" | "others";
+  type: "main";
   index: number;
 } | null;
 
@@ -210,14 +142,10 @@ type OpenSubmenu = {
 const findActiveSubmenu = (pathname: string): OpenSubmenu => {
   let match: OpenSubmenu = null;
 
-  (["main", "others"] as const).forEach((menuType) => {
-    const items = menuType === "main" ? navItems : othersItems;
-
-    items.forEach((nav, index) => {
-      if (nav.subItems?.some((subItem) => subItem.path === pathname)) {
-        match = { type: menuType, index };
-      }
-    });
+  navItems.forEach((nav, index) => {
+    if (nav.subItems?.some((subItem) => subItem.path === pathname)) {
+      match = { type: "main", index };
+    }
   });
 
   return match;
@@ -284,7 +212,7 @@ const AppSidebar: React.FC = () => {
     }
   }, [openSubmenu]);
 
-  const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
+  const handleSubmenuToggle = (index: number, menuType: "main") => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
         prevOpenSubmenu &&
@@ -297,7 +225,7 @@ const AppSidebar: React.FC = () => {
     });
   };
 
-  const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
+  const renderMenuItems = (items: NavItem[], menuType: "main") => (
     <ul className="flex flex-col gap-1">
       {items.map((nav, index) => (
         <li
@@ -483,23 +411,6 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
-            </div>
-
-            <div>
-              <h2
-                className={`mb-4 flex text-xs leading-5 text-gray-400 uppercase ${
-                  !isExpanded && !isHovered
-                    ? "xl:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  tApp("nav.templateGroup")
-                ) : (
-                  <HorizontaLDots className="size-6" />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
             </div>
           </div>
         </nav>

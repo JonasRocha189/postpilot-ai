@@ -12,7 +12,6 @@
     "calendar": "Calendário",
     "bestPractices": "Boas práticas",
     "profile": "Perfil",
-    "templateGroup": "Template (referência)",
     "toggleSidebar": "Abrir ou fechar o menu",
     "moreOptions": "Mais opções",
     "posts": "Posts",
@@ -76,6 +75,43 @@
   "language": {
     "label": "Idioma",
     "select": "Selecionar idioma"
+  },
+  "health": {
+    "title": "Saúde do sistema",
+    "label": "Saúde do sistema: {status}",
+    "short": {
+      "checking": "Conectando",
+      "ok": "Online",
+      "degraded": "Instável",
+      "offline": "Offline",
+      "demo": "Demonstração"
+    },
+    "state": {
+      "checking": "Verificando o servidor…",
+      "ok": "Tudo funcionando",
+      "degraded": "API no ar, banco de dados indisponível",
+      "offline": "Servidor sem resposta",
+      "demo": "Modo de demonstração (sem servidor)"
+    },
+    "hint": {
+      "checking": "No plano gratuito, o servidor dorme sem uso e leva até um minuto para acordar.",
+      "ok": "API e banco de dados respondendo. A verificação se repete a cada minuto.",
+      "degraded": "Dá para navegar, mas salvar e carregar dados pode falhar. Tente de novo em instantes.",
+      "offline": "O servidor pode estar acordando ou fora do ar. Tente de novo em instantes.",
+      "demo": "Os dados ficam só neste navegador. Configure VITE_API_URL para usar o backend."
+    },
+    "api": "API",
+    "database": "Banco de dados",
+    "databaseState": {
+      "ok": "Respondendo",
+      "error": "Indisponível",
+      "unknown": "Sem informação"
+    },
+    "latency": "{ms} ms",
+    "noAnswer": "Sem resposta",
+    "checkedAt": "Verificado às",
+    "checkNow": "Verificar agora",
+    "checking": "Verificando…"
   },
   "brand": {
     "tagline": "Posts para LinkedIn, Instagram e X com um agente de IA que conhece seus documentos e a voz da sua marca."
@@ -539,16 +575,16 @@
     "stepNumber": "Passo {n}",
     "arguments": "Argumentos",
     "tools": {
-      "obter_projeto": "Lendo o projeto",
-      "listar_assuntos": "Listando os assuntos",
-      "obter_assunto": "Lendo o assunto",
-      "buscar_documentos": "Buscando nos documentos",
-      "buscar_posts_anteriores": "Buscando posts aprovados",
-      "analisar_desempenho": "Analisando o desempenho",
-      "pesquisar_web": "Pesquisando na web",
-      "adaptar_para_rede": "Adaptando para a rede",
-      "gerar_imagem": "Gerando a imagem",
-      "salvar_rascunho": "Salvando o rascunho"
+      "get_project": "Lendo o projeto",
+      "list_subjects": "Listando os assuntos",
+      "get_subject": "Lendo o assunto",
+      "search_documents": "Buscando nos documentos",
+      "search_past_posts": "Buscando posts aprovados",
+      "analyze_performance": "Analisando o desempenho",
+      "search_web": "Pesquisando na web",
+      "adapt_for_network": "Adaptando para a rede",
+      "generate_image": "Gerando a imagem",
+      "save_draft": "Salvando o rascunho"
     },
     "runs": {
       "title": "Execuções do agente",

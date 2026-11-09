@@ -4,7 +4,7 @@ import { cardClass } from "@/components/common/styles";
 import Badge from "@/components/ui/badge/Badge";
 import { useExecucao } from "@/features/agente/api";
 import PassosLista from "@/features/agente/components/PassosLista";
-import { MAX_ITERACOES } from "@/features/agente/types";
+import { MAX_ITERATIONS } from "@/features/agente/types";
 import { ApiError } from "@/lib/api/http";
 import { STATUS_EXECUCAO_COR } from "@/lib/dominio";
 import { useFormat } from "@/lib/format";
@@ -31,12 +31,12 @@ export default function ExecucaoDetalhe() {
   if (error instanceof ApiError && error.status === 404) return <NotFound />;
 
   const duracao =
-    execucao?.finalizada_em &&
-    (new Date(execucao.finalizada_em).getTime() - new Date(execucao.iniciada_em).getTime()) / 1000;
+    execucao?.finished_at &&
+    (new Date(execucao.finished_at).getTime() - new Date(execucao.started_at).getTime()) / 1000;
 
   return (
     <>
-      <PageMeta title={`${t("detail.title")} | PostPilot`} description={execucao?.pedido ?? ""} />
+      <PageMeta title={`${t("detail.title")} | PostPilot`} description={execucao?.request ?? ""} />
       <PageBreadcrumb pageTitle={t("detail.title")} />
 
       {isLoading || !execucao ? (
@@ -50,22 +50,22 @@ export default function ExecucaoDetalhe() {
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="space-y-6 xl:col-span-2">
-            {/* Pedido e resposta */}
+            {/* Pedido e response */}
             <section className={`${cardClass} p-5 sm:p-6`}>
               <h3 className="text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">
                 {t("detail.request")}
               </h3>
               <p className="mt-2 text-base whitespace-pre-line text-gray-800 dark:text-white/90">
-                {execucao.pedido}
+                {execucao.request}
               </p>
 
-              {execucao.status === "completed" && execucao.resposta && (
+              {execucao.status === "completed" && execucao.response && (
                 <>
                   <h3 className="mt-6 text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400">
                     {t("detail.answer")}
                   </h3>
                   <p className="mt-2 text-sm whitespace-pre-line text-gray-700 dark:text-gray-300">
-                    {execucao.resposta}
+                    {execucao.response}
                   </p>
                 </>
               )}
@@ -74,7 +74,7 @@ export default function ExecucaoDetalhe() {
               )}
               {execucao.status === "limit_reached" && (
                 <p className="mt-6 text-sm text-warning-600 dark:text-orange-400">
-                  {t("limitReached", { max: MAX_ITERACOES })}
+                  {t("limitReached", { max: MAX_ITERATIONS })}
                 </p>
               )}
               {execucao.post_id && (
@@ -93,11 +93,11 @@ export default function ExecucaoDetalhe() {
                 {t("detail.steps")}
               </h3>
               <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">{t("detail.stepsHint")}</p>
-              {execucao.passos.length === 0 && execucao.status !== "running" ? (
+              {execucao.steps.length === 0 && execucao.status !== "running" ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">{t("detail.noSteps")}</p>
               ) : (
                 <PassosLista
-                  passos={execucao.passos}
+                  steps={execucao.steps}
                   executando={execucao.status === "running"}
                   detalhado
                 />
@@ -113,9 +113,9 @@ export default function ExecucaoDetalhe() {
                   {tApp(`domain.runStatus.${execucao.status}`)}
                 </Badge>
               </Info>
-              <Info label={t("detail.mode")}>{tApp(`domain.agentMode.${execucao.modo}`)}</Info>
+              <Info label={t("detail.mode")}>{tApp(`domain.agentMode.${execucao.mode}`)}</Info>
               <Info label={t("detail.started")}>
-                {fmt.date(execucao.iniciada_em, {
+                {fmt.date(execucao.started_at, {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
@@ -129,7 +129,7 @@ export default function ExecucaoDetalhe() {
                 </Info>
               ) : null}
               <Info label={t("detail.iterations")}>
-                {t("detail.iterationsValue", { n: execucao.iteracoes, max: MAX_ITERACOES })}
+                {t("detail.iterationsValue", { n: execucao.iterations, max: MAX_ITERATIONS })}
               </Info>
             </dl>
             <Link

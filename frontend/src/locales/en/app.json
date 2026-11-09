@@ -12,7 +12,6 @@
     "calendar": "Calendar",
     "bestPractices": "Best practices",
     "profile": "Profile",
-    "templateGroup": "Template (reference)",
     "toggleSidebar": "Toggle menu",
     "moreOptions": "More options",
     "posts": "Posts",
@@ -76,6 +75,43 @@
   "language": {
     "label": "Language",
     "select": "Select language"
+  },
+  "health": {
+    "title": "System health",
+    "label": "System health: {status}",
+    "short": {
+      "checking": "Connecting",
+      "ok": "Online",
+      "degraded": "Unstable",
+      "offline": "Offline",
+      "demo": "Demo"
+    },
+    "state": {
+      "checking": "Checking the server…",
+      "ok": "All systems working",
+      "degraded": "API up, database unavailable",
+      "offline": "Server not responding",
+      "demo": "Demo mode (no server)"
+    },
+    "hint": {
+      "checking": "On the free plan the server sleeps when idle and takes up to a minute to wake up.",
+      "ok": "API and database responding. The check repeats every minute.",
+      "degraded": "You can browse, but saving and loading data may fail. Try again in a moment.",
+      "offline": "The server may be waking up or down. Try again in a moment.",
+      "demo": "Data stays in this browser only. Set VITE_API_URL to use the backend."
+    },
+    "api": "API",
+    "database": "Database",
+    "databaseState": {
+      "ok": "Responding",
+      "error": "Unavailable",
+      "unknown": "No information"
+    },
+    "latency": "{ms} ms",
+    "noAnswer": "No answer",
+    "checkedAt": "Checked at",
+    "checkNow": "Check now",
+    "checking": "Checking…"
   },
   "brand": {
     "tagline": "Posts for LinkedIn, Instagram and X with an AI agent that knows your documents and your brand voice."
@@ -539,16 +575,16 @@
     "stepNumber": "Step {n}",
     "arguments": "Arguments",
     "tools": {
-      "obter_projeto": "Reading the project",
-      "listar_assuntos": "Listing subjects",
-      "obter_assunto": "Reading the subject",
-      "buscar_documentos": "Searching documents",
-      "buscar_posts_anteriores": "Finding approved posts",
-      "analisar_desempenho": "Analyzing performance",
-      "pesquisar_web": "Searching the web",
-      "adaptar_para_rede": "Adapting for the network",
-      "gerar_imagem": "Generating the image",
-      "salvar_rascunho": "Saving the draft"
+      "get_project": "Reading the project",
+      "list_subjects": "Listing subjects",
+      "get_subject": "Reading the subject",
+      "search_documents": "Searching documents",
+      "search_past_posts": "Finding approved posts",
+      "analyze_performance": "Analyzing performance",
+      "search_web": "Searching the web",
+      "adapt_for_network": "Adapting for the network",
+      "generate_image": "Generating the image",
+      "save_draft": "Saving the draft"
     },
     "runs": {
       "title": "Agent runs",

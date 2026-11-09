@@ -4,6 +4,7 @@ import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import LanguageDropdown from "@/components/header/LanguageDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
+import HealthStatus from "@/features/health/components/HealthStatus";
 import ProjetoSelector from "@/features/projetos/components/ProjetoSelector";
 import { cn } from "@/utils";
 import { useState } from "react";
@@ -81,7 +82,7 @@ const AppHeader: React.FC = () => {
           <button
             onClick={toggleApplicationMenu}
             aria-label={tApp("nav.moreOptions")}
-            className="z-99999 shrink-0 flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800"
+            className="z-99999 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800"
           >
             <svg
               width="24"
@@ -98,7 +99,6 @@ const AppHeader: React.FC = () => {
               />
             </svg>
           </button>
-
         </div>
         <div
           className={cn(
@@ -107,6 +107,8 @@ const AppHeader: React.FC = () => {
           )}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
+            {/* Backend and database status (health check) */}
+            <HealthStatus />
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}

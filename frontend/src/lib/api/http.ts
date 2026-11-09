@@ -7,7 +7,9 @@ export type ApiMode = "http" | "mock";
 export const apiMode: ApiMode =
   import.meta.env.VITE_API_URL || !import.meta.env.DEV ? "http" : "mock";
 
-const baseUrl = `${import.meta.env.VITE_API_URL ?? ""}/api/v1`;
+/** Base of every API call (exported for requests outside `apiFetch`, like the health check). */
+export const API_BASE_URL = `${import.meta.env.VITE_API_URL ?? ""}/api/v1`;
+const baseUrl = API_BASE_URL;
 
 /** Erro da API no formato `{"detail": ...}` do FastAPI. */
 export class ApiError extends Error {

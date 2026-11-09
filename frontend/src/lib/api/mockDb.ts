@@ -3,7 +3,7 @@
 // usam estas coleções e imitam as regras da API real (404, 409...).
 import { criarRoteiro, type Roteiro } from "@/features/agente/mockRoteiro";
 import type { Assunto } from "@/features/assuntos/types";
-import type { Documento } from "@/features/documentos/types";
+import type { ProjectDocument } from "@/features/documentos/types";
 import { imagemFicticia } from "@/features/imagens/ficticia";
 import type { Idea } from "@/features/ideas/types";
 import type { Imagem } from "@/features/imagens/types";
@@ -14,8 +14,8 @@ import type { Post } from "@/features/posts/types";
 import type { Projeto } from "@/features/projetos/types";
 import { ApiError } from "./http";
 
-/** Documento no banco fictício: guarda quando o processamento começou. */
-export type DocumentoMock = Documento & {
+/** ProjectDocument no banco fictício: guarda quando o processamento começou. */
+export type DocumentoMock = ProjectDocument & {
   processamento_iniciado_em: string | null;
 };
 
@@ -26,9 +26,9 @@ export type DocumentoMock = Documento & {
 export type ExecucaoMock = {
   id: string;
   project_id: string;
-  modo: ModoAgente;
-  pedido: string;
-  iniciada_em: string;
+  mode: ModoAgente;
+  request: string;
+  started_at: string;
   roteiro: Roteiro;
   post_id: string | null;
   finalizada: boolean;
@@ -247,9 +247,9 @@ function seedDocumentos(): DocumentoMock[] {
     id: string,
     project_id: string,
     name: string,
-    tipo: Documento["tipo"],
-    tamanho_bytes: number,
-    total_chunks: number,
+    type: ProjectDocument["type"],
+    size_bytes: number,
+    chunk_count: number,
     diasAtras: number,
   ): DocumentoMock => {
     const data = new Date(Date.now() - diasAtras * 86_400_000).toISOString();
@@ -257,11 +257,11 @@ function seedDocumentos(): DocumentoMock[] {
       id,
       project_id,
       name,
-      tipo,
-      tamanho_bytes,
+      type,
+      size_bytes,
       status: "ready",
-      mensagem_erro: null,
-      total_chunks,
+      error_message: null,
+      chunk_count,
       created_at: data,
       updated_at: data,
       processamento_iniciado_em: data,
@@ -296,8 +296,8 @@ function seedExecucoes(): ExecucaoMock[] {
   const exec = (
     id: string,
     projetoId: string,
-    modo: ModoAgente,
-    pedido: string,
+    mode: ModoAgente,
+    request: string,
     assunto: { id: string; name: string } | null,
     documentos: string[],
     horasAtras: number,
@@ -307,10 +307,10 @@ function seedExecucoes(): ExecucaoMock[] {
     return {
       id,
       project_id: projetoId,
-      modo,
-      pedido,
-      iniciada_em: new Date(Date.now() - horasAtras * 3_600_000).toISOString(),
-      roteiro: criarRoteiro({ modo, pedido, projeto, assunto, documentos }),
+      mode,
+      request,
+      started_at: new Date(Date.now() - horasAtras * 3_600_000).toISOString(),
+      roteiro: criarRoteiro({ mode, request, projeto, assunto, documentos }),
       post_id,
       finalizada: true,
     };
@@ -339,7 +339,7 @@ function seedExecucoes(): ExecucaoMock[] {
       "exec-3",
       PROJ_ACME,
       "ideation",
-      "O que está funcionando melhor no LinkedIn? #erro",
+      "O que está funcionando melhor no LinkedIn? #error",
       null,
       [],
       30,
@@ -495,12 +495,13 @@ export const mockDb = {
   assuntos: colecao<Assunto>("postpilot:mock:v2:assuntos", seedAssuntos),
   // v3: posts with variations (older browser data had one network per post)
   posts: colecao<Post>("postpilot:mock:v3:posts", seedPosts),
+  // v3: documents and runs with the English API fields (type, steps, request...)
   documentos: colecao<DocumentoMock>(
-    "postpilot:mock:v2:documentos",
+    "postpilot:mock:v3:documentos",
     seedDocumentos,
   ),
   execucoes: colecao<ExecucaoMock>(
-    "postpilot:mock:v2:execucoes",
+    "postpilot:mock:v3:execucoes",
     seedExecucoes,
   ),
   imagens: colecao<Imagem>("postpilot:mock:v2:imagens", seedImagens),
