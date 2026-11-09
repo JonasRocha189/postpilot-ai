@@ -69,20 +69,20 @@ export default function Execucoes() {
                         to={`/agent/runs/${e.id}`}
                         className="line-clamp-2 font-medium text-gray-800 hover:text-brand-500 dark:text-white/90 dark:hover:text-brand-400"
                       >
-                        {e.pedido}
+                        {e.request}
                       </Link>
                       <p className="mt-1 text-theme-xs text-gray-500 md:hidden dark:text-gray-400">
-                        {fmt.relative(e.iniciada_em)}
+                        {fmt.relative(e.started_at)}
                       </p>
                     </td>
                     <td className={`${td} hidden sm:table-cell`}>
                       <Badge color="primary" size="sm">
-                        {tApp(`domain.agentMode.${e.modo}`)}
+                        {tApp(`domain.agentMode.${e.mode}`)}
                       </Badge>
                     </td>
-                    <td className={`${td} hidden tabular-nums md:table-cell`}>{e.passos.length}</td>
+                    <td className={`${td} hidden tabular-nums md:table-cell`}>{e.steps.length}</td>
                     <td className={`${td} hidden whitespace-nowrap md:table-cell`}>
-                      {fmt.relative(e.iniciada_em)}
+                      {fmt.relative(e.started_at)}
                     </td>
                     <td className={td}>
                       <Badge color={STATUS_EXECUCAO_COR[e.status]} size="sm">

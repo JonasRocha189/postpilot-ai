@@ -1,10 +1,10 @@
 // API FICTÍCIA de documentos (ver lib/api/mockDb.ts). Não guarda o arquivo:
-// só simula o envio e o processamento (pendente → processando → pronto/erro).
+// só simula o envio e o processamento (pendente → processando → pronto/error).
 // Arquivos vazios ou com "error" no nome terminam com status "error".
 import { ApiError } from "@/lib/api/http";
 import { agoraIso, latencia, mockDb, type DocumentoMock } from "@/lib/api/mockDb";
 import type { DocumentosService } from "./service";
-import type { Documento } from "./types";
+import type { ProjectDocument } from "./types";
 import { TAMANHO_MAXIMO, tipoDoArquivo } from "./validacao";
 
 const TEMPO_PROCESSAMENTO_MS = 3500;
@@ -15,17 +15,17 @@ function atualizar(doc: DocumentoMock): DocumentoMock {
   const decorrido = Date.now() - new Date(doc.processamento_iniciado_em).getTime();
   if (decorrido < TEMPO_PROCESSAMENTO_MS) return doc;
 
-  const falhou = doc.tamanho_bytes === 0 || doc.name.toLowerCase().includes("error");
+  const falhou = doc.size_bytes === 0 || doc.name.toLowerCase().includes("error");
   return mockDb.documentos.substituir({
     ...doc,
     status: falhou ? "error" : "ready",
-    mensagem_erro: falhou ? "Não foi possível extrair texto do arquivo" : null,
-    total_chunks: falhou ? null : Math.max(1, Math.round(doc.tamanho_bytes / 30_000)),
+    error_message: falhou ? "Não foi possível extrair texto do arquivo" : null,
+    chunk_count: falhou ? null : Math.max(1, Math.round(doc.size_bytes / 30_000)),
     updated_at: agoraIso(),
   });
 }
 
-const publico = ({ processamento_iniciado_em: _ignorado, ...doc }: DocumentoMock): Documento => {
+const publico = ({ processamento_iniciado_em: _ignorado, ...doc }: DocumentoMock): ProjectDocument => {
   void _ignorado;
   return doc;
 };
@@ -44,8 +44,8 @@ export const documentosMock: DocumentosService = {
 
   async enviar(projetoId, arquivo, onProgress) {
     mockDb.projetos.encontrar(projetoId, "Projeto");
-    const tipo = tipoDoArquivo(arquivo.name);
-    if (!tipo) throw new ApiError(422, "Tipo de arquivo não aceito");
+    const type = tipoDoArquivo(arquivo.name);
+    if (!type) throw new ApiError(422, "Tipo de arquivo não aceito");
     if (arquivo.size > TAMANHO_MAXIMO) throw new ApiError(422, "Arquivo maior que o permitido");
 
     // Simula o PUT no S3 com progresso
@@ -59,11 +59,11 @@ export const documentosMock: DocumentosService = {
       id: crypto.randomUUID(),
       project_id: projetoId,
       name: arquivo.name,
-      tipo,
-      tamanho_bytes: arquivo.size,
+      type,
+      size_bytes: arquivo.size,
       status: "processing",
-      mensagem_erro: null,
-      total_chunks: null,
+      error_message: null,
+      chunk_count: null,
       created_at: agora,
       updated_at: agora,
       processamento_iniciado_em: agora,
@@ -73,7 +73,7 @@ export const documentosMock: DocumentosService = {
 
   async excluir(id) {
     await latencia();
-    mockDb.documentos.encontrar(id, "Documento");
+    mockDb.documentos.encontrar(id, "ProjectDocument");
     mockDb.documentos.remover(id);
   },
 };

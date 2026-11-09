@@ -11,7 +11,7 @@ type Envio = {
   chave: string;
   name: string;
   progresso: number;
-  erro: string | null;
+  error: string | null;
 };
 
 /** Área de arrastar-e-soltar: envia cada arquivo direto para o S3 (via URL pré-assinada). */
@@ -35,12 +35,12 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
 
   const onDrop = (aceitos: File[], rejeitados: FileRejection[]) => {
     const novos: Envio[] = [
-      ...aceitos.map((f) => ({ chave: crypto.randomUUID(), name: f.name, progresso: 0, erro: null })),
+      ...aceitos.map((f) => ({ chave: crypto.randomUUID(), name: f.name, progresso: 0, error: null })),
       ...rejeitados.map((r) => ({
         chave: crypto.randomUUID(),
         name: r.file.name,
         progresso: 0,
-        erro: motivo(r),
+        error: motivo(r),
       })),
     ];
     setEnvios((atual) => [...novos, ...atual]);
@@ -52,7 +52,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
         {
           // Enviado: some daqui e aparece na lista, já "processing"
           onSuccess: () => remover(chave),
-          onError: () => atualizar(chave, { erro: t("failed") }),
+          onError: () => atualizar(chave, { error: t("failed") }),
         },
       );
     });
@@ -96,7 +96,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
               key={envio.chave}
               className={cn(
                 "flex items-center gap-3 rounded-xl border px-4 py-3",
-                envio.erro
+                envio.error
                   ? "border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10"
                   : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3",
               )}
@@ -105,8 +105,8 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
                 <p className="truncate text-sm font-medium text-gray-800 dark:text-white/90">
                   {envio.name}
                 </p>
-                {envio.erro ? (
-                  <p className="text-theme-xs text-error-600 dark:text-error-400">{envio.erro}</p>
+                {envio.error ? (
+                  <p className="text-theme-xs text-error-600 dark:text-error-400">{envio.error}</p>
                 ) : (
                   <div
                     className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
@@ -123,7 +123,7 @@ export default function UploadArea({ projetoId }: { projetoId: string }) {
                   </div>
                 )}
               </div>
-              {envio.erro && (
+              {envio.error && (
                 <button
                   type="button"
                   onClick={() => remover(envio.chave)}

@@ -5,7 +5,7 @@ import { cardClass, iconButtonDangerClass } from "@/components/common/styles";
 import Badge from "@/components/ui/badge/Badge";
 import { useDocumentos, useExcluirDocumento } from "@/features/documentos/api";
 import UploadArea from "@/features/documentos/components/UploadArea";
-import type { Documento } from "@/features/documentos/types";
+import type { ProjectDocument } from "@/features/documentos/types";
 import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
 import { FileIcon, TrashBinIcon } from "@/icons";
 import { STATUS_DOCUMENTO_COR } from "@/lib/dominio";
@@ -24,7 +24,7 @@ export default function Documentos() {
   const { projetoAtual } = useProjetoAtual();
   const { data: documentos = [], isLoading, isError } = useDocumentos(projetoAtual?.id);
   const excluir = useExcluirDocumento();
-  const [paraExcluir, setParaExcluir] = useState<Documento | null>(null);
+  const [paraExcluir, setParaExcluir] = useState<ProjectDocument | null>(null);
 
   const tamanho = (bytes: number) =>
     bytes >= 1024 * 1024
@@ -69,28 +69,28 @@ export default function Documentos() {
                       <td className={td}>
                         <div className="flex items-center gap-3">
                           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-bold text-gray-600 uppercase dark:bg-gray-800 dark:text-gray-300">
-                            {doc.tipo}
+                            {doc.type}
                           </span>
                           <div className="min-w-0">
                             <p className="truncate font-medium text-gray-800 dark:text-white/90">
                               {doc.name}
                             </p>
-                            {doc.status === "error" && doc.mensagem_erro && (
+                            {doc.status === "error" && doc.error_message && (
                               <p className="text-theme-xs text-error-600 dark:text-error-400">
-                                {doc.mensagem_erro}
+                                {doc.error_message}
                               </p>
                             )}
                             <p className="text-theme-xs text-gray-500 sm:hidden dark:text-gray-400">
-                              {tamanho(doc.tamanho_bytes)}
+                              {tamanho(doc.size_bytes)}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className={`${td} hidden whitespace-nowrap sm:table-cell`}>
-                        {tamanho(doc.tamanho_bytes)}
+                        {tamanho(doc.size_bytes)}
                       </td>
                       <td className={`${td} hidden tabular-nums md:table-cell`}>
-                        {doc.total_chunks ?? "—"}
+                        {doc.chunk_count ?? "—"}
                       </td>
                       <td className={`${td} hidden whitespace-nowrap lg:table-cell`}>
                         {fmt.relative(doc.created_at)}

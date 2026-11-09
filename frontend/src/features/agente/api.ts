@@ -1,7 +1,7 @@
 import { postsKeys } from "@/features/posts/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { agenteService } from "./service";
-import type { ExecucaoAgente, ExecucaoInput } from "./types";
+import type { AgentRun, AgentRunInput } from "./types";
 
 export const execucoesKeys = {
   all: ["execucoes"] as const,
@@ -12,7 +12,7 @@ export const execucoesKeys = {
 export function useExecutarAgente() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: ExecucaoInput) => agenteService.executar(input),
+    mutationFn: (input: AgentRunInput) => agenteService.executar(input),
     onSuccess: (execucao) => {
       queryClient.setQueryData(execucoesKeys.detail(execucao.id), execucao);
       void queryClient.invalidateQueries({ queryKey: execucoesKeys.list(execucao.project_id) });
@@ -35,8 +35,8 @@ export function useExecucao(id: string | undefined) {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: execucoesKeys.detail(id ?? ""),
-    queryFn: async (): Promise<ExecucaoAgente> => {
-      const anterior = queryClient.getQueryData<ExecucaoAgente>(execucoesKeys.detail(id!));
+    queryFn: async (): Promise<AgentRun> => {
+      const anterior = queryClient.getQueryData<AgentRun>(execucoesKeys.detail(id!));
       const execucao = await agenteService.obter(id!);
       // Ao terminar, atualiza o histórico e os posts (pode ter um rascunho novo)
       if (anterior?.status === "running" && execucao.status !== "running") {

@@ -5,7 +5,7 @@ import type {
   StatusPost,
 } from "@/lib/dominio";
 
-// Formato provisório da resposta do dashboard. Ajustar quando a API existir
+// Formato provisório da response do dashboard. Ajustar quando a API existir
 // (GET /posts, GET /agent/runs e GET /reports/performance).
 
 export type Interacoes = {
@@ -42,10 +42,10 @@ export type ProximoPost = {
 
 export type ExecucaoResumo = {
   id: string;
-  modo: ModoAgente;
-  pedido: string;
+  mode: ModoAgente;
+  request: string;
   status: StatusExecucao;
-  passos: number;
+  steps: number;
   iniciadaEm: string; // ISO
 };
 

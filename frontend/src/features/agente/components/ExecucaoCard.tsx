@@ -4,7 +4,7 @@ import { STATUS_EXECUCAO_COR } from "@/lib/dominio";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { useExecucao } from "../api";
-import { MAX_ITERACOES } from "../types";
+import { MAX_ITERATIONS } from "../types";
 import PassosLista from "./PassosLista";
 
 /** Uma troca na conversa: o pedido do usuário e o agente trabalhando/respondendo. */
@@ -28,7 +28,7 @@ export default function ExecucaoCard({ id }: { id: string }) {
       {/* Pedido */}
       <div className="flex justify-end">
         <p className="max-w-[85%] rounded-2xl rounded-ee-md bg-brand-500 px-4 py-3 text-sm whitespace-pre-line text-white">
-          {execucao.pedido}
+          {execucao.request}
         </p>
       </div>
 
@@ -40,18 +40,18 @@ export default function ExecucaoCard({ id }: { id: string }) {
         <div className="min-w-0 flex-1 rounded-2xl rounded-ss-md border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge color="primary" size="sm">
-              {t(`domain.agentMode.${execucao.modo}`)}
+              {t(`domain.agentMode.${execucao.mode}`)}
             </Badge>
             <Badge color={STATUS_EXECUCAO_COR[execucao.status]} size="sm">
               {t(`domain.runStatus.${execucao.status}`)}
             </Badge>
           </div>
 
-          <PassosLista passos={execucao.passos} executando={executando} />
+          <PassosLista steps={execucao.steps} executando={executando} />
 
-          {execucao.status === "completed" && execucao.resposta && (
+          {execucao.status === "completed" && execucao.response && (
             <div className="mt-4 border-t border-gray-100 pt-4 text-sm whitespace-pre-line text-gray-800 dark:border-gray-800 dark:text-white/90">
-              {execucao.resposta}
+              {execucao.response}
             </div>
           )}
           {execucao.status === "error" && (
@@ -61,7 +61,7 @@ export default function ExecucaoCard({ id }: { id: string }) {
           )}
           {execucao.status === "limit_reached" && (
             <p className="mt-4 border-t border-gray-100 pt-4 text-sm text-warning-600 dark:border-gray-800 dark:text-orange-400">
-              {t("agent.limitReached", { max: MAX_ITERACOES })}
+              {t("agent.limitReached", { max: MAX_ITERATIONS })}
             </p>
           )}
 

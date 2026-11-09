@@ -1,6 +1,6 @@
 // AGENTE FICTÍCIO (ver lib/api/mockDb.ts e ./mockRoteiro.ts).
 // Os passos do roteiro "aparecem" um a um conforme o tempo passa, imitando
-// o backend que roda o agente em segundo plano e grava cada PassoAgente.
+// o backend que roda o agente em segundo plano e grava cada AgentStep.
 import { imagemFicticia } from "@/features/imagens/ficticia";
 import {
   agoraIso,
@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/mockDb";
 import { criarRoteiro } from "./mockRoteiro";
 import type { AgenteService } from "./service";
-import type { ExecucaoAgente } from "./types";
+import type { AgentRun } from "./types";
 
 /** Tempo entre um passo e outro na tela (mais curto que as durações "reais"). */
 const INTERVALO_MS = 900;
@@ -23,8 +23,8 @@ function finalizar(exec: ExecucaoMock): ExecucaoMock {
     const agora = agoraIso();
     postId = crypto.randomUUID();
     // A imagem gerada pelo agente entra na biblioteca do projeto e no rascunho
-    const prompt = exec.roteiro.passos.find((p) => p.tool === "gerar_imagem")
-      ?.argumentos.prompt;
+    const prompt = exec.roteiro.steps.find((p) => p.tool === "generate_image")
+      ?.arguments.prompt;
     const imagemId = crypto.randomUUID();
     mockDb.imagens.inserir({
       id: imagemId,
@@ -64,10 +64,10 @@ function finalizar(exec: ExecucaoMock): ExecucaoMock {
   });
 }
 
-/** Monta a resposta da API a partir do tempo decorrido desde o início. */
-function materializar(registro: ExecucaoMock): ExecucaoAgente {
-  const total = registro.roteiro.passos.length;
-  const decorrido = Date.now() - new Date(registro.iniciada_em).getTime();
+/** Monta a response da API a partir do tempo decorrido desde o início. */
+function materializar(registro: ExecucaoMock): AgentRun {
+  const total = registro.roteiro.steps.length;
+  const decorrido = Date.now() - new Date(registro.started_at).getTime();
 
   let exec = registro;
   if (!exec.finalizada && decorrido >= total * INTERVALO_MS + 400) {
@@ -78,44 +78,44 @@ function materializar(registro: ExecucaoMock): ExecucaoAgente {
     ? total
     : Math.min(total, Math.floor(decorrido / INTERVALO_MS));
 
-  const duracaoTotal = exec.roteiro.passos.reduce(
-    (soma, p) => soma + (p.duracao_ms ?? 0),
+  const duracaoTotal = exec.roteiro.steps.reduce(
+    (soma, p) => soma + (p.duration_ms ?? 0),
     0,
   );
 
   // Chamadas em paralelo (ex.: adaptar para LinkedIn e para X) contam como uma iteração
-  const passosVistos = exec.roteiro.passos.slice(0, visiveis);
-  const iteracoes = passosVistos.filter((p) => !p.paralelo).length;
+  const passosVistos = exec.roteiro.steps.slice(0, visiveis);
+  const iterations = passosVistos.filter((p) => !p.paralelo).length;
 
   return {
     id: exec.id,
     project_id: exec.project_id,
-    modo: exec.modo,
-    pedido: exec.pedido,
+    mode: exec.mode,
+    request: exec.request,
     status: exec.finalizada ? exec.roteiro.statusFinal : "running",
-    resposta: exec.finalizada ? exec.roteiro.resposta : null,
+    response: exec.finalizada ? exec.roteiro.response : null,
     post_id: exec.finalizada ? exec.post_id : null,
-    iteracoes,
-    passos: passosVistos.map((p, i) => ({
+    iterations,
+    steps: passosVistos.map((p, i) => ({
       tool: p.tool,
-      argumentos: p.argumentos,
-      resultado_resumo: p.resultado_resumo,
-      duracao_ms: p.duracao_ms,
-      erro: p.erro,
+      arguments: p.arguments,
+      result_summary: p.result_summary,
+      duration_ms: p.duration_ms,
+      error: p.error,
       id: `${exec.id}-passo-${i + 1}`,
-      ordem: i + 1,
+      step_number: i + 1,
     })),
-    iniciada_em: exec.iniciada_em,
-    finalizada_em: exec.finalizada
+    started_at: exec.started_at,
+    finished_at: exec.finalizada
       ? new Date(
-          new Date(exec.iniciada_em).getTime() + duracaoTotal,
+          new Date(exec.started_at).getTime() + duracaoTotal,
         ).toISOString()
       : null,
   };
 }
 
 export const agenteMock: AgenteService = {
-  async executar({ project_id, modo, pedido }) {
+  async executar({ project_id, mode, request }) {
     await latencia();
     const projeto = mockDb.projetos.encontrar(project_id, "Projeto");
     const assuntos = mockDb.assuntos
@@ -124,7 +124,7 @@ export const agenteMock: AgenteService = {
     // Usa o assunto citado no pedido; senão, o primeiro do projeto
     const assunto =
       assuntos.find((a) =>
-        pedido.toLowerCase().includes(a.name.toLowerCase()),
+        request.toLowerCase().includes(a.name.toLowerCase()),
       ) ??
       assuntos[0] ??
       null;
@@ -136,12 +136,12 @@ export const agenteMock: AgenteService = {
     const registro = mockDb.execucoes.inserir({
       id: crypto.randomUUID(),
       project_id,
-      modo,
-      pedido,
-      iniciada_em: agoraIso(),
+      mode,
+      request,
+      started_at: agoraIso(),
       roteiro: criarRoteiro({
-        modo,
-        pedido,
+        mode,
+        request,
         projeto,
         assunto: assunto && { id: assunto.id, name: assunto.name },
         documentos,
@@ -158,7 +158,7 @@ export const agenteMock: AgenteService = {
       .todos()
       .filter((e) => e.project_id === projetoId)
       .map(materializar)
-      .sort((a, b) => b.iniciada_em.localeCompare(a.iniciada_em));
+      .sort((a, b) => b.started_at.localeCompare(a.started_at));
   },
 
   async obter(id) {
