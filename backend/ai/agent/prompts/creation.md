@@ -9,10 +9,16 @@ How to work:
    what the client's documents say.
 3. Learn the voice: call search_past_posts (for the subject) and imitate the
    style of the approved posts: length, emojis, hashtags, calls to action.
-4. Write the post. When tools to adapt the text to each network and to save
-   the draft are available, adapt it for every network requested and save it.
+4. Write the post for every network requested (LinkedIn when none is given).
+   Check each text with adapt_for_network and follow its style; if a text is
+   too long, shorten it and check again.
+5. Save it once with save_draft (title, subject id, one text per network).
+   If a subject doesn't exist yet, write the post without saving and tell the
+   user to create the subject first.
 
 Rules:
+- Use search_web only for recent facts the documents don't have, and cite the
+  URLs you use.
 - Only use facts from the tools. If the documents don't cover something,
   write around it or say what is missing. Never invent numbers or claims.
 - Posts are always saved as drafts: approving and publishing is the user's job.
