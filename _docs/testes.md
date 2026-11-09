@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (148 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas) e da migration das variações.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (180 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings, fusão RRF e o schema das tools que o LLM vê) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas), da busca híbrida, das tools de leitura do agente e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -33,6 +33,8 @@ backend/tests/
 │   ├── test_health.py
 │   ├── test_post_rules.py   # regras por rede (formato, limite de texto, imagens) e da importação de métricas
 │   ├── test_rag.py          # extração (PDF, DOCX, TXT), chunking com sobreposição, modelo de embeddings
+│   ├── test_rrf.py          # Reciprocal Rank Fusion
+│   ├── test_tool_schemas.py # o que o LLM vê de cada tool: nunca user_id, project_id ou runtime
 │   └── test_request.py      # logs JSON: request_id (cabeçalho X-Request-ID), user_id, 500 e token nunca registrado
 └── integration/
     ├── conftest.py          # contêiner do Postgres, migrations, cliente HTTP, limpeza
@@ -43,6 +45,8 @@ backend/tests/
     ├── test_ideas.py        # ligação com o post, ON DELETE SET NULL
     ├── test_metrics.py      # importação tudo ou nada
     ├── test_documents.py    # URL de upload, processamento em segundo plano (ready/error), reprocessar, 409, 422, 503, autorização
+    ├── test_search.py       # busca híbrida no pgvector: termos (com redução em português), significado, escopo
+    ├── test_read_tools.py   # tools de leitura: voz resolvida, ids inválidos, isolamento entre projetos e usuários
     └── test_migrations.py   # dados antigos viram variações (downgrade → insert → upgrade)
 ```
 

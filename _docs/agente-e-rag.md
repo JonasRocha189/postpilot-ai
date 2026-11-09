@@ -1,6 +1,6 @@
 # Agente e RAG
 
-> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
+> Status: **em implementação**. Pronto: documentos (upload, processamento em segundo plano com extração, chunking e embeddings, lista e exclusão), busca híbrida e as tools de leitura (`get_project`, `list_subjects`, `get_subject`, `search_documents`, `search_past_posts`). Stack definida na [decisão 34](decisoes.md): LangChain 1.x + LangGraph, OpenAI com fallback para o Groq, LangSmith.
 
 ## Stack
 
@@ -139,7 +139,20 @@ sequenceDiagram
 1. **Similaridade vetorial** (pgvector, índice HNSW) sobre o embedding da consulta.
 2. **Full-text** (`tsvector` em português) sobre o conteúdo.
 
-Os dois rankings são combinados em uma lista única, por exemplo com Reciprocal Rank Fusion. A consulta **sempre** filtra por `user_id` e `project_id` (via `Document`).
+Os dois rankings são combinados com **Reciprocal Rank Fusion** (RRF): cada trecho soma `1 / (60 + posição)` em cada ranking em que aparece. Só as posições contam, então as notas dos dois métodos (que não são comparáveis) nunca são misturadas, e um trecho bem colocado nos dois sobe para o topo.
+
+- Implementação em `ai/rag/search.py` (`search_chunks`): cada método traz até 20 candidatos e a fusão devolve os 5 melhores, com o nome do documento.
+- **Full-text:** `websearch_to_tsquery('portuguese', …)`, que aceita texto livre sem erro de sintaxe e faz a redução das palavras ("backups" encontra "backup"); ordem por `ts_rank`.
+- **Vetorial:** distância de cosseno (`<=>`) sobre o índice HNSW.
+- A consulta **sempre** filtra por `user_id` e `project_id` (via `Document`) e só usa documentos `ready`.
+
+## Contexto das tools
+
+Toda tool recebe o contexto da execução (`ai/agent/context.py`, `AgentContext`: `user_id`, `project_id`, a fábrica de sessões do banco e o modelo de embeddings) pelo parâmetro `runtime: ToolRuntime[AgentContext]` do LangChain. Esse parâmetro **não entra no schema enviado ao modelo**: o LLM só preenche os argumentos de conteúdo (`query`, `subject_id`). Um teste de unidade (`tests/unit/test_tool_schemas.py`) confere, para cada tool, o que o modelo vê.
+
+- Cada tool tem duas partes no mesmo arquivo: a função `xxx_data(ctx, …)`, com a lógica (testada direto contra o banco), e a `@tool`, fina, cuja docstring é a descrição que o LLM lê.
+- Erros de uso (id inválido, assunto de outro projeto) voltam como `{"error": "…"}` com uma dica ("use um id de list_subjects"), para o modelo corrigir a chamada, em vez de derrubar a execução.
+- `ai/tools/registry.py` reúne as tools (`READ_TOOLS`).
 
 ## Testes
 
