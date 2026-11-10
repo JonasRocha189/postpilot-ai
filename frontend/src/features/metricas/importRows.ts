@@ -89,6 +89,34 @@ export function parseDate(value: string): string | null {
   return ok ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : null;
 }
 
+/**
+ * The publishing moment as an ISO string. Keeps the time when the cell has one
+ * ("2026-11-02 14:00 +0000", "2026-11-02T14:00:00Z"; without an offset, the
+ * browser's time zone), so the dashboard can tell mornings from evenings.
+ * A date alone becomes noon UTC, which is the same calendar day everywhere.
+ * Null when the date is invalid.
+ */
+export function parsePublishedAt(value: string): string | null {
+  const day = parseDate(value);
+  if (!day) return null;
+  const time =
+    /^\d{4}-\d{2}-\d{2}[ T](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?\s*(Z|[+-]\d{2}:?\d{2})?$/i.exec(
+      value.trim(),
+    );
+  if (!time) return `${day}T12:00:00Z`;
+  const [, h, m, sec = "00", offset] = time;
+  if (Number(h) > 23 || Number(m) > 59 || Number(sec) > 59) return null;
+  const local = `${day}T${h.padStart(2, "0")}:${m}:${sec}`;
+  if (offset) {
+    const zone =
+      offset.toUpperCase() === "Z"
+        ? "Z"
+        : `${offset.slice(0, 3)}:${offset.slice(-2)}`;
+    return `${local}${zone}`;
+  }
+  return new Date(local).toISOString();
+}
+
 /** "1.234", "1,234", "1 234" or "" (→ 0). Null when it isn't a whole count. */
 export function parseCount(value: string): number | null {
   const v = value.trim().replace(/\s/g, "");
@@ -101,8 +129,10 @@ export function parseCount(value: string): number | null {
 export type ImportRow = {
   /** Line in the file (the header is line 1) */
   line: number;
-  /** YYYY-MM-DD, or null when the date is invalid */
+  /** YYYY-MM-DD as written in the file (matches the variation's date), or null when invalid */
   publishedOn: string | null;
+  /** ISO moment sent to the API (see parsePublishedAt), or null when invalid */
+  publishedAt: string | null;
   /** Post text or link from the file, to help the user recognize it */
   label: string;
   values: Record<MetricField, number>;
@@ -134,7 +164,10 @@ export function readMetricsCsv(text: string): ReadResult {
       index[c] === -1 ? "" : (cells[index[c]] ?? "");
     const errors: string[] = [];
     const publishedOn = parseDate(cell("date"));
-    if (!publishedOn) errors.push("metricsImport.errors.invalidDate");
+    const publishedAt = parsePublishedAt(cell("date"));
+    if (!publishedOn || !publishedAt) {
+      errors.push("metricsImport.errors.invalidDate");
+    }
     const values = {} as Record<MetricField, number>;
     for (const field of METRIC_FIELDS) {
       const n = parseCount(cell(field));
@@ -148,6 +181,7 @@ export function readMetricsCsv(text: string): ReadResult {
     return {
       line: i + 2,
       publishedOn,
+      publishedAt,
       label: cell("post").trim(),
       values,
       errors: [...new Set(errors)],

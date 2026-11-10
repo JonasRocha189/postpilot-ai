@@ -176,7 +176,7 @@ Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); cada variaç
 }
 ```
 
-- Cada linha vira um registro de `Metric` com o `collected_at` do corpo. As datas vão ao meio-dia UTC para continuarem no mesmo dia em qualquer fuso.
+- Cada linha vira um registro de `Metric` com o `collected_at` do corpo. O `published_at` leva o horário do arquivo quando a coluna de data tem hora (é o que alimenta o dia × horário do relatório); data sem hora vai ao meio-dia UTC, para continuar no mesmo dia em qualquer fuso. O frontend casa a linha com a variação pela data (`expected_date`).
 - O frontend já filtra: só envia linhas sem erro, associadas e com `published_at` até a data da coleta.
 
 **Corpo de `POST /variations/{id}/metrics`:**
