@@ -137,8 +137,8 @@ export default function Metrics() {
         collected_at: `${collectedOn}T12:00:00Z`,
         rows: ready.map((r) => ({
           variation_id: matchOf(r),
-          // Noon UTC keeps the same calendar day in every time zone
-          published_at: `${r.publishedOn}T12:00:00Z`,
+          // With the file's time when it has one (noon UTC for a date alone)
+          published_at: r.publishedAt!,
           ...r.values,
         })),
       });

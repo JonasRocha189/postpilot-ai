@@ -25,6 +25,7 @@ Formato de cada entrada:
 
 ### Alterado
 
+- Métricas: a importação por CSV guarda o **horário de publicação** quando a coluna de data tem hora ("2026-11-02 14:00 +0000", com fuso ou no fuso do navegador); antes, todas as linhas ficavam ao meio-dia UTC e o mapa de dia × horário do dashboard só mostrava a manhã. Data sem hora continua ao meio-dia UTC.
 - IA: o modelo de fallback do Groq passa a ser `openai/gpt-oss-120b`; o `llama-3.3-70b-versatile` foi retirado pelo Groq.
 - Frontend: **Documentos e Agente ligados à API real**: os tipos (`ProjectDocument`, `AgentRun`, `AgentStep`, `AgentRunInput`) e os campos passam a ser os da API em inglês (`type`, `size_bytes`, `error_message`, `chunk_count`; `mode`, `request`, `response`, `steps`, `step_number`, `arguments`, `result_summary`, `duration_ms`, `started_at`, `finished_at`), e os nomes das tools nos rótulos e no agente fictício são os do backend (`search_documents`, `save_draft`…). Os dados do modo fictício no navegador mudam de versão (`v3`) para não quebrar com os campos antigos. Fluxo de documentos conferido contra o backend local (URL de upload → S3 → processamento → `ready`).
 

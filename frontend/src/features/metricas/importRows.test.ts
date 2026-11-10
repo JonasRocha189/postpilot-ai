@@ -4,6 +4,7 @@ import {
   autoMatch,
   parseCount,
   parseDate,
+  parsePublishedAt,
   readMetricsCsv,
   templateCsv,
 } from "./importRows";
@@ -48,6 +49,26 @@ describe("parseDate and parseCount", () => {
     expect(parseDate("ontem")).toBeNull();
   });
 
+  it("keeps the publishing time when the cell has one", () => {
+    expect(parsePublishedAt("2026-11-02")).toBe("2026-11-02T12:00:00Z");
+    expect(parsePublishedAt("02/11/2026")).toBe("2026-11-02T12:00:00Z");
+    expect(parsePublishedAt("2026-11-02 14:05 +0000")).toBe(
+      "2026-11-02T14:05:00+00:00",
+    );
+    expect(parsePublishedAt("2026-11-02 18:30 -0300")).toBe(
+      "2026-11-02T18:30:00-03:00",
+    );
+    expect(parsePublishedAt("2026-11-02T09:00:00.000Z")).toBe(
+      "2026-11-02T09:00:00Z",
+    );
+    // No offset: the browser's time zone
+    expect(parsePublishedAt("2026-11-02 08:00")).toBe(
+      new Date(2026, 10, 2, 8, 0).toISOString(),
+    );
+    expect(parsePublishedAt("2026-11-02 25:00")).toBeNull();
+    expect(parsePublishedAt("ontem")).toBeNull();
+  });
+
   it("reads whole counts with thousand separators; empty is 0", () => {
     expect(parseCount("1.234")).toBe(1234);
     expect(parseCount("1,234,567")).toBe(1234567);
@@ -66,6 +87,7 @@ describe("readMetricsCsv", () => {
       {
         line: 2,
         publishedOn: "2026-11-02",
+        publishedAt: "2026-11-02T12:00:00Z",
         label: "5 erros ao migrar para a nuvem",
         values: {
           impressions: 2720,
