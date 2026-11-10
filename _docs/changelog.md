@@ -26,6 +26,9 @@ Formato de cada entrada:
 ### Corrigido
 
 - Infra: o backup falhava porque o Neon roda o PostgreSQL 18 e o `pg_dump` do workflow era o 17; o contêiner passa a ser `postgres:18-alpine`.
+- Agente: pedir um carrossel esgotava o limite de 8 passos (o agente tentava gerar várias imagens, mas só pode uma por execução). O prompt de criação agora salva um rascunho com uma imagem e orienta o usuário a montar o carrossel no editor de arte.
+- Agente: na ideação, o "melhor assunto" às vezes era escolhido pelas impressões, e a resposta mostrava nomes de campos (`avg_engagement_rate 0.0612`, `enough_data`, `evening`) e português de Portugal vindo das fontes. Os prompts agora comparam pela taxa de engajamento, escrevem taxas em porcentagem, traduzem dias e períodos e mantêm o português do Brasil.
+- Infra: `*.tfvars` no `.gitignore`, para que valores do Terraform nunca sejam commitados.
 
 ### Removido
 
