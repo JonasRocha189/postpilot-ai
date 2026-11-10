@@ -67,7 +67,7 @@
 | --- | --- |
 | Frontend | React, Vite, TypeScript, Tailwind CSS, template TailAdmin, TanStack Query, React Hook Form + Zod, ApexCharts |
 | Backend (API) | Python, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2 |
-| Banco de dados | PostgreSQL 16 + pgvector, com busca híbrida (vetorial + full-text) |
+| Banco de dados | PostgreSQL + pgvector (18 no Neon, 16 local e nos testes), com busca híbrida (vetorial + full-text) |
 | IA | LangChain + LangGraph, OpenAI (chat, embeddings e imagem) com fallback para o Groq, busca web com Tavily, rastreio no LangSmith |
 | Autenticação | Auth0 (OAuth 2.0 / OpenID Connect, Authorization Code + PKCE) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
@@ -143,7 +143,7 @@ cd e2e && npx playwright test                   # aceite (ver _docs/testes.md)
 | | Requisito | Como é atendido |
 | --- | --- | --- |
 | [x] | Acesso por navegador, com responsividade | React + Tailwind, layout mobile-first |
-| [x] | Persistência em banco de dados | PostgreSQL 16 + pgvector |
+| [x] | Persistência em banco de dados | PostgreSQL + pgvector (Neon) |
 | [x] | OAuth para autenticação e autorização das APIs | Auth0 (OIDC + PKCE), JWT validado no backend |
 | [x] | Backend com API consumida pelo frontend | API REST FastAPI em `/api/v1` |
 | [x] | Controle de versões na internet | GitHub |

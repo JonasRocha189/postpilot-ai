@@ -24,7 +24,7 @@ flowchart TB
     end
 
     subgraph neon["Neon"]
-        pg[("PostgreSQL 16<br/>+ pgvector")]
+        pg[("PostgreSQL 18<br/>+ pgvector")]
     end
 
     subgraph aws["AWS"]
@@ -210,7 +210,7 @@ Um objeto JSON por linha no stdout (structlog), configurado em `backend/core/log
 
 Um workflow agendado, `.github/workflows/backup.yml`, roda todo dia às 06:00 UTC (03:00 em São Paulo) e também pelo botão **Run workflow**:
 
-1. `pg_dump` do Neon em formato *custom* (compactado), num contêiner `postgres:17-alpine` (o cliente precisa ser da mesma versão do servidor ou mais novo).
+1. `pg_dump` do Neon em formato *custom* (compactado), num contêiner `postgres:18-alpine` (o cliente precisa ser da mesma versão do servidor ou mais novo; o Neon roda o PostgreSQL 18).
 2. Envio para `s3://<bucket>/backups/postpilot-AAAA-MM-DDTHHMMZ.dump`, com o AWS CLI do runner.
 
 | Peça | Onde |

@@ -23,6 +23,10 @@ Formato de cada entrada:
 
 - Docs: **arquitetura C4** reescrita conforme o código em produção (OpenAI + Groq + LangSmith no contexto, tarefas em segundo plano nos contêineres, componentes reais do backend e do frontend). **README** fechado: URL de produção, funcionalidades atuais, como executar localmente corrigido (o `docker compose` sobe só o Postgres e o S3) e entregas e requisitos marcados. Status da implantação atualizado.
 
+### Corrigido
+
+- Infra: o backup falhava porque o Neon roda o PostgreSQL 18 e o `pg_dump` do workflow era o 17; o contêiner passa a ser `postgres:18-alpine`.
+
 ### Removido
 
 - Frontend: o cadastro manual de métricas por variação (`MetricaForm`, `MetricasVariacao`, `calculo.ts`, `schema.ts`, 3 hooks e os textos `metrics.*`), que não estava em nenhuma tela e chamava endpoints que o backend não tem. As métricas entram só pela importação de CSV. Saem também da `api.md` os três endpoints que nunca existiram (`/variations/{id}/metrics` e `DELETE /metrics/{id}`).

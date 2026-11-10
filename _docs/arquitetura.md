@@ -46,7 +46,7 @@ flowchart TB
         back["Backend<br/><i>FastAPI (Python 3.12)<br/>contêiner Docker</i>"]
         bg["Tarefas em segundo plano<br/><i>processamento de documentos<br/>e execuções do agente</i>"]
     end
-    db[("PostgreSQL 16<br/>+ pgvector<br/><i>Neon</i>")]
+    db[("PostgreSQL 18<br/>+ pgvector<br/><i>Neon</i>")]
     backup["Backup agendado<br/><i>GitHub Actions, pg_dump</i>"]
 
     s3["AWS S3"]
