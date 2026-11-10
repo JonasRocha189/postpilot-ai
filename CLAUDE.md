@@ -21,7 +21,7 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 |---|---|
 | Frontend | React + Vite + TypeScript, Tailwind CSS, template TailAdmin (versão gratuita; não misturar com shadcn/ui), React Router, TanStack Query, React Hook Form + Zod, ApexCharts (já vem no TailAdmin) |
 | Backend | Python 3.12+, FastAPI, SQLAlchemy 2.x (async), Alembic, Pydantic v2, pydantic-settings |
-| Banco | PostgreSQL 16 + pgvector (índice HNSW) + full-text search (`tsvector`) para busca híbrida |
+| Banco | PostgreSQL + pgvector (18 no Neon; 16 local e nos testes) (índice HNSW) + full-text search (`tsvector`) para busca híbrida |
 | IA | LangChain 1.x + LangGraph (`create_agent`), chat na OpenAI com fallback para o Groq, embeddings e geração de imagem na OpenAI, busca web via Tavily, rastreio no LangSmith (decisão 34) |
 | Autenticação | Auth0 (OAuth 2.0 / OIDC, Authorization Code + PKCE no frontend, validação de JWT no backend) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
