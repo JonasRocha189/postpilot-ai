@@ -1,0 +1,44 @@
+name: Database backup
+
+# A daily pg_dump of the production database (Neon), sent to the app's S3
+# bucket under backups/. The bucket keeps the last 30 days (lifecycle rule in
+# infra/terraform/s3.tf). Restore: see _docs/implantacao.md, "Backup".
+on:
+  schedule:
+    - cron: "0 6 * * *" # every day at 06:00 UTC (03:00 in São Paulo)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: pg_dump to S3
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # pg_dump must be at least the server's version: the Postgres 17 client
+      # also dumps 16. Custom format: compressed, restored with pg_restore.
+      - name: Dump the database
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          docker run --rm -e DATABASE_URL -v "$PWD:/out" postgres:17-alpine \
+            sh -c 'pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --file=/out/postpilot.dump'
+          ls -lh postpilot.dump
+
+      # The backup user can only PutObject under backups/ (infra/terraform/iam.tf)
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          key="backups/postpilot-$(date -u +%Y-%m-%dT%H%MZ).dump"
+          aws s3 cp postpilot.dump "s3://$BUCKET/$key" --only-show-errors
+          echo "Saved $key"

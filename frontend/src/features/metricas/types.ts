@@ -3,7 +3,8 @@ import type { Rede } from "@/lib/dominio";
 // Espelha o schema do backend (ver docs/modelo-de-dados.md e docs/api.md)
 
 /**
- * Um registro de métricas de uma variação publicada. Os números são o total
+ * Um registro de métricas de uma variação publicada (só na API fictícia: a
+ * real recebe as métricas por POST /metrics/import). Os números são o total
  * acumulado no momento da coleta; o registro mais recente é o atual.
  */
 export type Metrica = {
@@ -17,19 +18,6 @@ export type Metrica = {
   cliques: number;
   coletado_em: string; // ISO
 };
-
-/** Corpo de POST /variacoes/{id}/metricas */
-export type MetricaInput = Omit<Metrica, "id" | "variacao_id">;
-
-export const CAMPOS_NUMERICOS = [
-  "impressoes",
-  "curtidas",
-  "comentarios",
-  "compartilhamentos",
-  "cliques",
-] as const satisfies readonly (keyof MetricaInput)[];
-
-export type CampoNumerico = (typeof CAMPOS_NUMERICOS)[number];
 
 // --- Import from a network's export (contract in English, see _docs/api.md) --
 

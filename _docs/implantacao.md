@@ -1,6 +1,6 @@
 # Implantação, CI/CD e IaC
 
-> Status: **em implantação**. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s). Prontos: contas da Neon, Render e Vercel, domínio `postpilot.jonas-rocha.com` (Cloudflare → Vercel), URLs de produção no Auth0, a parte da AWS pelo Terraform, a imagem Docker do backend, os logs em JSON, o `vercel.json` (frontend publicado), o pipeline (`.github/workflows/ci-cd.yml`) e o backend na Render (`postpilot-apit.onrender.com`, ligado ao Neon). Faltam os GitHub Secrets do deploy e o backup agendado. Não altere recursos em produção sem revisar antes o `terraform plan`.
+> Status: **em produção** desde 08/11 em https://postpilot.jonas-rocha.com. Plataformas definidas na [decisão 28](decisoes.md) (substitui a VPS com k3s): Vercel (frontend), Render (backend, `postpilot-apit.onrender.com`), Neon (PostgreSQL) e AWS pelo Terraform. Cada merge na `main` passa pelo pipeline completo (lint, testes, imagem, deploy e smoke test). O banco tem backup diário no S3. Não altere recursos em produção sem revisar antes o `terraform plan`.
 
 ## Modelo de implantação
 
@@ -208,4 +208,35 @@ Um objeto JSON por linha no stdout (structlog), configurado em `backend/core/log
 
 ## Backup
 
-Job agendado no GitHub Actions (`schedule`) que roda `pg_dump` no Neon e envia o dump para o S3. O Neon também guarda um histórico curto para restauração (point-in-time) no plano gratuito.
+Um workflow agendado, `.github/workflows/backup.yml`, roda todo dia às 06:00 UTC (03:00 em São Paulo) e também pelo botão **Run workflow**:
+
+1. `pg_dump` do Neon em formato *custom* (compactado), num contêiner `postgres:17-alpine` (o cliente precisa ser da mesma versão do servidor ou mais novo).
+2. Envio para `s3://<bucket>/backups/postpilot-AAAA-MM-DDTHHMMZ.dump`, com o AWS CLI do runner.
+
+| Peça | Onde |
+| --- | --- |
+| Usuário IAM `postpilot-backup` | `infra/terraform/iam.tf`. Só `PutObject` em `backups/*`: uma chave vazada não lê, altera nem apaga os arquivos do app |
+| Retenção de 30 dias | Regra `expire-backups` do lifecycle em `infra/terraform/s3.tf` |
+| Criptografia | SSE-S3 do bucket (padrão para todo objeto) |
+
+**GitHub Secrets do backup:**
+
+| Secret | Valor |
+| --- | --- |
+| `BACKUP_DATABASE_URL` | A URL do Neon no formato do `psql`: `postgresql://USUÁRIO:SENHA@HOST/BANCO?sslmode=require` (a mesma da Render, sem `+asyncpg` e com `sslmode` no lugar de `ssl`) |
+| `BACKUP_AWS_ACCESS_KEY_ID` | `terraform output backup_access_key_id` |
+| `BACKUP_AWS_SECRET_ACCESS_KEY` | `terraform output -raw backup_secret_access_key` |
+| `BACKUP_S3_BUCKET` | `terraform output -raw s3_bucket` |
+
+**Restaurar** (com uma conta que possa ler o bucket, como a do Terraform):
+
+```bash
+aws s3 ls s3://<bucket>/backups/                       # escolha o arquivo
+aws s3 cp s3://<bucket>/backups/postpilot-….dump .
+# Num banco vazio (ex.: um branch novo no Neon), nunca direto em produção:
+pg_restore --no-owner --no-privileges --dbname "postgresql://…?sslmode=require" postpilot-….dump
+```
+
+Depois de restaurar num branch novo, aponte o `DATABASE_URL` da Render para ele. O Neon também guarda um histórico curto para restauração *point-in-time* no plano gratuito, útil para desfazer um erro recente sem o dump.
+
+> Workflows agendados só rodam na `main`, e o GitHub os desliga depois de 60 dias sem atividade no repositório.
