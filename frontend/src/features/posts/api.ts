@@ -4,27 +4,27 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { imagensKeys } from "@/features/imagens/api";
-import { metricasKeys } from "@/features/metricas/api";
+import { imagesKeys } from "@/features/images/api";
+import { metricsKeys } from "@/features/metrics/api";
 import { postsService } from "./service";
-import type { PostFiltros, PostInput } from "./types";
+import type { PostFilters, PostInput } from "./types";
 
 export const postsKeys = {
   all: ["posts"] as const,
-  list: (projetoId: string, filtros: PostFiltros) =>
-    ["posts", "list", projetoId, filtros] as const,
+  list: (projectId: string, filters: PostFilters) =>
+    ["posts", "list", projectId, filters] as const,
   detail: (id: string) => ["posts", "detail", id] as const,
 };
 
 export function usePosts(
-  projetoId: string | undefined,
-  filtros: PostFiltros = {},
+  projectId: string | undefined,
+  filters: PostFilters = {},
 ) {
   return useQuery({
-    queryKey: postsKeys.list(projetoId ?? "", filtros),
-    queryFn: () => postsService.listar(projetoId!, filtros),
-    enabled: Boolean(projetoId),
-    // Ao trocar filtro ou mês do calendário, mantém a lista anterior até chegar a nova
+    queryKey: postsKeys.list(projectId ?? "", filters),
+    queryFn: () => postsService.list(projectId!, filters),
+    enabled: Boolean(projectId),
+    // When the filter or calendar month changes, keep the previous list until the new one arrives
     placeholderData: keepPreviousData,
   });
 }
@@ -32,43 +32,43 @@ export function usePosts(
 export function usePost(id: string | undefined) {
   return useQuery({
     queryKey: postsKeys.detail(id ?? ""),
-    queryFn: () => postsService.obter(id!),
+    queryFn: () => postsService.get(id!),
     enabled: Boolean(id),
   });
 }
 
-export function useCriarPost() {
+export function useCreatePost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: PostInput) => postsService.criar(input),
+    mutationFn: (input: PostInput) => postsService.create(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: postsKeys.all }),
   });
 }
 
-/** Variações removidas levam junto as imagens e as métricas. */
-function invalidarPostsEDependentes(
+/** Removed variations take their images and metrics with them. */
+function invalidatePostsAndDependents(
   queryClient: ReturnType<typeof useQueryClient>,
 ) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: postsKeys.all }),
-    queryClient.invalidateQueries({ queryKey: imagensKeys.all }),
-    queryClient.invalidateQueries({ queryKey: metricasKeys.all }),
+    queryClient.invalidateQueries({ queryKey: imagesKeys.all }),
+    queryClient.invalidateQueries({ queryKey: metricsKeys.all }),
   ]);
 }
 
-export function useAtualizarPost() {
+export function useUpdatePost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: PostInput }) =>
-      postsService.atualizar(id, input),
-    onSuccess: () => invalidarPostsEDependentes(queryClient),
+      postsService.update(id, input),
+    onSuccess: () => invalidatePostsAndDependents(queryClient),
   });
 }
 
-export function useExcluirPost() {
+export function useDeletePost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => postsService.excluir(id),
-    onSuccess: () => invalidarPostsEDependentes(queryClient),
+    mutationFn: (id: string) => postsService.remove(id),
+    onSuccess: () => invalidatePostsAndDependents(queryClient),
   });
 }

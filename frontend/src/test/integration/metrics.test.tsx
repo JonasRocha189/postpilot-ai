@@ -1,7 +1,7 @@
 // Integration: the metrics import page. The CSV is read in the browser, rows
 // are matched to published variations of the chosen network and imported in
 // one request (POST /metrics/import).
-import { templateCsv } from "@/features/metricas/importRows";
+import { templateCsv } from "@/features/metrics/importRows";
 import Metrics from "@/pages/Metrics";
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw/http";
@@ -16,7 +16,7 @@ const csvFile = (text: string, name = "export.csv") =>
 function seed() {
   const project = fakeApi.addProject();
   const subject = fakeApi.addSubject(project.id);
-  const erros = fakeApi.addPost(subject.id, {
+  const errors = fakeApi.addPost(subject.id, {
     title: "5 erros",
     variations: [
       { network: "linkedin", status: "published", expected_date: "2026-11-02" },
@@ -36,8 +36,8 @@ function seed() {
     ],
   });
   return {
-    linkedinErros: erros.variations[0].id,
-    xErros: erros.variations[1].id,
+    linkedinErrors: errors.variations[0].id,
+    xErrors: errors.variations[1].id,
     linkedinBackup: backup.variations[0].id,
   };
 }
@@ -64,7 +64,7 @@ describe("Metrics import (/metrics)", () => {
     const row3 = screen.getByRole("combobox", {
       name: "Post do PostPilot da linha 3",
     });
-    expect(row2).toHaveValue(ids.linkedinErros);
+    expect(row2).toHaveValue(ids.linkedinErrors);
     expect(row3).toHaveValue(ids.linkedinBackup);
     expect(within(row3).queryByText(/Ainda rascunho/)).not.toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "2.720" })).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe("Metrics import (/metrics)", () => {
     expect(body.collected_at).toMatch(/^\d{4}-\d{2}-\d{2}T12:00:00Z$/);
     expect(body.rows).toEqual([
       {
-        variation_id: ids.linkedinErros,
+        variation_id: ids.linkedinErrors,
         published_at: "2026-11-02T12:00:00Z",
         impressions: 2720,
         likes: 65,
@@ -118,7 +118,7 @@ describe("Metrics import (/metrics)", () => {
     const row3 = screen.getByRole("combobox", {
       name: "Post do PostPilot da linha 3",
     });
-    expect(row2).toHaveValue(ids.xErros);
+    expect(row2).toHaveValue(ids.xErrors);
     expect(row3).toHaveValue("");
     expect(within(row3).getAllByRole("option")).toHaveLength(2); // skip + 1 X variation
 
@@ -159,7 +159,7 @@ describe("Metrics import (/metrics)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("combobox", { name: "Post do PostPilot da linha 2" }),
-    ).toHaveValue(ids.linkedinErros);
+    ).toHaveValue(ids.linkedinErrors);
   });
 
   it("explains missing columns and invalid rows; nothing is sent", async () => {

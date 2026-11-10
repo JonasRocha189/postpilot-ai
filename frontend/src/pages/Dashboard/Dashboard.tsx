@@ -1,13 +1,13 @@
 import PageMeta from "@/components/common/PageMeta";
 import { useDashboard } from "@/features/dashboard/api";
 import DashboardCard from "@/features/dashboard/components/DashboardCard";
-import DesempenhoPorAssunto from "@/features/dashboard/components/DesempenhoPorAssunto";
-import EngajamentoPorRede from "@/features/dashboard/components/EngajamentoPorRede";
-import MelhorDiaHorario from "@/features/dashboard/components/MelhorDiaHorario";
-import ProximosPosts from "@/features/dashboard/components/ProximosPosts";
-import ResumoCards from "@/features/dashboard/components/ResumoCards";
-import UltimasExecucoes from "@/features/dashboard/components/UltimasExecucoes";
-import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
+import PerformanceBySubject from "@/features/dashboard/components/PerformanceBySubject";
+import EngagementByNetwork from "@/features/dashboard/components/EngagementByNetwork";
+import BestDayTime from "@/features/dashboard/components/BestDayTime";
+import UpcomingPosts from "@/features/dashboard/components/UpcomingPosts";
+import SummaryCards from "@/features/dashboard/components/SummaryCards";
+import LatestRuns from "@/features/dashboard/components/LatestRuns";
+import { useCurrentProject } from "@/features/projects/useCurrentProject";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
@@ -29,9 +29,11 @@ function NoMetrics() {
 
 export default function Dashboard() {
   const { t } = useTranslation("app");
-  const { projetoAtual } = useProjetoAtual();
-  const { data, isLoading, isError, refetch } = useDashboard(projetoAtual?.id);
-  const hasMetrics = (data?.desempenho.porRede.length ?? 0) > 0;
+  const { currentProject } = useCurrentProject();
+  const { data, isLoading, isError, refetch } = useDashboard(
+    currentProject?.id,
+  );
+  const hasMetrics = (data?.performance.byNetwork.length ?? 0) > 0;
 
   return (
     <>
@@ -74,22 +76,22 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           <div className="col-span-12">
-            <ResumoCards
-              postsPorStatus={data.postsPorStatus}
-              porRede={data.desempenho.porRede}
+            <SummaryCards
+              postsByStatus={data.postsByStatus}
+              byNetwork={data.performance.byNetwork}
             />
           </div>
 
           {hasMetrics ? (
             <>
               <div className="col-span-12 xl:col-span-7">
-                <EngajamentoPorRede porRede={data.desempenho.porRede} />
+                <EngagementByNetwork byNetwork={data.performance.byNetwork} />
               </div>
               <div className="col-span-12 xl:col-span-5">
-                <MelhorDiaHorario celulas={data.desempenho.porDiaHorario} />
+                <BestDayTime cells={data.performance.byDayTime} />
               </div>
               <div className="col-span-12 xl:col-span-7">
-                <DesempenhoPorAssunto porAssunto={data.desempenho.porAssunto} />
+                <PerformanceBySubject bySubject={data.performance.bySubject} />
               </div>
             </>
           ) : (
@@ -98,11 +100,11 @@ export default function Dashboard() {
             </div>
           )}
           <div className="col-span-12 xl:col-span-5">
-            <ProximosPosts posts={data.proximosPosts} />
+            <UpcomingPosts posts={data.upcomingPosts} />
           </div>
 
           <div className="col-span-12">
-            <UltimasExecucoes execucoes={data.ultimasExecucoes} />
+            <LatestRuns runs={data.latestRuns} />
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
 import { cn } from "@/utils";
 
 /**
- * Símbolo do PostPilot: avião de papel (o "piloto" que envia o post), com
- * rastro e um brilho (a IA). Mesmo desenho de `public/favicon.svg`.
+ * PostPilot symbol: a paper plane (the "pilot" that sends the post), with a
+ * trail and a sparkle (the AI). Same drawing as `public/favicon.svg`.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
@@ -30,7 +30,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** Marca do PostPilot. `iconOnly` para o menu lateral recolhido. */
+/** PostPilot brand. `iconOnly` for the collapsed sidebar. */
 export default function Logo({
   iconOnly = false,
   className,

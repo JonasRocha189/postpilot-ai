@@ -5,7 +5,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // Não repete erros do cliente (404, 409...), só falhas de rede ou 5xx
+      // Doesn't retry client errors (404, 409...), only network failures or 5xx
       retry: (failureCount, error) =>
         !(error instanceof ApiError && error.status < 500) && failureCount < 2,
     },

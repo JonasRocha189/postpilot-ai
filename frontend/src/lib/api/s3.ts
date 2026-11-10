@@ -1,16 +1,16 @@
 import { ApiError } from "./http";
 
-export type Progresso = (fracao: number) => void;
+export type Progress = (fraction: number) => void;
 
 /**
- * PUT direto no S3 com uma URL pré-assinada pelo backend.
- * Usa XHR porque o fetch não informa o progresso do envio.
+ * PUT straight to S3 with a URL presigned by the backend.
+ * Uses XHR because fetch doesn't report upload progress.
  */
 export function putNoS3(
   url: string,
-  arquivo: File,
+  file: File,
   contentType: string,
-  onProgress?: Progresso,
+  onProgress?: Progress,
 ) {
   return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -25,6 +25,6 @@ export function putNoS3(
         : reject(new ApiError(xhr.status, "Falha no envio para o S3"));
     xhr.onerror = () =>
       reject(new ApiError(0, "Falha de rede no envio para o S3"));
-    xhr.send(arquivo);
+    xhr.send(file);
   });
 }

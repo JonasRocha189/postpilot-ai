@@ -1,6 +1,6 @@
 /**
- * - `http`: chama o backend (`VITE_API_URL` ou a mesma origem em produção)
- * - `mock`: só em `npm run dev` sem `VITE_API_URL`; dados no localStorage
+ * - `http`: calls the backend (`VITE_API_URL`, or the same origin in production)
+ * - `mock`: only in `npm run dev` without `VITE_API_URL`; data in localStorage
  */
 export type ApiMode = "http" | "mock";
 
@@ -11,7 +11,7 @@ export const apiMode: ApiMode =
 export const API_BASE_URL = `${import.meta.env.VITE_API_URL ?? ""}/api/v1`;
 const baseUrl = API_BASE_URL;
 
-/** Erro da API no formato `{"detail": ...}` do FastAPI. */
+/** API error in FastAPI's `{"detail": ...}` format. */
 export class ApiError extends Error {
   readonly status: number;
 
@@ -22,7 +22,7 @@ export class ApiError extends Error {
   }
 }
 
-// Registrado pelo AuthProvider; devolve o access token do Auth0
+// Registered by AuthProvider; returns the Auth0 access token
 type TokenGetter = () => Promise<string | undefined>;
 
 let tokenGetter: TokenGetter | null = null;
@@ -51,7 +51,7 @@ export async function apiFetch<T>(
     try {
       detail = (await response.json()).detail;
     } catch {
-      // corpo vazio ou não-JSON
+      // empty or non-JSON body
     }
     throw new ApiError(
       response.status,

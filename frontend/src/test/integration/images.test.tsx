@@ -1,6 +1,6 @@
 // Integration: image library (/images), including the direct upload to S3
 // (presigned URL + XHR PUT, both answered by MSW).
-import Imagens from "@/pages/Imagens";
+import Images from "@/pages/Images";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -14,15 +14,15 @@ describe("Image library (/images)", () => {
   it("lists the project's images and how many posts use each one", async () => {
     const project = fakeApi.addProject();
     const subject = fakeApi.addSubject(project.id);
-    const usada = fakeApi.addImage(project.id, { description: "Nuvem" });
+    const used = fakeApi.addImage(project.id, { description: "Nuvem" });
     fakeApi.addImage(project.id, { description: "Evento" });
     fakeApi.addPost(subject.id, {
       variations: [
-        { network: "instagram", format: "single", image_ids: [usada.id] },
+        { network: "instagram", format: "single", image_ids: [used.id] },
       ],
     });
 
-    renderPage(<Imagens />, { path: "/images" });
+    renderPage(<Images />, { path: "/images" });
 
     expect(await screen.findByAltText("Nuvem")).toBeInTheDocument();
     expect(screen.getByAltText("Evento")).toBeInTheDocument();
@@ -31,7 +31,7 @@ describe("Image library (/images)", () => {
 
   it("uploads a file: presigned URL → PUT to S3 → registers the image", async () => {
     const project = fakeApi.addProject();
-    const { user } = renderPage(<Imagens />, { path: "/images" });
+    const { user } = renderPage(<Images />, { path: "/images" });
 
     await screen.findByText(
       "A biblioteca está vazia. Envie a primeira imagem.",
@@ -60,7 +60,7 @@ describe("Image library (/images)", () => {
 
   it("refuses unsupported files before calling the API", async () => {
     fakeApi.addProject();
-    renderPage(<Imagens />, { path: "/images" });
+    renderPage(<Images />, { path: "/images" });
     await screen.findByText(
       "A biblioteca está vazia. Envie a primeira imagem.",
     );
@@ -79,14 +79,14 @@ describe("Image library (/images)", () => {
   it("does not delete an image used by a post (409) but deletes an unused one", async () => {
     const project = fakeApi.addProject();
     const subject = fakeApi.addSubject(project.id);
-    const usada = fakeApi.addImage(project.id, { description: "Usada" });
+    const used = fakeApi.addImage(project.id, { description: "Usada" });
     fakeApi.addImage(project.id, { description: "Livre" });
     fakeApi.addPost(subject.id, {
       variations: [
-        { network: "instagram", format: "single", image_ids: [usada.id] },
+        { network: "instagram", format: "single", image_ids: [used.id] },
       ],
     });
-    const { user } = renderPage(<Imagens />, { path: "/images" });
+    const { user } = renderPage(<Images />, { path: "/images" });
     await screen.findByAltText("Usada");
 
     // Images are listed in API order: "Usada" is image 1

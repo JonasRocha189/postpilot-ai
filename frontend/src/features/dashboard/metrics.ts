@@ -1,41 +1,43 @@
-import type { Interacoes } from "./types";
+import type { Interactions } from "./types";
 
-/** Mínimo de posts por grupo para uma conclusão de desempenho (regra do agente). */
-export const AMOSTRA_MINIMA = 5;
+/** Minimum posts per group for a performance conclusion (the agent's rule). */
+export const MIN_SAMPLE = 5;
 
-export function totalInteracoes(m: Interacoes): number {
-  return m.curtidas + m.comentarios + m.compartilhamentos + m.cliques;
+export function totalInteractions(m: Interactions): number {
+  return m.likes + m.comments + m.shares + m.clicks;
 }
 
-/** Interações / impressões, entre 0 e 1. Zero quando não há impressões. */
-export function taxaEngajamento(m: Interacoes & { impressoes: number }): number {
-  return m.impressoes > 0 ? totalInteracoes(m) / m.impressoes : 0;
+/** Interactions / impressions, between 0 and 1. Zero when there are no impressions. */
+export function engagementRate(
+  m: Interactions & { impressions: number },
+): number {
+  return m.impressions > 0 ? totalInteractions(m) / m.impressions : 0;
 }
 
-export function amostraSuficiente(posts: number): boolean {
-  return posts >= AMOSTRA_MINIMA;
+export function enoughSample(posts: number): boolean {
+  return posts >= MIN_SAMPLE;
 }
 
-/** Soma interações e impressões de vários grupos. */
-export function somar<T extends Interacoes & { impressoes: number; posts: number }>(
-  grupos: T[],
-): Interacoes & { impressoes: number; posts: number } {
-  return grupos.reduce(
+/** Adds up interactions and impressions of several groups. */
+export function add<
+  T extends Interactions & { impressions: number; posts: number },
+>(groups: T[]): Interactions & { impressions: number; posts: number } {
+  return groups.reduce(
     (acc, g) => ({
       posts: acc.posts + g.posts,
-      impressoes: acc.impressoes + g.impressoes,
-      curtidas: acc.curtidas + g.curtidas,
-      comentarios: acc.comentarios + g.comentarios,
-      compartilhamentos: acc.compartilhamentos + g.compartilhamentos,
-      cliques: acc.cliques + g.cliques,
+      impressions: acc.impressions + g.impressions,
+      likes: acc.likes + g.likes,
+      comments: acc.comments + g.comments,
+      shares: acc.shares + g.shares,
+      clicks: acc.clicks + g.clicks,
     }),
     {
       posts: 0,
-      impressoes: 0,
-      curtidas: 0,
-      comentarios: 0,
-      compartilhamentos: 0,
-      cliques: 0,
+      impressions: 0,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      clicks: 0,
     },
   );
 }

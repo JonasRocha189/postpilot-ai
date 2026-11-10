@@ -1,4 +1,4 @@
-import type { AgentRun } from "@/features/agente/types";
+import type { AgentRun } from "@/features/agent/types";
 import type { Post, PostVariation } from "@/features/posts/types";
 import { describe, expect, it } from "vitest";
 import {
@@ -66,44 +66,44 @@ describe("timeBand", () => {
 
 describe("groupPerformance", () => {
   it("sums each network in the app's order", () => {
-    const { porRede } = groupPerformance([
+    const { byNetwork } = groupPerformance([
       row({ network: "x", impressions: 500 }),
       row(),
       row({ likes: 60 }),
     ]);
 
-    expect(porRede.map((r) => r.grupo)).toEqual(["linkedin", "x"]);
-    expect(porRede[0]).toMatchObject({
+    expect(byNetwork.map((r) => r.group)).toEqual(["linkedin", "x"]);
+    expect(byNetwork[0]).toMatchObject({
       posts: 2,
-      impressoes: 2000,
-      curtidas: 100,
-      comentarios: 10,
+      impressions: 2000,
+      likes: 100,
+      comments: 10,
     });
   });
 
   it("groups by subject", () => {
-    const { porAssunto } = groupPerformance([
+    const { bySubject } = groupPerformance([
       row({ subject: "Cloud" }),
       row({ subject: "Segurança" }),
       row({ subject: "Cloud" }),
     ]);
 
-    expect(porAssunto).toEqual([
-      expect.objectContaining({ grupo: "Cloud", posts: 2 }),
-      expect.objectContaining({ grupo: "Segurança", posts: 1 }),
+    expect(bySubject).toEqual([
+      expect.objectContaining({ group: "Cloud", posts: 2 }),
+      expect.objectContaining({ group: "Segurança", posts: 1 }),
     ]);
   });
 
   it("maps ISO weekdays to the chart's (0 = Sunday) and hours to bands", () => {
-    const { porDiaHorario } = groupPerformance([
+    const { byDayTime } = groupPerformance([
       row({ weekday: 7, hour: 20 }), // Sunday evening
       row({ weekday: 1, hour: 3 }), // Monday, late night
       row({ weekday: 7, hour: 21 }),
     ]);
 
-    expect(porDiaHorario).toEqual([
-      expect.objectContaining({ dia: 0, faixa: "noite", posts: 2 }),
-      expect.objectContaining({ dia: 1, faixa: "madrugada", posts: 1 }),
+    expect(byDayTime).toEqual([
+      expect.objectContaining({ day: 0, band: "noite", posts: 2 }),
+      expect.objectContaining({ day: 1, band: "madrugada", posts: 1 }),
     ]);
   });
 });
@@ -142,10 +142,10 @@ describe("upcomingPosts", () => {
     expect(result[0]).toEqual({
       id: "soon",
       title: "Post soon",
-      assunto: "Cloud",
-      redes: ["linkedin", "x"],
+      subject: "Cloud",
+      networks: ["linkedin", "x"],
       status: "draft",
-      dataPrevista: "2026-11-10T00:00:00",
+      expectedDate: "2026-11-10T00:00:00",
     });
   });
 
@@ -186,7 +186,7 @@ describe("latestRuns", () => {
     expect(result.map((r) => r.id)).toEqual(["r0", "r1", "r2", "r3", "r4"]);
     expect(result[2]).toMatchObject({
       steps: 2,
-      iniciadaEm: runs[2].started_at,
+      startedAt: runs[2].started_at,
     });
   });
 });

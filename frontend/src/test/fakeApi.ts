@@ -1,24 +1,24 @@
 // Fake backend for the integration tests: MSW answers the same routes as the
 // FastAPI backend (/api/v1/...) from in-memory data, with the same rules
 // (project scoping, 404, 409, 422) and the S3 presigned upload.
-import type { AgentRun } from "@/features/agente/types";
-import type { Assunto } from "@/features/assuntos/types";
+import type { AgentRun } from "@/features/agent/types";
+import type { Subject } from "@/features/subjects/types";
 import type { PostPerformance } from "@/features/dashboard/types";
 import type { Idea, IdeaInput } from "@/features/ideas/types";
-import type { Imagem } from "@/features/imagens/types";
+import type { Image } from "@/features/images/types";
 import type {
   MetricsImportInput,
   MetricsImportRow,
-} from "@/features/metricas/types";
-import { erroRegraPost } from "@/features/posts/redes";
+} from "@/features/metrics/types";
+import { postRuleError } from "@/features/posts/networks";
 import {
   variationMatches,
   type Post,
   type PostInput,
   type PostVariation,
 } from "@/features/posts/types";
-import type { Rede, StatusPost } from "@/lib/dominio";
-import type { Projeto } from "@/features/projetos/types";
+import type { Network, PostStatus } from "@/lib/domain";
+import type { Project } from "@/features/projects/types";
 import { http, HttpResponse } from "msw/http";
 import { setupServer } from "msw/node";
 
@@ -32,10 +32,10 @@ const s3Cors = {
 };
 
 type Db = {
-  projects: Projeto[];
-  subjects: Assunto[];
+  projects: Project[];
+  subjects: Subject[];
   posts: Post[];
-  images: (Imagem & { key: string })[];
+  images: (Image & { key: string })[];
   uploads: Set<string>;
   ideas: Idea[];
   /** Rows saved by POST /metrics/import, with the collection date */
@@ -77,10 +77,10 @@ const invalid = (detail: string) =>
 const noContent = () => new HttpResponse(null, { status: 204 });
 
 /** The API never returns the S3 key, only the presigned URL. */
-function semChave<T extends { key: string }>(image: T): Omit<T, "key"> {
-  const copia: Partial<T> = { ...image };
-  delete copia.key;
-  return copia as Omit<T, "key">;
+function noKey<T extends { key: string }>(image: T): Omit<T, "key"> {
+  const copy: Partial<T> = { ...image };
+  delete copy.key;
+  return copy as Omit<T, "key">;
 }
 
 async function body<T>(request: Request): Promise<T> {
@@ -144,8 +144,8 @@ const handlers = [
     ),
   ),
   http.post(`${API}/projects`, async ({ request }) => {
-    const input = await body<Partial<Projeto>>(request);
-    const project: Projeto = {
+    const input = await body<Partial<Project>>(request);
+    const project: Project = {
       id: newId("proj"),
       name: input.name ?? "",
       description: input.description ?? null,
@@ -164,7 +164,7 @@ const handlers = [
   http.put(`${API}/projects/:id`, async ({ params, request }) => {
     const project = db.projects.find((p) => p.id === params.id);
     if (!project) return notFound("Project");
-    Object.assign(project, await body<Partial<Projeto>>(request));
+    Object.assign(project, await body<Partial<Project>>(request));
     return HttpResponse.json(project);
   }),
   http.delete(`${API}/projects/:id`, ({ params }) => {
@@ -188,10 +188,10 @@ const handlers = [
     );
   }),
   http.post(`${API}/subjects`, async ({ request }) => {
-    const input = await body<Partial<Assunto>>(request);
+    const input = await body<Partial<Subject>>(request);
     if (!db.projects.some((p) => p.id === input.project_id))
       return notFound("Project");
-    const subject: Assunto = {
+    const subject: Subject = {
       id: newId("subj"),
       project_id: input.project_id!,
       name: input.name ?? "",
@@ -223,8 +223,8 @@ const handlers = [
       return notFound("Project");
     // A post matches when one of its variations matches all the filters
     const filters = {
-      status: (q.get("status") ?? undefined) as StatusPost | undefined,
-      network: (q.get("network") ?? undefined) as Rede | undefined,
+      status: (q.get("status") ?? undefined) as PostStatus | undefined,
+      network: (q.get("network") ?? undefined) as Network | undefined,
       from: q.get("from") ?? undefined,
       to: q.get("to") ?? undefined,
     };
@@ -368,7 +368,7 @@ const handlers = [
     if (!db.projects.some((p) => p.id === projectId))
       return notFound("Project");
     return HttpResponse.json(
-      db.images.filter((i) => i.project_id === projectId).map(semChave),
+      db.images.filter((i) => i.project_id === projectId).map(noKey),
     );
   }),
   http.post(`${API}/images/upload-url`, async ({ request }) => {
@@ -417,7 +417,7 @@ const handlers = [
       updated_at: now,
     };
     db.images.unshift(image);
-    return HttpResponse.json(semChave(image), { status: 201 });
+    return HttpResponse.json(noKey(image), { status: 201 });
   }),
   http.delete(`${API}/images/:id`, ({ params }) => {
     const used = db.posts.some((p) =>
@@ -443,14 +443,14 @@ function variationsError(input: PostInput, projectId: string): string | null {
     )
       return "Image is not in this project's library";
     // Same network rules as the backend (format, text length, images)
-    const rule = erroRegraPost({
+    const rule = postRuleError({
       network: v.network,
       format: v.format,
-      imagens: v.image_ids.length,
-      texto: v.content ?? "",
+      images: v.image_ids.length,
+      text: v.content ?? "",
       status: v.status,
     });
-    if (rule) return rule.mensagem;
+    if (rule) return rule.message;
   }
   return null;
 }
@@ -496,8 +496,8 @@ export const fakeApi = {
   get db() {
     return db;
   },
-  addProject(data: Partial<Projeto> = {}): Projeto {
-    const project: Projeto = {
+  addProject(data: Partial<Project> = {}): Project {
+    const project: Project = {
       id: newId("proj"),
       name: "Minha marca",
       description: null,
@@ -510,8 +510,8 @@ export const fakeApi = {
     db.projects.push(project);
     return project;
   },
-  addSubject(projectId: string, data: Partial<Assunto> = {}): Assunto {
-    const subject: Assunto = {
+  addSubject(projectId: string, data: Partial<Subject> = {}): Subject {
+    const subject: Subject = {
       id: newId("subj"),
       project_id: projectId,
       name: "Cloud",
@@ -562,7 +562,7 @@ export const fakeApi = {
     db.ideas.push(idea);
     return idea;
   },
-  addImage(projectId: string, data: Partial<Imagem> = {}): Imagem {
+  addImage(projectId: string, data: Partial<Image> = {}): Image {
     const image = {
       id: newId("img"),
       project_id: projectId,
@@ -575,7 +575,7 @@ export const fakeApi = {
       ...data,
     };
     db.images.push(image);
-    return semChave(image);
+    return noKey(image);
   },
   /** An agent run (newest first: add the most recent one first). */
   addRun(projectId: string, data: Partial<AgentRun> = {}): AgentRun {
@@ -603,7 +603,7 @@ export const fakeApi = {
       post_id: newId("post"),
       title: "Post",
       subject: "Cloud",
-      network: "linkedin" as Rede,
+      network: "linkedin" as Network,
       published_at: now,
       weekday: 2,
       hour: 9,

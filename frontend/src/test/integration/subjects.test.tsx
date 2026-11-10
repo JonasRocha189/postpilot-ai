@@ -1,6 +1,6 @@
 // Integration: subjects are always scoped by the current project.
-import AssuntoFormPage from "@/pages/Assuntos/AssuntoFormPage";
-import Assuntos from "@/pages/Assuntos/Assuntos";
+import SubjectFormPage from "@/pages/Subjects/SubjectFormPage";
+import Subjects from "@/pages/Subjects/Subjects";
 import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { fakeApi } from "../fakeApi";
@@ -8,31 +8,31 @@ import { renderPage } from "../render";
 
 describe("Subjects (/subjects)", () => {
   it("lists only the subjects of the current project", async () => {
-    const atual = fakeApi.addProject({ name: "A projeto atual" });
-    const outro = fakeApi.addProject({ name: "B outro" });
-    fakeApi.addSubject(atual.id, { name: "Cloud" });
-    fakeApi.addSubject(outro.id, { name: "Segurança" });
+    const current = fakeApi.addProject({ name: "A projeto atual" });
+    const other = fakeApi.addProject({ name: "B outro" });
+    fakeApi.addSubject(current.id, { name: "Cloud" });
+    fakeApi.addSubject(other.id, { name: "Segurança" });
 
-    renderPage(<Assuntos />, { path: "/subjects" });
+    renderPage(<Subjects />, { path: "/subjects" });
 
     expect(
       await screen.findByRole("link", { name: "Cloud" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("Segurança")).not.toBeInTheDocument();
     const [request] = fakeApi.requests("GET", "/subjects");
-    expect(request.url.searchParams.get("project_id")).toBe(atual.id);
+    expect(request.url.searchParams.get("project_id")).toBe(current.id);
   });
 
   it("asks to create a project first when there is none", async () => {
-    renderPage(<Assuntos />, { path: "/subjects" });
+    renderPage(<Subjects />, { path: "/subjects" });
     expect(
       await screen.findByRole("link", { name: "Criar primeiro projeto" }),
     ).toHaveAttribute("href", "/projects/new");
   });
 
   it("creates a subject in the current project", async () => {
-    const atual = fakeApi.addProject();
-    const { user, location } = renderPage(<AssuntoFormPage />, {
+    const current = fakeApi.addProject();
+    const { user, location } = renderPage(<SubjectFormPage />, {
       path: "/subjects/new",
     });
 
@@ -45,7 +45,7 @@ describe("Subjects (/subjects)", () => {
     await waitFor(() => expect(location()).toBe("/subjects"));
     expect(fakeApi.requests("POST", "/subjects")[0].body).toMatchObject({
       name: "Dicas de segurança",
-      project_id: atual.id,
+      project_id: current.id,
     });
   });
 
@@ -53,7 +53,7 @@ describe("Subjects (/subjects)", () => {
     const project = fakeApi.addProject();
     const subject = fakeApi.addSubject(project.id, { name: "Cloud" });
     fakeApi.addPost(subject.id);
-    const { user } = renderPage(<Assuntos />, { path: "/subjects" });
+    const { user } = renderPage(<Subjects />, { path: "/subjects" });
 
     await user.click(
       await screen.findByRole("button", { name: "Excluir Cloud" }),

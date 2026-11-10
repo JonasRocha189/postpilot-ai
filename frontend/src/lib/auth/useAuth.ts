@@ -23,7 +23,7 @@ export type AuthState = {
 };
 
 // ---------------------------------------------------------------------------
-// Modo mock: sessão fictícia guardada no sessionStorage (só em `npm run dev`)
+// Mock mode: a fake session kept in sessionStorage (only in `npm run dev`)
 // ---------------------------------------------------------------------------
 
 const MOCK_SESSION_KEY = "postpilot:mock-session";
@@ -48,7 +48,7 @@ function writeMockSession(loggedIn: boolean) {
     if (loggedIn) sessionStorage.setItem(MOCK_SESSION_KEY, "1");
     else sessionStorage.removeItem(MOCK_SESSION_KEY);
   } catch {
-    // sessionStorage indisponível: a sessão fictícia dura só esta página
+    // sessionStorage unavailable: the fake session lasts only this page
   }
 }
 
@@ -89,7 +89,7 @@ function missingAuthState(): AuthState {
 
 // ---------------------------------------------------------------------------
 
-/** Estado de autenticação da aplicação. Use sempre este hook, nunca o useAuth0 direto. */
+/** The app's authentication state. Always use this hook, never useAuth0 directly. */
 export function useAuth(): AuthState {
   const auth0 = useAuth0<AuthUser>();
 
@@ -117,14 +117,14 @@ export function useAuth(): AuthState {
   };
 }
 
-/** Usuários de login social (Google etc.) não têm senha no Auth0. */
+/** Social login users (Google etc.) have no password in Auth0. */
 export function hasPassword(user?: AuthUser): boolean {
   return Boolean(user?.sub?.startsWith("auth0|"));
 }
 
 /**
- * Pede ao Auth0 que envie o e-mail de redefinição de senha.
- * Exige a origem do app em "Allowed Origins (CORS)" da aplicação no Auth0.
+ * Asks Auth0 to send the password reset email.
+ * Needs the app's origin in the Auth0 application's "Allowed Origins (CORS)".
  */
 export async function requestPasswordChange(email: string): Promise<void> {
   if (authMode === "mock") return;

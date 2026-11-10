@@ -14,14 +14,14 @@ const SWITCH_TO: Record<Mode, string> = {
   signup: "/login",
 };
 
-/** Monta a URL de /erro a partir do erro devolvido pelo Auth0. */
+/** Builds the /erro URL from the error returned by Auth0. */
 function errorUrl(error: Error): string {
   const { error: code, error_description: description } = error as Error & {
     error?: string;
     error_description?: string;
   };
   const params = new URLSearchParams({
-    origem: "auth",
+    origin: "auth",
     error: code ?? "auth_error",
     error_description: description ?? error.message,
   });
@@ -44,8 +44,8 @@ export default function AuthEntry({ mode }: { mode: Mode }) {
   const returnTo =
     (location.state as { from?: string } | null)?.from ?? DEFAULT_RETURN_TO;
 
-  // Erro no retorno do Auth0 (ex.: acesso negado). Só redireciona quando o erro
-  // veio na URL; senão "tentar novamente" em /erro voltaria direto para /erro.
+  // Error on the way back from Auth0 (e.g. access denied). Redirects only when the error
+  // came in the URL; otherwise "try again" on /erro would go straight back to /erro.
   const returnedWithError = new URLSearchParams(location.search).has("error");
   if (error && authMode === "auth0" && returnedWithError) {
     return <Navigate to={errorUrl(error)} replace />;

@@ -1,5 +1,5 @@
-import { useExecucoes } from "@/features/agente/api";
-import { useAssuntos } from "@/features/assuntos/api";
+import { useRuns } from "@/features/agent/api";
+import { useSubjects } from "@/features/subjects/api";
 import { usePosts } from "@/features/posts/api";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -11,7 +11,7 @@ import {
   upcomingPosts,
 } from "./aggregate";
 import { reportsService } from "./service";
-import type { DadosDashboard } from "./types";
+import type { DashboardData } from "./types";
 
 export const reportsKeys = {
   all: ["reports"] as const,
@@ -30,21 +30,21 @@ export function usePerformanceReport(projectId: string | undefined) {
 /** Everything the dashboard shows, from the posts, runs and performance APIs. */
 export function useDashboard(projectId: string | undefined) {
   const posts = usePosts(projectId);
-  const subjects = useAssuntos(projectId);
-  const runs = useExecucoes(projectId);
+  const subjects = useSubjects(projectId);
+  const runs = useRuns(projectId);
   const report = usePerformanceReport(projectId);
   const queries = [posts, subjects, runs, report];
 
-  const data = useMemo((): DadosDashboard | undefined => {
+  const data = useMemo((): DashboardData | undefined => {
     if (!posts.data || !subjects.data || !runs.data || !report.data) {
       return undefined;
     }
     const names = new Map(subjects.data.map((s) => [s.id, s.name]));
     return {
-      postsPorStatus: countByStatus(posts.data),
-      proximosPosts: upcomingPosts(posts.data, names, localToday()),
-      ultimasExecucoes: latestRuns(runs.data),
-      desempenho: groupPerformance(report.data.posts),
+      postsByStatus: countByStatus(posts.data),
+      upcomingPosts: upcomingPosts(posts.data, names, localToday()),
+      latestRuns: latestRuns(runs.data),
+      performance: groupPerformance(report.data.posts),
     };
   }, [posts.data, subjects.data, runs.data, report.data]);
 

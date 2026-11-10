@@ -1,6 +1,6 @@
 // FAKE GET /reports/performance (see lib/api/mockDb.ts): built from the mock
 // posts and metrics, like the backend builds it from the database.
-import { latencia, mockDb } from "@/lib/api/mockDb";
+import { latency, mockDb } from "@/lib/api/mockDb";
 import type { ReportsService } from "./service";
 import type { PerformanceReport, PostPerformance } from "./types";
 
@@ -24,14 +24,14 @@ function localTime(iso: string): { weekday: number; hour: number } {
 
 export const reportsMock: ReportsService = {
   async performance(projectId) {
-    await latencia();
+    await latency();
     const subjects = new Map(
-      mockDb.assuntos
+      mockDb.subjects
         .todos()
         .filter((s) => s.project_id === projectId)
         .map((s) => [s.id, s.name]),
     );
-    const metrics = mockDb.metricas.todos();
+    const metrics = mockDb.metrics.todos();
     const posts: PostPerformance[] = [];
     for (const post of mockDb.posts.todos()) {
       const subject = subjects.get(post.subject_id);
@@ -39,8 +39,8 @@ export const reportsMock: ReportsService = {
       for (const variation of post.variations) {
         // The latest collection holds the current totals
         const latest = metrics
-          .filter((m) => m.variacao_id === variation.id)
-          .sort((a, b) => b.coletado_em.localeCompare(a.coletado_em))[0];
+          .filter((m) => m.variation_id === variation.id)
+          .sort((a, b) => b.collected_at.localeCompare(a.collected_at))[0];
         if (!latest) continue;
         posts.push({
           variation_id: variation.id,
@@ -48,14 +48,14 @@ export const reportsMock: ReportsService = {
           title: post.title,
           subject,
           network: variation.network,
-          published_at: latest.publicado_em,
-          ...localTime(latest.publicado_em),
+          published_at: latest.published_at,
+          ...localTime(latest.published_at),
           has_image: variation.image_ids.length > 0,
-          impressions: latest.impressoes,
-          likes: latest.curtidas,
-          comments: latest.comentarios,
-          shares: latest.compartilhamentos,
-          clicks: latest.cliques,
+          impressions: latest.impressions,
+          likes: latest.likes,
+          comments: latest.comments,
+          shares: latest.shares,
+          clicks: latest.clicks,
         });
       }
     }

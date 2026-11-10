@@ -1,8 +1,8 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
-import { useAssunto, useAssuntos } from "@/features/assuntos/api";
+import { useSubject, useSubjects } from "@/features/subjects/api";
 import { useIdea, useUpdateIdea } from "@/features/ideas/api";
-import { useAtualizarPost, useCriarPost, usePost } from "@/features/posts/api";
+import { useUpdatePost, useCreatePost, usePost } from "@/features/posts/api";
 import PostForm from "@/features/posts/components/PostForm";
 import {
   fromIdea,
@@ -10,9 +10,9 @@ import {
   toPostInput,
   type PostFormValues,
 } from "@/features/posts/schema";
-import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
+import { useCurrentProject } from "@/features/projects/useCurrentProject";
 import { ApiError } from "@/lib/api/http";
-import { REDES } from "@/features/posts/redes";
+import { NETWORKS } from "@/features/posts/networks";
 import NotFound from "@/pages/OtherPage/NotFound";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,44 +23,42 @@ import {
   useSearchParams,
 } from "react-router";
 
-/** /posts/new (sem id) e /posts/:id (edição). */
+/** /posts/new (no id) and /posts/:id (editing). */
 export default function PostFormPage() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const { t } = useTranslation("app", { keyPrefix: "posts" });
   const navigate = useNavigate();
   const location = useLocation();
-  const acabouDeCriar =
-    (location.state as { criado?: boolean } | null)?.criado === true;
-  const { projetoAtual } = useProjetoAtual();
+  const justCreated =
+    (location.state as { created?: boolean } | null)?.created === true;
+  const { currentProject } = useCurrentProject();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const isEdicao = Boolean(id);
+  const isEdit = Boolean(id);
   const post = usePost(id);
-  // Na edição, os assuntos oferecidos são os do projeto do post
-  const assuntoDoPost = useAssunto(post.data?.subject_id);
-  const projetoId = isEdicao
-    ? assuntoDoPost.data?.project_id
-    : projetoAtual?.id;
-  const assuntos = useAssuntos(projetoId);
+  // When editing, the subjects offered are those of the post's project
+  const postSubject = useSubject(post.data?.subject_id);
+  const projectId = isEdit ? postSubject.data?.project_id : currentProject?.id;
+  const subjects = useSubjects(projectId);
 
   // /posts/new?idea=…: the post starts from an idea (Ideas page)
-  const ideaId = isEdicao ? null : params.get("idea");
+  const ideaId = isEdit ? null : params.get("idea");
   const idea = useIdea(ideaId);
   const updateIdea = useUpdateIdea();
 
-  const criar = useCriarPost();
-  const atualizar = useAtualizarPost();
-  const titulo = isEdicao ? t("editTitle") : t("newTitle");
+  const create = useCreatePost();
+  const update = useUpdatePost();
+  const title = isEdit ? t("editTitle") : t("newTitle");
 
   const onSubmit = async (values: PostFormValues) => {
     setSubmitError(null);
     try {
       if (id) {
-        await atualizar.mutateAsync({ id, input: toPostInput(values) });
+        await update.mutateAsync({ id, input: toPostInput(values) });
         navigate("/posts");
       } else {
-        const criado = await criar.mutateAsync(toPostInput(values));
+        const created = await create.mutateAsync(toPostInput(values));
         if (idea.data) {
           // The idea now points to its post. If this fails, the post is
           // already saved: the idea just stays open (it can be retried later).
@@ -68,7 +66,13 @@ export default function PostFormPage() {
           await updateIdea
             .mutateAsync({
               id: idea.data.id,
-              input: { title, notes, subject_id, networks, post_id: criado.id },
+              input: {
+                title,
+                notes,
+                subject_id,
+                networks,
+                post_id: created.id,
+              },
             })
             .catch(() => undefined);
         }
@@ -79,39 +83,39 @@ export default function PostFormPage() {
     }
   };
 
-  if (isEdicao && post.error instanceof ApiError && post.error.status === 404) {
+  if (isEdit && post.error instanceof ApiError && post.error.status === 404) {
     return <NotFound />;
   }
 
-  const carregando =
-    (isEdicao && (post.isLoading || assuntoDoPost.isLoading)) ||
+  const loading =
+    (isEdit && (post.isLoading || postSubject.isLoading)) ||
     (Boolean(ideaId) && idea.isLoading) ||
-    assuntos.isLoading ||
-    !assuntos.data;
-  const erro = (isEdicao && post.isError) || assuntos.isError;
-  // ?subject=… pré-seleciona o assunto (ex.: vindo da lista filtrada)
-  const assuntoPadrao = params.get("subject") ?? "";
+    subjects.isLoading ||
+    !subjects.data;
+  const error = (isEdit && post.isError) || subjects.isError;
+  // ?subject=… preselects the subject (e.g. coming from the filtered list)
+  const defaultSubject = params.get("subject") ?? "";
   // ?network=… opens that variation's tab (e.g. coming from the calendar)
   const networkParam = params.get("network");
-  const initialNetwork = REDES.find((n) => n === networkParam) ?? null;
+  const initialNetwork = NETWORKS.find((n) => n === networkParam) ?? null;
 
   return (
     <>
-      <PageMeta title={`${titulo} | PostPilot`} description={t("subtitle")} />
-      <PageBreadcrumb pageTitle={titulo} />
+      <PageMeta title={`${title} | PostPilot`} description={t("subtitle")} />
+      <PageBreadcrumb pageTitle={title} />
 
       <div className="mx-auto max-w-4xl">
-        {erro ? (
+        {error ? (
           <p role="alert" className="text-sm text-error-600">
             {t("loadError")}
           </p>
-        ) : carregando ? (
+        ) : loading ? (
           <div className="space-y-6" aria-hidden>
             <div className="h-56 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
           </div>
         ) : (
           <>
-            {acabouDeCriar && (
+            {justCreated && (
               <p
                 role="status"
                 className="mb-6 rounded-lg border border-success-500 bg-success-50 p-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400"
@@ -120,17 +124,17 @@ export default function PostFormPage() {
               </p>
             )}
             <PostForm
-              projetoId={projetoId!}
+              projectId={projectId!}
               key={post.data?.id ?? idea.data?.id ?? "novo"}
-              assuntos={assuntos.data ?? []}
+              subjects={subjects.data ?? []}
               defaultValues={
-                idea.data && !isEdicao
+                idea.data && !isEdit
                   ? fromIdea(idea.data)
-                  : toFormValues(post.data, assuntoPadrao)
+                  : toFormValues(post.data, defaultSubject)
               }
               initialNetwork={initialNetwork}
               onSubmit={onSubmit}
-              submitLabel={isEdicao ? t("save") : t("create")}
+              submitLabel={isEdit ? t("save") : t("create")}
               submitError={submitError}
             />
           </>

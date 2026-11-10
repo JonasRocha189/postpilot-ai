@@ -116,7 +116,7 @@ Mestre-detalhe ([decisão 30](decisoes.md)): o **post** é a ideia (título e as
 
 Resposta (`GET`, `POST`, `PUT`): o post com `id`, `subject_id`, `title`, `created_at`, `updated_at` e `variations` (cada uma com `id`), **ordenadas por rede: LinkedIn, Instagram, X**.
 
-**Regras por rede**, aplicadas a cada variação (`schemas/posts.py`; o frontend usa as mesmas em `features/posts/redes.ts`). Quebrar uma delas responde `422`:
+**Regras por rede**, aplicadas a cada variação (`schemas/posts.py`; o frontend usa as mesmas em `features/posts/networks.ts`). Quebrar uma delas responde `422`:
 
 | Rede | Formatos | Limite de texto | Máximo de imagens |
 | --- | --- | --- | --- |

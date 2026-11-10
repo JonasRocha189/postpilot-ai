@@ -1,4 +1,4 @@
-import ConfirmarExclusaoModal from "@/components/common/ConfirmarExclusaoModal";
+import ConfirmDeleteModal from "@/components/common/ConfirmDeleteModal";
 import PageHeader from "@/components/common/PageHeader";
 import PageMeta from "@/components/common/PageMeta";
 import {
@@ -8,19 +8,19 @@ import {
   primaryLinkClass,
 } from "@/components/common/styles";
 import Badge from "@/components/ui/badge/Badge";
-import { useAssuntos } from "@/features/assuntos/api";
-import { useExcluirPost, usePosts } from "@/features/posts/api";
-import { REDES } from "@/features/posts/redes";
-import type { Post, PostFiltros, PostVariation } from "@/features/posts/types";
-import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
+import { useSubjects } from "@/features/subjects/api";
+import { useDeletePost, usePosts } from "@/features/posts/api";
+import { NETWORKS } from "@/features/posts/networks";
+import type { Post, PostFilters, PostVariation } from "@/features/posts/types";
+import { useCurrentProject } from "@/features/projects/useCurrentProject";
 import { PencilIcon, PlusIcon, TrashBinIcon } from "@/icons";
 import {
-  REDE_LABEL,
-  STATUS_POST,
-  STATUS_POST_COR,
-  type Rede,
-  type StatusPost,
-} from "@/lib/dominio";
+  NETWORK_LABEL,
+  POST_STATUS,
+  POST_STATUS_COLOR,
+  type Network,
+  type PostStatus,
+} from "@/lib/domain";
 import { useFormat } from "@/lib/format";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,32 +29,32 @@ import { Link, useSearchParams } from "react-router";
 const th =
   "px-5 py-3 text-start text-theme-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-400";
 const td = "px-5 py-4 align-middle text-sm text-gray-600 dark:text-gray-400";
-const filtroClass =
+const filterClass =
   "h-11 rounded-lg border border-gray-300 bg-transparent ps-3 pe-9 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
 
 export default function Posts() {
   const { t } = useTranslation("app", { keyPrefix: "posts" });
   const { t: tApp } = useTranslation("app");
   const fmt = useFormat();
-  const { projetoAtual } = useProjetoAtual();
+  const { currentProject } = useCurrentProject();
   const [params, setParams] = useSearchParams();
-  const excluir = useExcluirPost();
-  const [paraExcluir, setParaExcluir] = useState<Post | null>(null);
+  const remove = useDeletePost();
+  const [toDelete, setToDelete] = useState<Post | null>(null);
 
-  // Filtros na URL: links compartilháveis e o botão voltar funciona
+  // Filters in the URL: shareable links, and the back button works
   const statusParam = params.get("status");
   const networkParam = params.get("network");
-  const filtros: PostFiltros = {
-    status: STATUS_POST.includes(statusParam as StatusPost)
-      ? (statusParam as StatusPost)
+  const filters: PostFilters = {
+    status: POST_STATUS.includes(statusParam as PostStatus)
+      ? (statusParam as PostStatus)
       : undefined,
-    network: REDES.includes(networkParam as Rede)
-      ? (networkParam as Rede)
+    network: NETWORKS.includes(networkParam as Network)
+      ? (networkParam as Network)
       : undefined,
     subject_id: params.get("subject") ?? undefined,
   };
-  const temFiltro = Boolean(
-    filtros.status || filtros.network || filtros.subject_id,
+  const hasFilter = Boolean(
+    filters.status || filters.network || filters.subject_id,
   );
 
   const data = (iso: string | null) =>
@@ -62,14 +62,14 @@ export default function Posts() {
       ? fmt.date(iso, { day: "2-digit", month: "short", year: "numeric" })
       : t("noDate");
 
-  const assuntos = useAssuntos(projetoAtual?.id);
-  const posts = usePosts(projetoAtual?.id, filtros);
-  const nomeAssunto = (id: string) =>
-    assuntos.data?.find((a) => a.id === id)?.name ?? "—";
+  const subjects = useSubjects(currentProject?.id);
+  const posts = usePosts(currentProject?.id, filters);
+  const subjectName = (id: string) =>
+    subjects.data?.find((a) => a.id === id)?.name ?? "—";
   /** "Instagram · Carrossel · 20 nov" */
   const variationLabel = (v: PostVariation) =>
     [
-      REDE_LABEL[v.network],
+      NETWORK_LABEL[v.network],
       t(`form.formats.${v.network}.${v.format}.label`),
       data(v.expected_date),
     ].join(" · ");
@@ -83,23 +83,20 @@ export default function Posts() {
           >
             {variationLabel(v)}
           </Link>
-          <Badge color={STATUS_POST_COR[v.status]} size="sm">
+          <Badge color={POST_STATUS_COLOR[v.status]} size="sm">
             {tApp(`domain.postStatus.${v.status}`)}
           </Badge>
         </li>
       ))}
     </ul>
   );
-  const semAssuntos = assuntos.isSuccess && assuntos.data.length === 0;
+  const noSubjects = subjects.isSuccess && subjects.data.length === 0;
 
-  const setFiltro = (
-    chave: "status" | "network" | "subject",
-    valor: string,
-  ) => {
-    const proximo = new URLSearchParams(params);
-    if (valor) proximo.set(chave, valor);
-    else proximo.delete(chave);
-    setParams(proximo, { replace: true });
+  const setFilter = (key: "status" | "network" | "subject", value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
   };
 
   return (
@@ -110,9 +107,9 @@ export default function Posts() {
       />
       <PageHeader
         title={t("title")}
-        subtitle={t("subtitle", { project: projetoAtual?.name })}
+        subtitle={t("subtitle", { project: currentProject?.name })}
         action={
-          !semAssuntos && (
+          !noSubjects && (
             <Link to="/posts/new" className={primaryLinkClass}>
               <PlusIcon className="size-5" />
               {t("new")}
@@ -121,7 +118,7 @@ export default function Posts() {
         }
       />
 
-      {semAssuntos ? (
+      {noSubjects ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center dark:border-gray-700 dark:bg-white/3">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
             {t("needSubject.title")}
@@ -141,12 +138,12 @@ export default function Posts() {
             <label className="flex flex-col gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
               {t("filters.status")}
               <select
-                className={filtroClass}
-                value={filtros.status ?? ""}
-                onChange={(e) => setFiltro("status", e.target.value)}
+                className={filterClass}
+                value={filters.status ?? ""}
+                onChange={(e) => setFilter("status", e.target.value)}
               >
                 <option value="">{t("filters.all")}</option>
-                {STATUS_POST.map((s) => (
+                {POST_STATUS.map((s) => (
                   <option key={s} value={s}>
                     {tApp(`domain.postStatus.${s}`)}
                   </option>
@@ -156,14 +153,14 @@ export default function Posts() {
             <label className="flex flex-col gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
               {t("filters.network")}
               <select
-                className={filtroClass}
-                value={filtros.network ?? ""}
-                onChange={(e) => setFiltro("network", e.target.value)}
+                className={filterClass}
+                value={filters.network ?? ""}
+                onChange={(e) => setFilter("network", e.target.value)}
               >
                 <option value="">{t("filters.all")}</option>
-                {REDES.map((r) => (
+                {NETWORKS.map((r) => (
                   <option key={r} value={r}>
-                    {REDE_LABEL[r]}
+                    {NETWORK_LABEL[r]}
                   </option>
                 ))}
               </select>
@@ -171,19 +168,19 @@ export default function Posts() {
             <label className="flex min-w-0 flex-col gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
               {t("filters.subject")}
               <select
-                className={`${filtroClass} max-w-full`}
-                value={filtros.subject_id ?? ""}
-                onChange={(e) => setFiltro("subject", e.target.value)}
+                className={`${filterClass} max-w-full`}
+                value={filters.subject_id ?? ""}
+                onChange={(e) => setFilter("subject", e.target.value)}
               >
                 <option value="">{t("filters.all")}</option>
-                {assuntos.data?.map((a) => (
+                {subjects.data?.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
                   </option>
                 ))}
               </select>
             </label>
-            {temFiltro && (
+            {hasFilter && (
               <button
                 type="button"
                 onClick={() => setParams({}, { replace: true })}
@@ -194,7 +191,7 @@ export default function Posts() {
             )}
           </div>
 
-          {posts.isLoading || assuntos.isLoading ? (
+          {posts.isLoading || subjects.isLoading ? (
             <div
               aria-hidden
               className="h-64 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800"
@@ -206,7 +203,7 @@ export default function Posts() {
           ) : !posts.data?.length ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center dark:border-gray-700 dark:bg-white/3">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {temFiltro ? t("emptyFiltered") : t("empty")}
+                {hasFilter ? t("emptyFiltered") : t("empty")}
               </p>
             </div>
           ) : (
@@ -239,14 +236,14 @@ export default function Posts() {
                           </Link>
                           {/* On phones, the hidden columns show up here */}
                           <p className="mt-0.5 text-theme-xs text-gray-500 md:hidden dark:text-gray-400">
-                            {nomeAssunto(post.subject_id)}
+                            {subjectName(post.subject_id)}
                           </p>
                           <div className="mt-2 sm:hidden">
                             {variationsList(post)}
                           </div>
                         </td>
                         <td className={`${td} hidden md:table-cell`}>
-                          {nomeAssunto(post.subject_id)}
+                          {subjectName(post.subject_id)}
                         </td>
                         <td className={`${td} hidden sm:table-cell`}>
                           {variationsList(post)}
@@ -263,7 +260,7 @@ export default function Posts() {
                             </Link>
                             <button
                               type="button"
-                              onClick={() => setParaExcluir(post)}
+                              onClick={() => setToDelete(post)}
                               className={iconButtonDangerClass}
                               aria-label={t("deleteLabel", {
                                 name: post.title,
@@ -284,12 +281,12 @@ export default function Posts() {
         </>
       )}
 
-      <ConfirmarExclusaoModal
-        isOpen={paraExcluir !== null}
-        title={t("delete.title", { name: paraExcluir?.title })}
+      <ConfirmDeleteModal
+        isOpen={toDelete !== null}
+        title={t("delete.title", { name: toDelete?.title })}
         message={t("delete.message")}
-        onConfirm={() => excluir.mutateAsync(paraExcluir!.id)}
-        onClose={() => setParaExcluir(null)}
+        onConfirm={() => remove.mutateAsync(toDelete!.id)}
+        onClose={() => setToDelete(null)}
       />
     </>
   );

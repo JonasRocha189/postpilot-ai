@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 
-/** Botão redondo com a bandeira do idioma atual e lista de idiomas. */
+/** Round button with the current language's flag and the language list. */
 export default function LanguageDropdown({
   placement = "below",
 }: {
-  /** "above" para usar no rodapé (ex.: telas de login) */
+  /** "above" for use in a footer (e.g. login screens) */
   placement?: "below" | "above";
 }) {
   const [isOpen, setIsOpen] = useState(false);

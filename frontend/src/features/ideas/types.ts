@@ -1,4 +1,4 @@
-import type { Rede } from "@/lib/dominio";
+import type { Network } from "@/lib/domain";
 
 // Mirrors the backend schema (see _docs/api.md).
 
@@ -14,7 +14,7 @@ export type Idea = {
   /** Optional: an idea may not have a subject yet */
   subject_id: string | null;
   /** Networks suggested for the post (may be empty) */
-  networks: Rede[];
+  networks: Network[];
   source: IdeaSource;
   /** The post created from this idea; null while the idea is open */
   post_id: string | null;

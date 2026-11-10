@@ -1,4 +1,4 @@
-// Classes reutilizadas em links e botões das páginas
+// Classes reused by the pages' links and buttons
 
 export const primaryLinkClass =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600";

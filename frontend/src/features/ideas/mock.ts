@@ -1,6 +1,6 @@
 // FAKE ideas API (see lib/api/mockDb.ts)
 import { ApiError } from "@/lib/api/http";
-import { agoraIso, latencia, mockDb } from "@/lib/api/mockDb";
+import { nowIso, latency, mockDb } from "@/lib/api/mockDb";
 import type { IdeasService } from "./service";
 import type { IdeaInput } from "./types";
 
@@ -9,7 +9,7 @@ const NAME = "Idea";
 /** Like the backend: the subject (if any) belongs to the idea's project. */
 function checkSubject(projectId: string, subjectId: string | null) {
   if (!subjectId) return;
-  const subject = mockDb.assuntos.todos().find((s) => s.id === subjectId);
+  const subject = mockDb.subjects.todos().find((s) => s.id === subjectId);
   if (subject?.project_id !== projectId) {
     throw new ApiError(422, "Subject is not in this project");
   }
@@ -24,7 +24,7 @@ const clean = (input: IdeaInput) => ({
 
 export const ideasMock: IdeasService = {
   async list(projectId) {
-    await latencia();
+    await latency();
     return mockDb.ideas
       .todos()
       .filter((i) => i.project_id === projectId)
@@ -32,16 +32,16 @@ export const ideasMock: IdeasService = {
   },
 
   async get(id) {
-    await latencia();
-    return mockDb.ideas.encontrar(id, NAME);
+    await latency();
+    return mockDb.ideas.find(id, NAME);
   },
 
   async create(projectId, input) {
-    await latencia();
-    mockDb.projetos.encontrar(projectId, "Project");
+    await latency();
+    mockDb.projects.find(projectId, "Project");
     checkSubject(projectId, input.subject_id);
-    const now = agoraIso();
-    return mockDb.ideas.inserir({
+    const now = nowIso();
+    return mockDb.ideas.insert({
       ...clean(input),
       id: crypto.randomUUID(),
       project_id: projectId,
@@ -53,20 +53,20 @@ export const ideasMock: IdeasService = {
   },
 
   async update(id, input) {
-    await latencia();
-    const current = mockDb.ideas.encontrar(id, NAME);
+    await latency();
+    const current = mockDb.ideas.find(id, NAME);
     checkSubject(current.project_id, input.subject_id);
-    return mockDb.ideas.substituir({
+    return mockDb.ideas.replace({
       ...current,
       ...clean(input),
       post_id: input.post_id === undefined ? current.post_id : input.post_id,
-      updated_at: agoraIso(),
+      updated_at: nowIso(),
     });
   },
 
   async remove(id) {
-    await latencia();
-    mockDb.ideas.encontrar(id, NAME);
-    mockDb.ideas.remover(id);
+    await latency();
+    mockDb.ideas.find(id, NAME);
+    mockDb.ideas.remove(id);
   },
 };

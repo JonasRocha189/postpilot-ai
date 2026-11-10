@@ -1,9 +1,9 @@
 import PageHeader from "@/components/common/PageHeader";
 import PageMeta from "@/components/common/PageMeta";
 import { alertErrorClass, cardClass } from "@/components/common/styles";
-import CampoData from "@/components/form/CampoData";
+import DateField from "@/components/form/DateField";
 import Button from "@/components/ui/button/Button";
-import { useImportMetrics } from "@/features/metricas/api";
+import { useImportMetrics } from "@/features/metrics/api";
 import {
   autoMatch,
   METRIC_FIELDS,
@@ -12,13 +12,13 @@ import {
   type Candidate,
   type ImportRow,
   type ReadResult,
-} from "@/features/metricas/importRows";
+} from "@/features/metrics/importRows";
 import { usePosts } from "@/features/posts/api";
-import { REDES } from "@/features/posts/redes";
-import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
+import { NETWORKS } from "@/features/posts/networks";
+import { useCurrentProject } from "@/features/projects/useCurrentProject";
 import { DownloadIcon } from "@/icons";
-import { REDE_LABEL, type Rede } from "@/lib/dominio";
-import { diaIso, useFormat } from "@/lib/format";
+import { NETWORK_LABEL, type Network } from "@/lib/domain";
+import { isoDay, useFormat } from "@/lib/format";
 import { cn } from "@/utils";
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -51,11 +51,11 @@ export default function Metrics() {
   const { t } = useTranslation("app", { keyPrefix: "metricsImport" });
   const { t: tApp } = useTranslation("app");
   const fmt = useFormat();
-  const { projetoAtual } = useProjetoAtual();
+  const { currentProject } = useCurrentProject();
   const [params, setParams] = useSearchParams();
   const networkParam = params.get("network");
-  const network: Rede = REDES.includes(networkParam as Rede)
-    ? (networkParam as Rede)
+  const network: Network = NETWORKS.includes(networkParam as Network)
+    ? (networkParam as Network)
     : "linkedin";
 
   const [read, setRead] = useState<ReadResult | null>(null);
@@ -63,7 +63,7 @@ export default function Metrics() {
   const [fileError, setFileError] = useState(false);
   /** The user's choice per line ("" = skip); lines not chosen use the automatic match */
   const [choices, setChoices] = useState<Record<number, string>>({});
-  const [collectedOn, setCollectedOn] = useState(() => diaIso(new Date()));
+  const [collectedOn, setCollectedOn] = useState(() => isoDay(new Date()));
   const [created, setCreated] = useState<number | null>(null);
   const [importError, setImportError] = useState(false);
   // Changing the key clears the file input after an import
@@ -71,7 +71,7 @@ export default function Metrics() {
   const importMetrics = useImportMetrics();
 
   // Published variations of this network: what a row can be matched to
-  const posts = usePosts(projetoAtual?.id, { network, status: "published" });
+  const posts = usePosts(currentProject?.id, { network, status: "published" });
   const candidates = useMemo<Candidate[]>(
     () =>
       (posts.data ?? []).flatMap((post) =>
@@ -91,7 +91,7 @@ export default function Metrics() {
     setInputKey((k) => k + 1);
   };
 
-  const chooseNetwork = (next: Rede) => {
+  const chooseNetwork = (next: Network) => {
     setParams(next === "linkedin" ? {} : { network: next }, { replace: true });
     setCreated(null);
     reset();
@@ -162,7 +162,7 @@ export default function Metrics() {
         aria-label={t("network")}
         className="mb-5 inline-flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900"
       >
-        {REDES.map((n) => (
+        {NETWORKS.map((n) => (
           <button
             key={n}
             type="button"
@@ -175,7 +175,7 @@ export default function Metrics() {
                 : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white",
             )}
           >
-            {REDE_LABEL[n]}
+            {NETWORK_LABEL[n]}
           </button>
         ))}
       </div>
@@ -192,7 +192,7 @@ export default function Metrics() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <section className={`${cardClass} p-5 sm:p-6`}>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-            {t("step1", { network: REDE_LABEL[network] })}
+            {t("step1", { network: NETWORK_LABEL[network] })}
           </h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             {t(`howTo.${network}`)}
@@ -226,7 +226,7 @@ export default function Metrics() {
                 htmlFor="metrics-file"
                 className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
               >
-                {t("file", { network: REDE_LABEL[network] })}
+                {t("file", { network: NETWORK_LABEL[network] })}
               </label>
               <input
                 key={inputKey}
@@ -237,7 +237,7 @@ export default function Metrics() {
                 className="block w-full text-sm text-gray-700 file:me-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-brand-600 hover:file:bg-brand-100 dark:text-gray-300 dark:file:bg-brand-500/15 dark:file:text-brand-400"
               />
             </div>
-            <CampoData
+            <DateField
               id="metrics-collected"
               label={t("collectedOn")}
               value={collectedOn}
@@ -277,8 +277,8 @@ export default function Metrics() {
             </p>
             <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
               {candidates.length
-                ? t("matchHint", { network: REDE_LABEL[network] })
-                : t("noCandidates", { network: REDE_LABEL[network] })}
+                ? t("matchHint", { network: NETWORK_LABEL[network] })
+                : t("noCandidates", { network: NETWORK_LABEL[network] })}
             </p>
           </div>
           <div className="max-w-full overflow-x-auto border-t border-gray-100 dark:border-gray-800">

@@ -1,63 +1,58 @@
-import type {
-  ModoAgente,
-  Rede,
-  StatusExecucao,
-  StatusPost,
-} from "@/lib/dominio";
+import type { AgentMode, Network, RunStatus, PostStatus } from "@/lib/domain";
 
 // What the dashboard widgets show, built from GET /posts, GET /agent/runs and
 // GET /reports/performance (see aggregate.ts).
 
-export type Interacoes = {
-  curtidas: number;
-  comentarios: number;
-  compartilhamentos: number;
-  cliques: number;
+export type Interactions = {
+  likes: number;
+  comments: number;
+  shares: number;
+  clicks: number;
 };
 
-export type MetricasGrupo = Interacoes & {
-  grupo: string;
+export type MetricsGroup = Interactions & {
+  group: string;
   posts: number;
-  impressoes: number;
+  impressions: number;
 };
 
 /** Same bands as the agent's analyze_performance (madrugada = 0h–6h) */
-export type FaixaHorario = "madrugada" | "manha" | "tarde" | "noite";
+export type TimeBand = "madrugada" | "manha" | "tarde" | "noite";
 
-/** dia: 0 = domingo ... 6 = sábado */
-export type CelulaDiaHorario = Interacoes & {
-  dia: number;
-  faixa: FaixaHorario;
+/** day: 0 = Sunday ... 6 = Saturday */
+export type DayTimeCell = Interactions & {
+  day: number;
+  band: TimeBand;
   posts: number;
-  impressoes: number;
+  impressions: number;
 };
 
-export type ProximoPost = {
+export type UpcomingPost = {
   id: string;
   title: string;
-  assunto: string;
-  redes: Rede[];
-  status: StatusPost;
-  dataPrevista: string; // ISO
+  subject: string;
+  networks: Network[];
+  status: PostStatus;
+  expectedDate: string; // ISO
 };
 
-export type ExecucaoResumo = {
+export type RunSummary = {
   id: string;
-  mode: ModoAgente;
+  mode: AgentMode;
   request: string;
-  status: StatusExecucao;
+  status: RunStatus;
   steps: number;
-  iniciadaEm: string; // ISO
+  startedAt: string; // ISO
 };
 
-export type DadosDashboard = {
-  postsPorStatus: Record<StatusPost, number>;
-  proximosPosts: ProximoPost[];
-  ultimasExecucoes: ExecucaoResumo[];
-  desempenho: {
-    porRede: (MetricasGrupo & { grupo: Rede })[];
-    porAssunto: MetricasGrupo[];
-    porDiaHorario: CelulaDiaHorario[];
+export type DashboardData = {
+  postsByStatus: Record<PostStatus, number>;
+  upcomingPosts: UpcomingPost[];
+  latestRuns: RunSummary[];
+  performance: {
+    byNetwork: (MetricsGroup & { group: Network })[];
+    bySubject: MetricsGroup[];
+    byDayTime: DayTimeCell[];
   };
 };
 
@@ -69,7 +64,7 @@ export type PostPerformance = {
   post_id: string;
   title: string;
   subject: string;
-  network: Rede;
+  network: Network;
   published_at: string;
   /** In the report's time zone: ISO weekday (1 = Monday ... 7 = Sunday) */
   weekday: number;

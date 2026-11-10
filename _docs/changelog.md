@@ -14,6 +14,10 @@ Formato de cada entrada:
 
 ## 2026-11-10
 
+### Alterado
+
+- Frontend: **código em inglês** (decisão 20). Pastas, arquivos, componentes, hooks, tipos, variáveis e comentários renomeados do português para o inglês (`features/assuntos` → `features/subjects`, `useProjetoAtual` → `useCurrentProject`, `EditorArte` → `ArtEditor`...). Nenhuma mudança de comportamento: os textos da interface (i18n), as URLs e os valores guardados (ex.: faixas de horário) continuam iguais. Typecheck, lint, 139 testes Vitest e 10 testes Playwright passando.
+
 ### Adicionado
 
 - Infra: **backup diário do banco** (`.github/workflows/backup.yml`): `pg_dump` do Neon às 06:00 UTC enviado para `backups/` no S3, com um usuário IAM que só pode gravar ali e retenção de 30 dias (Terraform). Restauração documentada em `implantacao.md`.

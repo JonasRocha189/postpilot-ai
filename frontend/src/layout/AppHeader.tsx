@@ -5,7 +5,7 @@ import LanguageDropdown from "@/components/header/LanguageDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
 import HealthStatus from "@/features/health/components/HealthStatus";
-import ProjetoSelector from "@/features/projetos/components/ProjetoSelector";
+import ProjectSelector from "@/features/projects/components/ProjectSelector";
 import { cn } from "@/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,9 +74,9 @@ const AppHeader: React.FC = () => {
             {/* Cross Icon */}
           </button>
 
-          {/* Seletor do projeto atual (no celular, ocupa o lugar do logo) */}
+          {/* Current project picker (on mobile, it takes the logo's place) */}
           <div className="flex min-w-0 flex-1 justify-center xl:flex-none xl:justify-start">
-            <ProjetoSelector />
+            <ProjectSelector />
           </div>
 
           <button

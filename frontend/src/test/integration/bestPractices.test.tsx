@@ -1,18 +1,18 @@
 // Integration: read-only guide (/best-practices). No API calls, no project needed.
-import BoasPraticas from "@/pages/BoasPraticas";
+import BestPractices from "@/pages/BestPractices";
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { fakeApi } from "../fakeApi";
 import { renderPage } from "../render";
 
 const render = (route = "/best-practices") =>
-  renderPage(<BoasPraticas />, {
+  renderPage(<BestPractices />, {
     path: "/best-practices",
     route,
     requireProject: false,
   });
 
-const formatos = () =>
+const formats = () =>
   screen.getByRole("region", { name: "Formatos e tamanhos" });
 
 describe("Best practices (/best-practices)", () => {
@@ -24,9 +24,9 @@ describe("Best practices (/best-practices)", () => {
     ).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Uma ideia por post")).toBeInTheDocument();
 
-    const carrossel = within(formatos()).getByText("Carrossel").closest("tr")!;
-    expect(within(carrossel).getByText("1080 × 1350")).toBeInTheDocument();
-    expect(within(carrossel).getByText("4:5")).toBeInTheDocument();
+    const carousel = within(formats()).getByText("Carrossel").closest("tr")!;
+    expect(within(carousel).getByText("1080 × 1350")).toBeInTheDocument();
+    expect(within(carousel).getByText("4:5")).toBeInTheDocument();
 
     // Same limit the post form uses (features/posts/redes.ts)
     expect(screen.getByText("2.200 caracteres")).toBeInTheDocument();
@@ -46,13 +46,13 @@ describe("Best practices (/best-practices)", () => {
       "true",
     );
     expect(
-      within(formatos()).getByText("Carrossel (documento PDF)"),
+      within(formats()).getByText("Carrossel (documento PDF)"),
     ).toBeInTheDocument();
     expect(screen.getByText("3.000 caracteres")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "X" }));
     expect(location()).toBe("/best-practices?network=x");
-    expect(within(formatos()).getByText("Várias imagens")).toBeInTheDocument();
+    expect(within(formats()).getByText("Várias imagens")).toBeInTheDocument();
     expect(screen.getByText("280 caracteres")).toBeInTheDocument();
     expect(screen.getByText("1 a 2")).toBeInTheDocument();
   });

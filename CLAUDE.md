@@ -62,7 +62,7 @@ O usuário registra as **métricas** dos posts publicados, e um **relatório de 
 │   ├── src/
 │   │   ├── pages/
 │   │   ├── components/
-│   │   ├── features/       # assuntos, posts, documentos, agente, relatorio
+│   │   ├── features/       # projects, subjects, posts, images, documents, agent, metrics, dashboard...
 │   │   ├── lib/            # cliente da API, auth
 │   │   └── main.tsx
 │   ├── tests/

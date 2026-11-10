@@ -1,25 +1,25 @@
 import {
-  STATUS_POST,
-  type FormatoPost,
-  type Rede,
-  type StatusPost,
-} from "@/lib/dominio";
+  POST_STATUS,
+  type PostFormat,
+  type Network,
+  type PostStatus,
+} from "@/lib/domain";
 import { z } from "zod";
-import { erroRegraPost, REDES } from "./redes";
+import { postRuleError, NETWORKS } from "./networks";
 import type { Idea } from "@/features/ideas/types";
 import type { Post, PostInput, PostVariation } from "./types";
 
 // Messages are translation keys (namespace "app")
 
-const FORMATS: readonly FormatoPost[] = ["text", "single", "carousel"];
+const FORMATS: readonly PostFormat[] = ["text", "single", "carousel"];
 
 /** Order of the variations (tabs, list chips and API body). */
-export const NETWORK_ORDER: readonly Rede[] = REDES;
+export const NETWORK_ORDER: readonly Network[] = NETWORKS;
 
 const variationSchema = z.object({
-  network: z.enum(REDES as [Rede, ...Rede[]]),
-  format: z.enum(FORMATS as [FormatoPost, ...FormatoPost[]]),
-  status: z.enum(STATUS_POST as [StatusPost, ...StatusPost[]]),
+  network: z.enum(NETWORKS as [Network, ...Network[]]),
+  format: z.enum(FORMATS as [PostFormat, ...PostFormat[]]),
+  status: z.enum(POST_STATUS as [PostStatus, ...PostStatus[]]),
   /** "YYYY-MM-DD" or "" (the date field shows it in the user's locale) */
   expected_date: z.string(),
   content: z.string(),
@@ -49,18 +49,18 @@ export const postFormSchema = z
     }
     // Same rules as the backend, for each network: format, text and images
     values.variations.forEach((variation, index) => {
-      const error = erroRegraPost({
+      const error = postRuleError({
         network: variation.network,
         format: variation.format,
-        imagens: variation.image_ids.length,
-        texto: variation.content.trim(),
+        images: variation.image_ids.length,
+        text: variation.content.trim(),
         status: variation.status,
       });
       if (error) {
         ctx.addIssue({
           code: "custom",
-          path: ["variations", index, error.campo],
-          message: error.mensagem,
+          path: ["variations", index, error.field],
+          message: error.message,
         });
       }
     });
@@ -71,8 +71,8 @@ export type VariationFormValues = PostFormValues["variations"][number];
 
 /** A new variation for the network: its first format, draft, no date. */
 export function newVariation(
-  network: Rede,
-  format: FormatoPost = network === "instagram" ? "single" : "text",
+  network: Network,
+  format: PostFormat = network === "instagram" ? "single" : "text",
 ): VariationFormValues {
   return {
     network,
@@ -84,7 +84,7 @@ export function newVariation(
   };
 }
 
-const byNetwork = <T extends { network: Rede }>(a: T, b: T) =>
+const byNetwork = <T extends { network: Network }>(a: T, b: T) =>
   NETWORK_ORDER.indexOf(a.network) - NETWORK_ORDER.indexOf(b.network);
 
 export function toPostInput(values: PostFormValues): PostInput {

@@ -8,9 +8,9 @@ export const auth0Config = {
 };
 
 /**
- * - `auth0`: Auth0 configurado (desenvolvimento ou produção)
- * - `mock`: só em `npm run dev` sem Auth0 configurado; usuário fictício
- * - `missing`: build de produção sem Auth0 configurado; login indisponível
+ * - `auth0`: Auth0 configured (development or production)
+ * - `mock`: only in `npm run dev` without Auth0 configured; a fake user
+ * - `missing`: production build without Auth0 configured; login unavailable
  */
 export type AuthMode = "auth0" | "mock" | "missing";
 
