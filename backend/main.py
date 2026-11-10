@@ -3,7 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api import health
 from api.middleware import RequestLogMiddleware
-from api.v1.routers import agent, documents, ideas, images, metrics, posts, projects, subjects
+from api.v1.routers import (
+    agent,
+    documents,
+    ideas,
+    images,
+    metrics,
+    posts,
+    projects,
+    reports,
+    subjects,
+)
 from core.logs import configure_logging
 from database.config import settings
 
@@ -38,3 +48,4 @@ app.include_router(ideas.router, prefix="/api/v1")
 app.include_router(metrics.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(agent.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")

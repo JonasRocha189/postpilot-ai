@@ -1,43 +1,13 @@
 from collections import defaultdict
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 from typing import Any
 
 from langchain.tools import ToolRuntime, tool
-from sqlalchemy import exists, func, select
-from sqlalchemy.dialects.postgresql import distinct_on
 
 from ai.agent.context import AgentContext
-from database.models import Metric, Post, PostVariation, Subject, VariationImage
+from services.performance import MIN_SAMPLE, TIMEZONE, PostNumbers, published_post_numbers
 
-# Below this many posts, a group says nothing (CLAUDE.md: minimum sample of 5)
-MIN_SAMPLE = 5
-# Weekday and hour as the brand's audience lives them (Postgres has the tz database)
-TIMEZONE = "America/Sao_Paulo"
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-
-
-@dataclass(frozen=True)
-class PostNumbers:
-    """The latest numbers of one published variation, with what describes it."""
-
-    subject: str
-    network: str
-    weekday: int  # ISO: 1 = Monday
-    hour: int  # 0-23, local time
-    has_image: bool
-    impressions: int
-    likes: int
-    comments: int
-    shares: int
-    clicks: int
-
-    @property
-    def engagement_rate(self) -> float:
-        """Interactions ÷ impressions, the same rule as the metrics screen."""
-        if self.impressions <= 0:
-            return 0.0
-        return (self.likes + self.comments + self.shares + self.clicks) / self.impressions
 
 
 def time_of_day(hour: int) -> str:
@@ -111,50 +81,9 @@ def summarize(posts: Iterable[PostNumbers]) -> dict[str, Any]:
 
 async def analyze_performance_data(ctx: AgentContext) -> dict[str, Any]:
     """The project's published variations with their latest metrics, summarized."""
-    local_time = func.timezone(TIMEZONE, Metric.published_at)
-    has_image = exists().where(VariationImage.variation_id == PostVariation.id)
-    query = (
-        # The latest collection of each variation holds its current totals
-        select(
-            Subject.name,
-            PostVariation.network,
-            func.extract("isodow", local_time),
-            func.extract("hour", local_time),
-            has_image,
-            Metric.impressions,
-            Metric.likes,
-            Metric.comments,
-            Metric.shares,
-            Metric.clicks,
-        )
-        .join(PostVariation, PostVariation.id == Metric.variation_id)
-        .join(Post, Post.id == PostVariation.post_id)
-        .join(Subject, Subject.id == Post.subject_id)
-        .where(
-            Subject.project_id == ctx.project_id,
-            Subject.user_id == ctx.user_id,
-            Metric.user_id == ctx.user_id,
-        )
-        .ext(distinct_on(Metric.variation_id))
-        .order_by(Metric.variation_id, Metric.collected_at.desc())
-    )
     async with ctx.sessions() as db:
-        rows = (await db.execute(query)).all()
-    return summarize(
-        PostNumbers(
-            subject=row[0],
-            network=row[1].value,
-            weekday=int(row[2]),
-            hour=int(row[3]),
-            has_image=bool(row[4]),
-            impressions=row[5],
-            likes=row[6],
-            comments=row[7],
-            shares=row[8],
-            clicks=row[9],
-        )
-        for row in rows
-    )
+        posts = await published_post_numbers(db, ctx.user_id, ctx.project_id)
+    return summarize(posts)
 
 
 @tool

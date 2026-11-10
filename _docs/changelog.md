@@ -16,6 +16,7 @@ Formato de cada entrada:
 
 ### Adicionado
 
+- **Dashboard com dados reais**: cartões de variações por status e taxa de engajamento, próximos posts (data prevista a partir de hoje, sem os publicados), últimas execuções do agente e os gráficos de desempenho (por rede, por assunto e mapa de dia × horário, agora com a faixa da madrugada). Sem métricas, a página convida a importar em Métricas; importar métricas atualiza o dashboard. Sai o selo "Dados de exemplo". Backend: `GET /reports/performance` com os números mais recentes de cada variação, lidos pelo mesmo serviço da tool `analyze_performance` (`services/performance.py`). 11 testes no frontend (138) e 3 no backend (238).
 - IA: tool **`generate_image`** (modo criação): OpenAI `gpt-image-1-mini` em qualidade `low` (configurável em `IMAGE_QUALITY`), sem texto na imagem, salva no S3 e na biblioteca de imagens do projeto; no máximo 1 por execução; falha ou recusa do provedor não derruba a execução. `save_draft` aceita `image_id` e salva todas as redes como `single` com a imagem.
 - IA: tool **`analyze_performance`** (os dois modos): a coleta mais recente de cada variação, agrupada por assunto, rede, dia da semana, período do dia (fuso de São Paulo) e com ou sem imagem, com média de impressões e taxa de engajamento; grupos com menos de 5 posts não têm médias. Prompts atualizados: a criação gera a imagem antes de salvar e a ideação usa o desempenho só com dados suficientes. 16 testes novos (235 no backend).
 - IA: **o agente** (`ai/agent/runner.py`): `create_agent` do LangChain com `ModelCallLimitMiddleware` (8 iterações), `ModelFallbackMiddleware` (OpenAI → Groq `openai/gpt-oss-120b`) e um middleware próprio que conta as iterações e grava cada tool em `agent_steps` assim que ela termina, com log; prompts por modo; tempo máximo de 180 s. API `/agent/runs` (`POST` responde `202` e roda em segundo plano, histórico, detalhe com os passos; execução interrompida por deploy é fechada ao ler). Tools de escrita: `save_draft` (sempre `draft`, mesmas regras do formulário, liga o post à execução), `adapt_for_network` (limite e estilo de cada rede, sem IA) e `search_web` (Tavily, com fontes). 39 testes novos (219 no backend), com modelo de chat roteirizado. Primeira execução real local: 34 s, 5 tools, fontes citadas.
@@ -29,6 +30,7 @@ Formato de cada entrada:
 
 ### Corrigido
 
+- Dashboard: os próximos posts mostravam um horário (00:00) que não existe; agora mostram o dia da semana, o dia e o mês.
 - Testes do backend: as chaves de IA (`OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY`) ficam vazias e o LangSmith desligado em todos os testes (`tests/conftest.py`), como no CI. Antes, três testes de validação de `/agent/runs` passavam na máquina com chaves no `.env` e falhavam no CI (`503` antes do `422`).
 
 ### Removido

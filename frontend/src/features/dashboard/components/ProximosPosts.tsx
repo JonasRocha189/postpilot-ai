@@ -24,16 +24,13 @@ export default function ProximosPosts({ posts }: { posts: ProximoPost[] }) {
             <li key={post.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
               <div className="w-16 shrink-0 text-center">
                 <p className="text-theme-xs text-gray-500 first-letter:uppercase dark:text-gray-400">
-                  {fmt.date(post.dataPrevista, {
-                    weekday: "short",
-                    day: "2-digit",
-                    month: "short",
-                  })}
+                  {fmt.date(post.dataPrevista, { weekday: "short" })}
                 </p>
                 <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                  {/* The expected date has no time: day and month only */}
                   {fmt.date(post.dataPrevista, {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "short",
                   })}
                 </p>
               </div>

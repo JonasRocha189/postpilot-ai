@@ -1,6 +1,6 @@
 # Testes
 
-> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (235 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings, fusão RRF, o schema das tools que o LLM vê, os modelos de chat por chave configurada, `adapt_for_network` e `search_web` com transporte HTTP falso, a agregação de desempenho) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas), da busca híbrida, das tools do agente, do motor do agente com modelo roteirizado e da API `/agent/runs`, e da migration das variações.
+> Status: **frontend coberto** (unidade, integração e aceite). **Backend coberto** (238 testes): unidade (autenticação, verificação de saúde, log das requisições, regras por rede e da importação de métricas, extração de texto, chunking e configuração dos embeddings, fusão RRF, o schema das tools que o LLM vê, os modelos de chat por chave configurada, `adapt_for_network` e `search_web` com transporte HTTP falso, a agregação de desempenho) e integração com PostgreSQL de verdade de todos os recursos (Projects, Subjects, Posts com variações, Images e Documents com S3 simulado, Ideas, importação de métricas), da busca híbrida, das tools do agente, do motor do agente com modelo roteirizado e da API `/agent/runs`, e da migration das variações.
 
 Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste chama API paga nem depende de rede externa.
 
@@ -47,6 +47,7 @@ backend/tests/
     ├── test_posts.py        # variações: regras por rede, filtros na mesma variação, id mantido no PUT
     ├── test_ideas.py        # ligação com o post, ON DELETE SET NULL
     ├── test_metrics.py      # importação tudo ou nada
+    ├── test_reports.py      # /reports/performance: coleta mais recente, fuso local, projeto de outro usuário (404)
     ├── test_documents.py    # URL de upload, processamento em segundo plano (ready/error), reprocessar, 409, 422, 503, autorização
     ├── test_search.py       # busca híbrida no pgvector: termos (com redução em português), significado, escopo
     ├── test_read_tools.py   # tools de leitura: voz resolvida, ids inválidos, isolamento entre projetos e usuários

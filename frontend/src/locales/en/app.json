@@ -1,7 +1,6 @@
 {
   "common": {
     "loading": "Loading...",
-    "sampleData": "Sample data",
     "home": "Home",
     "close": "Close"
   },
@@ -256,7 +255,8 @@
       "afternoon": "Afternoon (12pm–6pm)",
       "evening": "Evening (6pm–12am)",
       "engagement": "Engagement: {value}",
-      "insufficient": "Not enough data (min. {min} posts)"
+      "insufficient": "Not enough data (min. {min} posts)",
+      "dawn": "Late night (0h–6h)"
     },
     "bySubject": {
       "title": "Performance by subject",
@@ -278,7 +278,15 @@
       "empty": "The agent hasn't been used yet.",
       "steps_one": "{count} step",
       "steps_other": "{count} steps"
-    }
+    },
+    "noMetrics": {
+      "title": "Performance",
+      "subtitle": "Engagement by network, by subject and best day and time",
+      "text": "No published post has metrics yet. Import the CSV exported from each network to see the charts and to let the agent use performance in its suggestions.",
+      "action": "Import metrics"
+    },
+    "loadError": "The dashboard could not be loaded.",
+    "retry": "Try again"
   },
   "calendar": {
     "title": "Calendar",

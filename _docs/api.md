@@ -70,7 +70,7 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | GET | `/variations/{id}/metrics` | Coletas da variação, da mais recente para a mais antiga |
 | POST | `/variations/{id}/metrics` | Registra uma coleta (corpo abaixo). `422` se o post não estiver `published`, se algum número for negativo, se `collected_at` for antes de `published_at` ou se alguma data estiver no futuro |
 | DELETE | `/metrics/{id}` | Remove uma coleta (para corrigir um registro errado) |
-| GET | `/reports/performance` 🅿 | Agregados do projeto por subject, rede, dia, horário e imagem |
+| GET | `/reports/performance` 🅿 | Os números mais recentes de cada variação com métricas do projeto (resposta abaixo). O frontend agrupa por rede, assunto e dia × horário para os gráficos do dashboard; a tool `analyze_performance` lê os mesmos dados (`services/performance.py`) |
 | **Documents** | | |
 | GET | `/documents` 🅿 | Lista os documentos do projeto (mais recentes primeiro), com status de processamento |
 | POST | `/documents/upload-url` | Corpo `{project_id, name, type, size_bytes}`. Valida tipo (`pdf`, `docx`, `txt`) e tamanho (até 10 MB), cria o Document como `pending` e responde `{document, upload_url}`. A URL pré-assinada exige o `Content-Type` do tipo |
@@ -195,6 +195,28 @@ Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); cada variaç
 
 - Os números são o **total acumulado** no momento da coleta (o que a rede mostra), não a diferença desde a coleta anterior. A coleta mais recente é a que vale.
 - Taxa de engajamento = (likes + comments + shares + clicks) ÷ impressions. Mesma regra no frontend (`features/metricas/calculo.ts`) e no relatório.
+
+## Resposta de `GET /reports/performance`
+
+```json
+{
+  "timezone": "America/Sao_Paulo",
+  "min_sample": 5,
+  "posts": [
+    {
+      "variation_id": "…", "post_id": "…", "title": "Backups em 3 passos",
+      "subject": "Segurança", "network": "linkedin",
+      "published_at": "2026-11-03T23:30:00Z", "weekday": 2, "hour": 20,
+      "has_image": true,
+      "impressions": 2000, "likes": 80, "comments": 4, "shares": 3, "clicks": 13
+    }
+  ]
+}
+```
+
+- Uma linha por variação com métricas, com a **coleta mais recente** (os números são totais acumulados).
+- `weekday` (ISO: 1 = segunda … 7 = domingo) e `hour` (0–23) no fuso `timezone`, calculados pelo Postgres.
+- `min_sample`: grupos com menos posts que isso não permitem conclusões (o dashboard marca "amostra insuficiente").
 
 ## Resposta de `GET /agent/runs/{id}`
 
