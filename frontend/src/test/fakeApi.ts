@@ -1,7 +1,9 @@
 // Fake backend for the integration tests: MSW answers the same routes as the
 // FastAPI backend (/api/v1/...) from in-memory data, with the same rules
 // (project scoping, 404, 409, 422) and the S3 presigned upload.
+import type { AgentRun } from "@/features/agente/types";
 import type { Assunto } from "@/features/assuntos/types";
+import type { PostPerformance } from "@/features/dashboard/types";
 import type { Idea, IdeaInput } from "@/features/ideas/types";
 import type { Imagem } from "@/features/imagens/types";
 import type {
@@ -38,6 +40,9 @@ type Db = {
   ideas: Idea[];
   /** Rows saved by POST /metrics/import, with the collection date */
   metrics: (MetricsImportRow & { collected_at: string })[];
+  runs: AgentRun[];
+  /** Rows of GET /reports/performance, per project */
+  performance: (PostPerformance & { project_id: string })[];
 };
 
 export type LoggedRequest = { method: string; url: URL; body: unknown };
@@ -55,6 +60,8 @@ function emptyDb(): Db {
     uploads: new Set(),
     ideas: [],
     metrics: [],
+    runs: [],
+    performance: [],
   };
 }
 
@@ -99,6 +106,30 @@ const handlers = [
   http.all(`${API}/*`, async ({ request }) => {
     await record(request);
     // Falls through to the specific handler
+  }),
+
+  // --- agent and reports (read only) ---------------------------------------
+  http.get(`${API}/agent/runs`, ({ request }) => {
+    const projectId = new URL(request.url).searchParams.get("project_id");
+    return HttpResponse.json(db.runs.filter((r) => r.project_id === projectId));
+  }),
+
+  http.get(`${API}/reports/performance`, ({ request }) => {
+    const projectId = new URL(request.url).searchParams.get("project_id");
+    if (!db.projects.some((p) => p.id === projectId))
+      return notFound("Project");
+    return HttpResponse.json({
+      timezone: "America/Sao_Paulo",
+      min_sample: 5,
+      // The response has no project_id (the API filters by it)
+      posts: db.performance
+        .filter((row) => row.project_id === projectId)
+        .map((row) => {
+          const copy: Partial<typeof row> = { ...row };
+          delete copy.project_id;
+          return copy;
+        }),
+    });
   }),
 
   // --- projects ------------------------------------------------------------
@@ -545,5 +576,46 @@ export const fakeApi = {
     };
     db.images.push(image);
     return semChave(image);
+  },
+  /** An agent run (newest first: add the most recent one first). */
+  addRun(projectId: string, data: Partial<AgentRun> = {}): AgentRun {
+    const run: AgentRun = {
+      id: newId("run"),
+      project_id: projectId,
+      mode: "creation",
+      request: "Um post",
+      status: "completed",
+      response: "Pronto",
+      post_id: null,
+      iterations: 3,
+      steps: [],
+      started_at: now,
+      finished_at: now,
+      ...data,
+    };
+    db.runs.push(run);
+    return run;
+  },
+  /** A published variation's latest numbers in the performance report. */
+  addPerformance(projectId: string, data: Partial<PostPerformance> = {}) {
+    const row = {
+      variation_id: newId("var"),
+      post_id: newId("post"),
+      title: "Post",
+      subject: "Cloud",
+      network: "linkedin" as Rede,
+      published_at: now,
+      weekday: 2,
+      hour: 9,
+      has_image: false,
+      impressions: 1000,
+      likes: 40,
+      comments: 5,
+      shares: 3,
+      clicks: 2,
+      ...data,
+    };
+    db.performance.push({ ...row, project_id: projectId });
+    return row;
   },
 };

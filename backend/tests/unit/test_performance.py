@@ -1,13 +1,21 @@
 """The performance summary the agent reads: groups, averages and the minimum sample."""
 
+import uuid
 from dataclasses import replace
+from datetime import UTC, datetime
 from typing import Any
 
-from ai.tools.analyze_performance import MIN_SAMPLE, PostNumbers, summarize, time_of_day
+from ai.tools.analyze_performance import summarize, time_of_day
+from database.models import Network
+from services.performance import MIN_SAMPLE, PostNumbers
 
 BASE = PostNumbers(
+    variation_id=uuid.uuid4(),
+    post_id=uuid.uuid4(),
+    title="Backups",
     subject="Security",
-    network="linkedin",
+    network=Network.LINKEDIN,
+    published_at=datetime(2026, 11, 3, 12, tzinfo=UTC),
     weekday=2,  # Tuesday
     hour=9,
     has_image=False,
@@ -51,7 +59,7 @@ def test_too_few_posts_means_no_recommendations() -> None:
 
 
 def test_groups_under_the_minimum_show_only_their_size() -> None:
-    posts = [BASE] * 5 + [replace(BASE, network="x", impressions=500)] * 2
+    posts = [BASE] * 5 + [replace(BASE, network=Network.X, impressions=500)] * 2
     result = summarize(posts)
 
     assert result["enough_data"] is True

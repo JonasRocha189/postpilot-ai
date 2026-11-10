@@ -1,7 +1,6 @@
 {
   "common": {
     "loading": "Carregando...",
-    "sampleData": "Dados de exemplo",
     "home": "Início",
     "close": "Fechar"
   },
@@ -256,7 +255,8 @@
       "afternoon": "Tarde (12h–18h)",
       "evening": "Noite (18h–24h)",
       "engagement": "Engajamento: {value}",
-      "insufficient": "Amostra insuficiente (mín. {min} posts)"
+      "insufficient": "Amostra insuficiente (mín. {min} posts)",
+      "dawn": "Madrugada (0h–6h)"
     },
     "bySubject": {
       "title": "Desempenho por assunto",
@@ -278,7 +278,15 @@
       "empty": "O agente ainda não foi usado.",
       "steps_one": "{count} passo",
       "steps_other": "{count} passos"
-    }
+    },
+    "noMetrics": {
+      "title": "Desempenho",
+      "subtitle": "Engajamento por rede, por assunto e melhor dia e horário",
+      "text": "Nenhum post publicado tem métricas ainda. Importe o CSV exportado de cada rede para ver os gráficos e para o agente usar o desempenho nas sugestões.",
+      "action": "Importar métricas"
+    },
+    "loadError": "Não foi possível carregar o dashboard.",
+    "retry": "Tentar novamente"
   },
   "calendar": {
     "title": "Calendário",

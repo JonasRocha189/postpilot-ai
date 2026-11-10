@@ -46,7 +46,10 @@ export function useImportMetrics() {
   return useMutation({
     mutationFn: (input: MetricsImportInput) =>
       metricasService.importMetrics(input),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: metricasKeys.all }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: metricasKeys.all });
+      // The dashboard's performance report ("reports" in features/dashboard/api.ts)
+      void queryClient.invalidateQueries({ queryKey: ["reports"] });
+    },
   });
 }

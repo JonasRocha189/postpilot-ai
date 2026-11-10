@@ -8,10 +8,14 @@ import type { CelulaDiaHorario, FaixaHorario } from "../types";
 import DashboardCard from "./DashboardCard";
 
 // De cima para baixo no gráfico
-const FAIXAS: { faixa: FaixaHorario; key: "evening" | "afternoon" | "morning" }[] = [
+const FAIXAS: {
+  faixa: FaixaHorario;
+  key: "evening" | "afternoon" | "morning" | "dawn";
+}[] = [
   { faixa: "noite", key: "evening" },
   { faixa: "tarde", key: "afternoon" },
   { faixa: "manha", key: "morning" },
+  { faixa: "madrugada", key: "dawn" },
 ];
 
 export default function MelhorDiaHorario({
@@ -32,7 +36,10 @@ export default function MelhorDiaHorario({
     name: t(`dashboard.bestTime.${key}`),
     data: dias.map((dia, i) => {
       const c = celula(i, faixa);
-      return { x: dia, y: c ? Number((taxaEngajamento(c) * 100).toFixed(1)) : 0 };
+      return {
+        x: dia,
+        y: c ? Number((taxaEngajamento(c) * 100).toFixed(1)) : 0,
+      };
     }),
   }));
 
@@ -73,7 +80,7 @@ export default function MelhorDiaHorario({
         options={options}
         series={series}
         type="heatmap"
-        height={260}
+        height={300}
       />
     </DashboardCard>
   );

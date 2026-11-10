@@ -5,8 +5,8 @@ import type {
   StatusPost,
 } from "@/lib/dominio";
 
-// Formato provisório da response do dashboard. Ajustar quando a API existir
-// (GET /posts, GET /agent/runs e GET /reports/performance).
+// What the dashboard widgets show, built from GET /posts, GET /agent/runs and
+// GET /reports/performance (see aggregate.ts).
 
 export type Interacoes = {
   curtidas: number;
@@ -21,7 +21,8 @@ export type MetricasGrupo = Interacoes & {
   impressoes: number;
 };
 
-export type FaixaHorario = "manha" | "tarde" | "noite";
+/** Same bands as the agent's analyze_performance (madrugada = 0h–6h) */
+export type FaixaHorario = "madrugada" | "manha" | "tarde" | "noite";
 
 /** dia: 0 = domingo ... 6 = sábado */
 export type CelulaDiaHorario = Interacoes & {
@@ -58,4 +59,33 @@ export type DadosDashboard = {
     porAssunto: MetricasGrupo[];
     porDiaHorario: CelulaDiaHorario[];
   };
+};
+
+// --- GET /reports/performance (mirrors backend/schemas/reports.py) ----------
+
+/** The latest numbers of one published variation */
+export type PostPerformance = {
+  variation_id: string;
+  post_id: string;
+  title: string;
+  subject: string;
+  network: Rede;
+  published_at: string;
+  /** In the report's time zone: ISO weekday (1 = Monday ... 7 = Sunday) */
+  weekday: number;
+  /** In the report's time zone: 0-23 */
+  hour: number;
+  has_image: boolean;
+  impressions: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  clicks: number;
+};
+
+export type PerformanceReport = {
+  timezone: string;
+  /** Groups with fewer posts support no conclusion */
+  min_sample: number;
+  posts: PostPerformance[];
 };

@@ -2,9 +2,9 @@
 
 > Status: **em implementação**. Atualize esta página sempre que uma rota for criada, alterada ou removida.
 >
-> **Implementadas:** `/login`, `/signup`, `/error`, `/`, `/projects`, `/subjects` e `/posts` (lista, novo e edição), `/images` (biblioteca de imagens do projeto), o seletor de projeto no cabeçalho, `/calendar`, `/best-practices` (guia de boas práticas por rede), `/documents`, `/agent`, `/agent/runs` e `/agent/runs/:id`, `/dashboard` (ainda com dados de exemplo), `/profile` e `*`.
+> **Implementadas:** `/login`, `/signup`, `/error`, `/`, `/projects`, `/subjects` e `/posts` (lista, novo e edição), `/images` (biblioteca de imagens do projeto), o seletor de projeto no cabeçalho, `/calendar`, `/best-practices` (guia de boas práticas por rede), `/documents`, `/agent`, `/agent/runs` e `/agent/runs/:id`, `/dashboard`, `/profile` e `*`.
 >
-> **Ligadas à API real:** projetos, assuntos, posts e imagens. Documentos, agente e dashboard ainda usam a API fictícia.
+> **Ligadas à API real:** todas as páginas. A API fictícia (`lib/api/mockDb.ts`) só é usada no modo de demonstração e nos testes de aceite.
 >
 > **Dados de exemplo:** sem `VITE_API_URL`, o `npm run dev` usa uma API fictícia no navegador (`lib/api/mockDb.ts`, guardada no `localStorage`), com as mesmas regras da API real (`404`, `409`, `422`). Com `VITE_API_URL`, as mesmas telas chamam o backend.
 >
@@ -31,7 +31,7 @@ Dentro do `AppLayout`. Sem sessão, o usuário é redirecionado para `/login`.
 | Rota | Página | API usada | Requisito do TCC |
 | --- | --- | --- | --- |
 | `/` | Redireciona para `/dashboard` | | |
-| `/dashboard` | Posts por status, próximos posts previstos, últimas execuções do agente e métricas de desempenho (por assunto, rede, dia e horário) | `GET /posts`, `GET /agent/runs`, `GET /reports/performance` | Relatório de desempenho |
+| `/dashboard` | Variações por status, próximos posts previstos (data prevista a partir de hoje, ainda não publicados), últimas 5 execuções do agente e desempenho: engajamento por rede, melhor dia e horário (madrugada, manhã, tarde, noite) e desempenho por assunto, com "amostra insuficiente" abaixo de 5 posts. Sem métricas, um convite para importar em `/metrics`. Agregação em `features/dashboard/aggregate.ts` | `GET /posts`, `GET /subjects`, `GET /agent/runs`, `GET /reports/performance` | Relatório de desempenho |
 | `/projects` | Lista de projetos (marca própria ou clientes) | `GET /projects`, `DELETE /projects/{id}` | CRUD |
 | `/projects/new` | Cadastro de projeto: nome, descrição, público-alvo e tom de voz padrão | `POST /projects` | CRUD |
 | `/projects/:id` | Edição de projeto | `GET`, `PUT /projects/{id}` | CRUD |
