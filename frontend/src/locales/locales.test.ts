@@ -27,19 +27,17 @@ describe("locales (namespace app)", () => {
   });
 
   it("each text uses the same {placeholders} in both languages", () => {
-    const diferentes = [...pt].filter(
+    const different = [...pt].filter(
       ([k, text]) =>
         enLeaves.has(k) &&
         placeholders(text) !== placeholders(enLeaves.get(k)!),
     );
-    expect(diferentes).toEqual([]);
+    expect(different).toEqual([]);
   });
 
   it("has no empty texts", () => {
     expect(pt.size).toBeGreaterThan(0);
-    const vazios = [...pt, ...enLeaves].filter(
-      ([, text]) => text.trim() === "",
-    );
-    expect(vazios).toEqual([]);
+    const empty = [...pt, ...enLeaves].filter(([, text]) => text.trim() === "");
+    expect(empty).toEqual([]);
   });
 });

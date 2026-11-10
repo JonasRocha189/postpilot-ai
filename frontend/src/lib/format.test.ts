@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaIso, parseData } from "./format";
+import { isoDay, parseData } from "./format";
 
 describe("parseData", () => {
   it("reads a date-only string as a local date, not UTC midnight", () => {
@@ -22,12 +22,12 @@ describe("parseData", () => {
   });
 });
 
-describe("diaIso", () => {
+describe("isoDay", () => {
   it("formats a local date as YYYY-MM-DD with zero padding", () => {
-    expect(diaIso(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+    expect(isoDay(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
   });
 
   it("round-trips with parseData", () => {
-    expect(diaIso(parseData("2026-12-31"))).toBe("2026-12-31");
+    expect(isoDay(parseData("2026-12-31"))).toBe("2026-12-31");
   });
 });

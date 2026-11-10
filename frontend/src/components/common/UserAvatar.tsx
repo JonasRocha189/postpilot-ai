@@ -11,7 +11,7 @@ function initials(user?: AuthUser): string {
     .join("");
 }
 
-/** Foto do usuário (Auth0) ou suas iniciais. */
+/** The user's photo (Auth0) or their initials. */
 export default function UserAvatar({
   user,
   className = "size-20 text-2xl",

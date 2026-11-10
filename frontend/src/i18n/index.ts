@@ -7,9 +7,9 @@ import ptApp from "../locales/pt-BR/app.json";
 import { defaultLocale, toLocale } from "./languages";
 
 // Namespaces:
-// - "app":    textos do PostPilot (todos traduzidos em pt-BR e en)
-// - "common": textos das páginas de demonstração do TailAdmin (só en;
-//             em pt-BR caem no fallback em inglês)
+// - "app":    PostPilot texts (all translated into pt-BR and en)
+// - "common": texts of the TailAdmin demo pages (en only;
+//             in pt-BR they fall back to English)
 export const resources = {
   "pt-BR": { app: ptApp },
   en: { app: enApp, common: enCommon },
@@ -23,7 +23,7 @@ function initialLanguage() {
   try {
     saved = localStorage.getItem(STORAGE_KEY);
   } catch {
-    // localStorage indisponível
+    // localStorage unavailable
   }
   return toLocale(saved) ?? toLocale(navigator.language) ?? defaultLocale;
 }

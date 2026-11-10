@@ -1,36 +1,36 @@
 import { apiFetch, apiMode } from "@/lib/api/http";
 import { postsMock } from "./mock";
-import type { Post, PostFiltros, PostInput } from "./types";
+import type { Post, PostFilters, PostInput } from "./types";
 
 export interface PostsService {
-  listar(projetoId: string, filtros?: PostFiltros): Promise<Post[]>;
-  obter(id: string): Promise<Post>;
-  criar(input: PostInput): Promise<Post>;
-  /** Substitui o post e todas as suas variações. */
-  atualizar(id: string, input: PostInput): Promise<Post>;
-  excluir(id: string): Promise<void>;
+  list(projectId: string, filters?: PostFilters): Promise<Post[]>;
+  get(id: string): Promise<Post>;
+  create(input: PostInput): Promise<Post>;
+  /** Replaces the post and all its variations. */
+  update(id: string, input: PostInput): Promise<Post>;
+  remove(id: string): Promise<void>;
 }
 
-function query(projetoId: string, filtros: PostFiltros = {}) {
-  const params = new URLSearchParams({ project_id: projetoId });
-  for (const [chave, valor] of Object.entries(filtros)) {
-    if (valor) params.set(chave, valor);
+function query(projectId: string, filters: PostFilters = {}) {
+  const params = new URLSearchParams({ project_id: projectId });
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
   }
   return params.toString();
 }
 
 const postsHttp: PostsService = {
-  listar: (projetoId, filtros) =>
-    apiFetch<Post[]>(`/posts?${query(projetoId, filtros)}`),
-  obter: (id) => apiFetch<Post>(`/posts/${id}`),
-  criar: (input) =>
+  list: (projectId, filters) =>
+    apiFetch<Post[]>(`/posts?${query(projectId, filters)}`),
+  get: (id) => apiFetch<Post>(`/posts/${id}`),
+  create: (input) =>
     apiFetch<Post>("/posts", { method: "POST", body: JSON.stringify(input) }),
-  atualizar: (id, input) =>
+  update: (id, input) =>
     apiFetch<Post>(`/posts/${id}`, {
       method: "PUT",
       body: JSON.stringify(input),
     }),
-  excluir: (id) => apiFetch<void>(`/posts/${id}`, { method: "DELETE" }),
+  remove: (id) => apiFetch<void>(`/posts/${id}`, { method: "DELETE" }),
 };
 
 export const postsService: PostsService =

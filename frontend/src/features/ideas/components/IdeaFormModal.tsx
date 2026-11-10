@@ -6,9 +6,9 @@ import {
 } from "@/components/form/FormField";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
-import type { Assunto } from "@/features/assuntos/types";
-import { REDES } from "@/features/posts/redes";
-import { REDE_LABEL, type Rede } from "@/lib/dominio";
+import type { Subject } from "@/features/subjects/types";
+import { NETWORKS } from "@/features/posts/networks";
+import { NETWORK_LABEL, type Network } from "@/lib/domain";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -25,7 +25,7 @@ const ideaSchema = z.object({
     .max(200, { message: "form.errors.tooLong" }),
   notes: z.string().max(2000, { message: "form.errors.tooLong" }),
   subject_id: z.string(),
-  networks: z.array(z.enum(REDES as [Rede, ...Rede[]])),
+  networks: z.array(z.enum(NETWORKS as [Network, ...Network[]])),
 });
 type IdeaFormValues = z.infer<typeof ideaSchema>;
 
@@ -40,7 +40,7 @@ const toInput = (values: IdeaFormValues): IdeaInput => ({
   title: values.title.trim(),
   notes: values.notes.trim() || null,
   subject_id: values.subject_id || null,
-  networks: REDES.filter((n) => values.networks.includes(n)),
+  networks: NETWORKS.filter((n) => values.networks.includes(n)),
 });
 
 /** Create or edit an idea (`idea` set = editing). */
@@ -53,7 +53,7 @@ export default function IdeaFormModal({
 }: {
   isOpen: boolean;
   idea: Idea | null;
-  subjects: Assunto[];
+  subjects: Subject[];
   onSave: (input: IdeaInput) => Promise<unknown>;
   onClose: () => void;
 }) {
@@ -84,7 +84,7 @@ function IdeaForm({
   onClose,
 }: {
   idea: Idea | null;
-  subjects: Assunto[];
+  subjects: Subject[];
   onSave: (input: IdeaInput) => Promise<unknown>;
   onClose: () => void;
 }) {
@@ -156,7 +156,7 @@ function IdeaForm({
                 {t("ideas.form.networks")}
               </legend>
               <div className="flex flex-wrap gap-4">
-                {REDES.map((n) => (
+                {NETWORKS.map((n) => (
                   <label
                     key={n}
                     className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
@@ -173,7 +173,7 @@ function IdeaForm({
                       }
                       className="size-4 accent-brand-500"
                     />
-                    {REDE_LABEL[n]}
+                    {NETWORK_LABEL[n]}
                   </label>
                 ))}
               </div>

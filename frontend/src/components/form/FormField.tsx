@@ -2,8 +2,8 @@ import { cn } from "@/utils";
 import type { ComponentProps } from "react";
 import Label from "./Label";
 
-// Campos com o visual do TailAdmin que aceitam `ref`, para usar com
-// o `register` do React Hook Form.
+// Fields with the TailAdmin look that accept `ref`, for use with
+// React Hook Form's `register`.
 
 const base =
   "w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30";
@@ -35,12 +35,19 @@ function FieldShell({
       </Label>
       {children}
       {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-error-500">
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="mt-1.5 text-xs text-error-500"
+        >
           {error}
         </p>
       ) : (
         hint && (
-          <p id={`${id}-hint`} className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <p
+            id={`${id}-hint`}
+            className="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
+          >
             {hint}
           </p>
         )
@@ -59,11 +66,19 @@ export function FormInput({
   ...props
 }: FieldProps & ComponentProps<"input"> & { id: string }) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+    >
       <input
         id={id}
         aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        aria-describedby={
+          error ? `${id}-error` : hint ? `${id}-hint` : undefined
+        }
         className={cn(base, "h-11", error ? invalid : normal, className)}
         {...props}
       />
@@ -82,12 +97,25 @@ export function FormSelect({
   ...props
 }: FieldProps & ComponentProps<"select"> & { id: string }) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+    >
       <select
         id={id}
         aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={cn(base, "h-11 pe-10 dark:bg-gray-900", error ? invalid : normal, className)}
+        aria-describedby={
+          error ? `${id}-error` : hint ? `${id}-hint` : undefined
+        }
+        className={cn(
+          base,
+          "h-11 pe-10 dark:bg-gray-900",
+          error ? invalid : normal,
+          className,
+        )}
         {...props}
       >
         {children}
@@ -107,12 +135,20 @@ export function FormTextArea({
   ...props
 }: FieldProps & ComponentProps<"textarea"> & { id: string }) {
   return (
-    <FieldShell id={id} label={label} hint={hint} error={error} required={required}>
+    <FieldShell
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+    >
       <textarea
         id={id}
         rows={rows}
         aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        aria-describedby={
+          error ? `${id}-error` : hint ? `${id}-hint` : undefined
+        }
         className={cn(base, error ? invalid : normal, className)}
         {...props}
       />

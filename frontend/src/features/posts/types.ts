@@ -1,4 +1,4 @@
-import type { FormatoPost, Rede, StatusPost } from "@/lib/dominio";
+import type { PostFormat, Network, PostStatus } from "@/lib/domain";
 
 // Mirrors the backend schema (see _docs/api.md).
 
@@ -9,10 +9,10 @@ import type { FormatoPost, Rede, StatusPost } from "@/lib/dominio";
 export type PostVariation = {
   /** Kept per network when the post is saved again (metrics hang on it) */
   id: string;
-  network: Rede;
-  format: FormatoPost;
+  network: Network;
+  format: PostFormat;
   content: string | null;
-  status: StatusPost;
+  status: PostStatus;
   expected_date: string | null; // YYYY-MM-DD
   /** Images from the project library, in carousel order */
   image_ids: string[];
@@ -43,9 +43,9 @@ export type PostInput = {
  * Filters of GET /posts (besides the project). A post is returned when at
  * least one variation matches status, network and period together.
  */
-export type PostFiltros = {
-  status?: StatusPost;
-  network?: Rede;
+export type PostFilters = {
+  status?: PostStatus;
+  network?: Network;
   subject_id?: string;
   from?: string; // YYYY-MM-DD
   to?: string;
@@ -54,7 +54,7 @@ export type PostFiltros = {
 /** Does the variation match the list filters? (same rule as the backend) */
 export function variationMatches(
   variation: Pick<PostVariation, "status" | "network" | "expected_date">,
-  filters: Omit<PostFiltros, "subject_id">,
+  filters: Omit<PostFilters, "subject_id">,
 ): boolean {
   const date = variation.expected_date;
   return (

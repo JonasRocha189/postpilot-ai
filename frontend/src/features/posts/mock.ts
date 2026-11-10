@@ -1,7 +1,7 @@
 // FAKE posts API (see lib/api/mockDb.ts)
 import { ApiError } from "@/lib/api/http";
-import { agoraIso, latencia, mockDb } from "@/lib/api/mockDb";
-import { erroRegraPost } from "./redes";
+import { nowIso, latency, mockDb } from "@/lib/api/mockDb";
+import { postRuleError } from "./networks";
 import type { PostsService } from "./service";
 import type { Post, PostInput, PostVariation } from "./types";
 import { variationMatches } from "./types";
@@ -9,7 +9,7 @@ import { variationMatches } from "./types";
 const NAME = "Post";
 
 function checkSubject(subjectId: string) {
-  if (!mockDb.assuntos.todos().some((a) => a.id === subjectId)) {
+  if (!mockDb.subjects.todos().some((a) => a.id === subjectId)) {
     throw new ApiError(404, "Subject not found");
   }
 }
@@ -24,9 +24,9 @@ function checkVariations(input: PostInput) {
   if (new Set(variations.map((v) => v.network)).size !== variations.length) {
     throw new ApiError(422, "Only one variation per network");
   }
-  const subject = mockDb.assuntos.encontrar(input.subject_id, "Assunto");
+  const subject = mockDb.subjects.find(input.subject_id, "Assunto");
   const library = new Set(
-    mockDb.imagens
+    mockDb.images
       .todos()
       .filter((i) => i.project_id === subject.project_id)
       .map((i) => i.id),
@@ -38,14 +38,14 @@ function checkVariations(input: PostInput) {
     ) {
       throw new ApiError(422, "Image is not in this project's library");
     }
-    const error = erroRegraPost({
+    const error = postRuleError({
       network: v.network,
       format: v.format,
-      imagens: v.image_ids.length,
-      texto: v.content ?? "",
+      images: v.image_ids.length,
+      text: v.content ?? "",
       status: v.status,
     });
-    if (error) throw new ApiError(422, error.mensagem);
+    if (error) throw new ApiError(422, error.message);
   }
 }
 
@@ -60,33 +60,33 @@ function withIds(input: PostInput, current?: Post): PostVariation[] {
 }
 
 export const postsMock: PostsService = {
-  async listar(projetoId, filtros = {}) {
-    await latencia();
+  async list(projectId, filters = {}) {
+    await latency();
     const subjectsOfProject = new Set(
-      mockDb.assuntos
+      mockDb.subjects
         .todos()
-        .filter((a) => a.project_id === projetoId)
+        .filter((a) => a.project_id === projectId)
         .map((a) => a.id),
     );
     return mockDb.posts
       .todos()
       .filter((p) => subjectsOfProject.has(p.subject_id))
-      .filter((p) => !filtros.subject_id || p.subject_id === filtros.subject_id)
-      .filter((p) => p.variations.some((v) => variationMatches(v, filtros)))
+      .filter((p) => !filters.subject_id || p.subject_id === filters.subject_id)
+      .filter((p) => p.variations.some((v) => variationMatches(v, filters)))
       .sort((a, b) => a.title.localeCompare(b.title));
   },
 
-  async obter(id) {
-    await latencia();
-    return mockDb.posts.encontrar(id, NAME);
+  async get(id) {
+    await latency();
+    return mockDb.posts.find(id, NAME);
   },
 
-  async criar(input) {
-    await latencia();
+  async create(input) {
+    await latency();
     checkSubject(input.subject_id);
     checkVariations(input);
-    const now = agoraIso();
-    return mockDb.posts.inserir({
+    const now = nowIso();
+    return mockDb.posts.insert({
       id: crypto.randomUUID(),
       subject_id: input.subject_id,
       title: input.title,
@@ -96,23 +96,23 @@ export const postsMock: PostsService = {
     });
   },
 
-  async atualizar(id, input) {
-    await latencia();
-    const current = mockDb.posts.encontrar(id, NAME);
+  async update(id, input) {
+    await latency();
+    const current = mockDb.posts.find(id, NAME);
     checkSubject(input.subject_id);
     checkVariations(input);
-    return mockDb.posts.substituir({
+    return mockDb.posts.replace({
       ...current,
       subject_id: input.subject_id,
       title: input.title,
       variations: withIds(input, current),
-      updated_at: agoraIso(),
+      updated_at: nowIso(),
     });
   },
 
-  async excluir(id) {
-    await latencia();
-    mockDb.posts.encontrar(id, NAME);
-    mockDb.posts.remover(id);
+  async remove(id) {
+    await latency();
+    mockDb.posts.find(id, NAME);
+    mockDb.posts.remove(id);
   },
 };

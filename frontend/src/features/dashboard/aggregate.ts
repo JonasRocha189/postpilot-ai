@@ -1,16 +1,16 @@
-import type { AgentRun } from "@/features/agente/types";
+import type { AgentRun } from "@/features/agent/types";
 import type { Post } from "@/features/posts/types";
-import { REDES } from "@/features/posts/redes";
-import type { Rede, StatusPost } from "@/lib/dominio";
+import { NETWORKS } from "@/features/posts/networks";
+import type { Network, PostStatus } from "@/lib/domain";
 import type {
-  CelulaDiaHorario,
-  DadosDashboard,
-  ExecucaoResumo,
-  FaixaHorario,
-  Interacoes,
-  MetricasGrupo,
+  DayTimeCell,
+  DashboardData,
+  RunSummary,
+  TimeBand,
+  Interactions,
+  MetricsGroup,
   PostPerformance,
-  ProximoPost,
+  UpcomingPost,
 } from "./types";
 
 // Turns the API responses into what each widget shows. Pure functions: tested
@@ -20,32 +20,32 @@ const UPCOMING_LIMIT = 5;
 const RUNS_LIMIT = 5;
 
 /** The band of a local hour (same as the agent's time_of_day) */
-export function timeBand(hour: number): FaixaHorario {
+export function timeBand(hour: number): TimeBand {
   if (hour < 6) return "madrugada";
   if (hour < 12) return "manha";
   if (hour < 18) return "tarde";
   return "noite";
 }
 
-type Numbers = Interacoes & { posts: number; impressoes: number };
+type Numbers = Interactions & { posts: number; impressions: number };
 
 const zero = (): Numbers => ({
   posts: 0,
-  impressoes: 0,
-  curtidas: 0,
-  comentarios: 0,
-  compartilhamentos: 0,
-  cliques: 0,
+  impressions: 0,
+  likes: 0,
+  comments: 0,
+  shares: 0,
+  clicks: 0,
 });
 
 function add(total: Numbers, post: PostPerformance): Numbers {
   return {
     posts: total.posts + 1,
-    impressoes: total.impressoes + post.impressions,
-    curtidas: total.curtidas + post.likes,
-    comentarios: total.comentarios + post.comments,
-    compartilhamentos: total.compartilhamentos + post.shares,
-    cliques: total.cliques + post.clicks,
+    impressions: total.impressions + post.impressions,
+    likes: total.likes + post.likes,
+    comments: total.comments + post.comments,
+    shares: total.shares + post.shares,
+    clicks: total.clicks + post.clicks,
   };
 }
 
@@ -64,32 +64,32 @@ function groupBy<K>(
 /** Totals per network (in the app's network order), subject and day × band. */
 export function groupPerformance(
   posts: PostPerformance[],
-): DadosDashboard["desempenho"] {
-  const byNetwork = groupBy(posts, (p) => p.network);
-  const porRede = REDES.filter((rede) => byNetwork.has(rede)).map((rede) => ({
-    grupo: rede,
-    ...byNetwork.get(rede)!,
+): DashboardData["performance"] {
+  const networkTotals = groupBy(posts, (p) => p.network);
+  const byNetwork = NETWORKS.filter((network) =>
+    networkTotals.has(network),
+  ).map((network) => ({
+    group: network,
+    ...networkTotals.get(network)!,
   }));
 
-  const porAssunto: MetricasGrupo[] = [...groupBy(posts, (p) => p.subject)].map(
-    ([grupo, numbers]) => ({ grupo, ...numbers }),
+  const bySubject: MetricsGroup[] = [...groupBy(posts, (p) => p.subject)].map(
+    ([group, numbers]) => ({ group, ...numbers }),
   );
 
   // The API uses ISO weekdays (7 = Sunday); the chart uses 0 = Sunday
   const byCell = groupBy(posts, (p) => `${p.weekday % 7}|${timeBand(p.hour)}`);
-  const porDiaHorario: CelulaDiaHorario[] = [...byCell].map(
-    ([key, numbers]) => {
-      const [dia, faixa] = key.split("|");
-      return { dia: Number(dia), faixa: faixa as FaixaHorario, ...numbers };
-    },
-  );
+  const byDayTime: DayTimeCell[] = [...byCell].map(([key, numbers]) => {
+    const [day, band] = key.split("|");
+    return { day: Number(day), band: band as TimeBand, ...numbers };
+  });
 
-  return { porRede, porAssunto, porDiaHorario };
+  return { byNetwork, bySubject, byDayTime };
 }
 
 /** How many variations are in each status (a post counts once per network). */
-export function countByStatus(posts: Post[]): Record<StatusPost, number> {
-  const counts: Record<StatusPost, number> = {
+export function countByStatus(posts: Post[]): Record<PostStatus, number> {
+  const counts: Record<PostStatus, number> = {
     draft: 0,
     review: 0,
     approved: 0,
@@ -109,8 +109,8 @@ export function upcomingPosts(
   posts: Post[],
   subjectNames: Map<string, string>,
   today: string,
-): ProximoPost[] {
-  const upcoming: ProximoPost[] = [];
+): UpcomingPost[] {
+  const upcoming: UpcomingPost[] = [];
   for (const post of posts) {
     const pending = post.variations.filter(
       (v) =>
@@ -125,27 +125,27 @@ export function upcomingPosts(
     upcoming.push({
       id: post.id,
       title: post.title,
-      assunto: subjectNames.get(post.subject_id) ?? "",
-      redes: pending.map((v) => v.network as Rede),
+      subject: subjectNames.get(post.subject_id) ?? "",
+      networks: pending.map((v) => v.network as Network),
       status: first.status,
       // Local midnight: a bare YYYY-MM-DD would be read as UTC (the day before in Brazil)
-      dataPrevista: `${first.expected_date}T00:00:00`,
+      expectedDate: `${first.expected_date}T00:00:00`,
     });
   }
   return upcoming
-    .sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevista))
+    .sort((a, b) => a.expectedDate.localeCompare(b.expectedDate))
     .slice(0, UPCOMING_LIMIT);
 }
 
 /** The most recent runs (the API already sends them newest first). */
-export function latestRuns(runs: AgentRun[]): ExecucaoResumo[] {
+export function latestRuns(runs: AgentRun[]): RunSummary[] {
   return runs.slice(0, RUNS_LIMIT).map((run) => ({
     id: run.id,
     mode: run.mode,
     request: run.request,
     status: run.status,
     steps: run.steps.length,
-    iniciadaEm: run.started_at,
+    startedAt: run.started_at,
   }));
 }
 

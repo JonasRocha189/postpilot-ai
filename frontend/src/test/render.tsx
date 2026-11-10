@@ -1,6 +1,6 @@
 import { AppWrapper } from "@/components/common/PageMeta";
-import ExigeProjeto from "@/features/projetos/components/ExigeProjeto";
-import ProjetoAtualProvider from "@/features/projetos/ProjetoAtualProvider";
+import RequireProject from "@/features/projects/components/RequireProject";
+import CurrentProjectProvider from "@/features/projects/CurrentProjectProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -50,7 +50,7 @@ export function renderPage(
           {
             path,
             element: requireProject ? (
-              <ExigeProjeto>{page}</ExigeProjeto>
+              <RequireProject>{page}</RequireProject>
             ) : (
               page
             ),
@@ -67,9 +67,9 @@ export function renderPage(
   render(
     <QueryClientProvider client={queryClient}>
       <AppWrapper>
-        <ProjetoAtualProvider>
+        <CurrentProjectProvider>
           <RouterProvider router={router} />
-        </ProjetoAtualProvider>
+        </CurrentProjectProvider>
       </AppWrapper>
     </QueryClientProvider>,
   );

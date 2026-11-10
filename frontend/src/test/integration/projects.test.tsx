@@ -1,6 +1,6 @@
 // Integration: projects pages + TanStack Query + http service, against the fake API (MSW).
-import ProjetoFormPage from "@/pages/Projetos/ProjetoFormPage";
-import Projetos from "@/pages/Projetos/Projetos";
+import ProjectFormPage from "@/pages/Projects/ProjectFormPage";
+import Projects from "@/pages/Projects/Projects";
 import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { fakeApi } from "../fakeApi";
@@ -11,7 +11,7 @@ describe("Projects page (/projects)", () => {
     fakeApi.addProject({ name: "Acme Cloud" });
     fakeApi.addProject({ name: "Minha marca" });
 
-    renderPage(<Projetos />, { path: "/projects", requireProject: false });
+    renderPage(<Projects />, { path: "/projects", requireProject: false });
 
     expect(
       await screen.findByRole("heading", { name: "Acme Cloud" }),
@@ -27,7 +27,7 @@ describe("Projects page (/projects)", () => {
   it("shows the conflict message when the API refuses to delete (409)", async () => {
     const project = fakeApi.addProject({ name: "Acme Cloud" });
     fakeApi.addSubject(project.id);
-    const { user } = renderPage(<Projetos />, {
+    const { user } = renderPage(<Projects />, {
       path: "/projects",
       requireProject: false,
     });
@@ -47,7 +47,7 @@ describe("Projects page (/projects)", () => {
   it("deletes an empty project and refreshes the list", async () => {
     fakeApi.addProject({ name: "Acme Cloud" });
     fakeApi.addProject({ name: "Minha marca" });
-    const { user } = renderPage(<Projetos />, {
+    const { user } = renderPage(<Projects />, {
       path: "/projects",
       requireProject: false,
     });
@@ -72,7 +72,7 @@ describe("Projects page (/projects)", () => {
 
 describe("New project form (/projects/new)", () => {
   it("validates the name before calling the API", async () => {
-    const { user } = renderPage(<ProjetoFormPage />, {
+    const { user } = renderPage(<ProjectFormPage />, {
       path: "/projects/new",
       requireProject: false,
     });
@@ -88,7 +88,7 @@ describe("New project form (/projects/new)", () => {
   });
 
   it("creates the project (empty fields as null) and goes back to the list", async () => {
-    const { user, location } = renderPage(<ProjetoFormPage />, {
+    const { user, location } = renderPage(<ProjectFormPage />, {
       path: "/projects/new",
       requireProject: false,
     });

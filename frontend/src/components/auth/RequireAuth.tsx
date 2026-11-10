@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import IdleLogout from "./IdleLogout";
 import LoadingScreen from "./LoadingScreen";
 
-/** Protege as rotas filhas: sem sessão, redireciona para /login e volta depois. */
+/** Guards the child routes: without a session, redirects to /login and comes back after. */
 export default function RequireAuth() {
   const { isLoading, isAuthenticated } = useAuth();
   const location = useLocation();

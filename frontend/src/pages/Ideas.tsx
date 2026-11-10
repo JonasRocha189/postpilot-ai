@@ -1,4 +1,4 @@
-import ConfirmarExclusaoModal from "@/components/common/ConfirmarExclusaoModal";
+import ConfirmDeleteModal from "@/components/common/ConfirmDeleteModal";
 import PageHeader from "@/components/common/PageHeader";
 import PageMeta from "@/components/common/PageMeta";
 import {
@@ -9,7 +9,7 @@ import {
 } from "@/components/common/styles";
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
-import { useAssuntos } from "@/features/assuntos/api";
+import { useSubjects } from "@/features/subjects/api";
 import {
   useCreateIdea,
   useDeleteIdea,
@@ -18,9 +18,9 @@ import {
 } from "@/features/ideas/api";
 import IdeaFormModal from "@/features/ideas/components/IdeaFormModal";
 import type { Idea, IdeaInput } from "@/features/ideas/types";
-import { useProjetoAtual } from "@/features/projetos/useProjetoAtual";
+import { useCurrentProject } from "@/features/projects/useCurrentProject";
 import { PencilIcon, PlusIcon, TrashBinIcon } from "@/icons";
-import { REDE_LABEL } from "@/lib/dominio";
+import { NETWORK_LABEL } from "@/lib/domain";
 import { cn } from "@/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,10 +35,10 @@ type Filter = (typeof FILTERS)[number];
  */
 export default function Ideas() {
   const { t } = useTranslation("app", { keyPrefix: "ideas" });
-  const { projetoAtual } = useProjetoAtual();
-  const projectId = projetoAtual?.id;
+  const { currentProject } = useCurrentProject();
+  const projectId = currentProject?.id;
   const ideas = useIdeas(projectId);
-  const subjects = useAssuntos(projectId);
+  const subjects = useSubjects(projectId);
   const create = useCreateIdea();
   const update = useUpdateIdea();
   const remove = useDeleteIdea();
@@ -81,7 +81,7 @@ export default function Ideas() {
       />
       <PageHeader
         title={t("title")}
-        subtitle={t("subtitle", { project: projetoAtual?.name })}
+        subtitle={t("subtitle", { project: currentProject?.name })}
         action={
           <Button onClick={openNew} startIcon={<PlusIcon className="size-5" />}>
             {t("new")}
@@ -182,7 +182,7 @@ export default function Ideas() {
                 )}
                 {idea.networks.map((n) => (
                   <Badge key={n} color="primary" size="sm">
-                    {REDE_LABEL[n]}
+                    {NETWORK_LABEL[n]}
                   </Badge>
                 ))}
               </div>
@@ -222,7 +222,7 @@ export default function Ideas() {
         onSave={save}
         onClose={() => setFormOpen(false)}
       />
-      <ConfirmarExclusaoModal
+      <ConfirmDeleteModal
         isOpen={toDelete !== null}
         title={t("delete.title", { name: toDelete?.title })}
         message={

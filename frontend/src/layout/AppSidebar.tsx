@@ -24,11 +24,11 @@ import { cn } from "../utils";
 
 type NavItem = {
   name: string;
-  /** Chave do namespace "app" (itens do PostPilot) */
+  /** Key in the "app" namespace (PostPilot items) */
   appKey?: string;
   icon: React.ReactNode;
   path?: string;
-  /** Desenha uma linha antes do item, separando grupos do menu */
+  /** Draws a line before the item, separating menu groups */
   divider?: boolean;
   new?: boolean;
   target?: string;
@@ -128,7 +128,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-const TODOS_OS_CAMINHOS = navItems.flatMap((item) => [
+const ALL_PATHS = navItems.flatMap((item) => [
   ...(item.path ? [item.path] : []),
   ...(item.subItems?.map((s) => s.path) ?? []),
 ]);
@@ -186,16 +186,16 @@ const AppSidebar: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Ativo também nas subpáginas (ex.: /projects/new destaca "Projetos"),
-  // mas só o item mais específico (/agent/runs não destaca "Agente")
+  // Also active on subpages (e.g. /projects/new highlights "Projects"),
+  // but only the most specific item (/agent/runs doesn't highlight "Agent")
   const isActive = useCallback(
     (path: string) => {
-      const casa = (p: string) =>
+      const house = (p: string) =>
         location.pathname === p || location.pathname.startsWith(`${p}/`);
-      const melhor = TODOS_OS_CAMINHOS.filter(casa).sort(
+      const best = ALL_PATHS.filter(house).sort(
         (a, b) => b.length - a.length,
       )[0];
-      return melhor === path;
+      return best === path;
     },
     [location.pathname],
   );

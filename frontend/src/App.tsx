@@ -1,13 +1,13 @@
 import AuthProvider from "@/components/auth/AuthProvider";
 import RequireAuth from "@/components/auth/RequireAuth";
-import ExigeProjeto from "@/features/projetos/components/ExigeProjeto";
+import RequireProject from "@/features/projects/components/RequireProject";
 import AppLayout from "@/layout/AppLayout";
-import Erro from "@/pages/OtherPage/Erro";
+import ErrorPage from "@/pages/OtherPage/ErrorPage";
 import type { ComponentType } from "react";
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
-/** Carrega a página sob demanda (code splitting por rota). */
+/** Loads the page on demand (code splitting per route). */
 const page = (
   load: () => Promise<{ default: ComponentType }>,
 ): Pick<RouteObject, "lazy"> => ({
@@ -17,12 +17,12 @@ const page = (
 const router = createBrowserRouter([
   {
     element: <AuthProvider />,
-    errorElement: <Erro />,
+    errorElement: <ErrorPage />,
     children: [
-      // Públicas
+      // Public
       { path: "/login", ...page(() => import("@/pages/AuthPages/Login")) },
-      { path: "/signup", ...page(() => import("@/pages/AuthPages/Cadastro")) },
-      { path: "/error", element: <Erro /> },
+      { path: "/signup", ...page(() => import("@/pages/AuthPages/SignUp")) },
+      { path: "/error", element: <ErrorPage /> },
 
       // Protegidas
       {
@@ -34,26 +34,26 @@ const router = createBrowserRouter([
               { index: true, element: <Navigate to="/dashboard" replace /> },
               {
                 path: "/projects",
-                ...page(() => import("@/pages/Projetos/Projetos")),
+                ...page(() => import("@/pages/Projects/Projects")),
               },
               {
                 path: "/projects/new",
-                ...page(() => import("@/pages/Projetos/ProjetoFormPage")),
+                ...page(() => import("@/pages/Projects/ProjectFormPage")),
               },
               {
                 path: "/projects/:id",
-                ...page(() => import("@/pages/Projetos/ProjetoFormPage")),
+                ...page(() => import("@/pages/Projects/ProjectFormPage")),
               },
-              { path: "/profile", ...page(() => import("@/pages/Perfil")) },
-              // Só leitura e sem dados do projeto: fora do ExigeProjeto
+              { path: "/profile", ...page(() => import("@/pages/Profile")) },
+              // Read-only and without project data: outside RequireProject
               {
                 path: "/best-practices",
-                ...page(() => import("@/pages/BoasPraticas")),
+                ...page(() => import("@/pages/BestPractices")),
               },
 
-              // Conteúdo: exige um projeto selecionado
+              // Content: needs a selected project
               {
-                element: <ExigeProjeto />,
+                element: <RequireProject />,
                 children: [
                   {
                     path: "/dashboard",
@@ -71,7 +71,7 @@ const router = createBrowserRouter([
                     path: "/posts/:id",
                     ...page(() => import("@/pages/Posts/PostFormPage")),
                   },
-                  { path: "/images", ...page(() => import("@/pages/Imagens")) },
+                  { path: "/images", ...page(() => import("@/pages/Images")) },
                   { path: "/ideas", ...page(() => import("@/pages/Ideas")) },
                   {
                     path: "/metrics",
@@ -79,35 +79,35 @@ const router = createBrowserRouter([
                   },
                   {
                     path: "/calendar",
-                    ...page(() => import("@/pages/Calendario")),
+                    ...page(() => import("@/pages/Calendar")),
                   },
                   {
                     path: "/subjects",
-                    ...page(() => import("@/pages/Assuntos/Assuntos")),
+                    ...page(() => import("@/pages/Subjects/Subjects")),
                   },
                   {
                     path: "/subjects/new",
-                    ...page(() => import("@/pages/Assuntos/AssuntoFormPage")),
+                    ...page(() => import("@/pages/Subjects/SubjectFormPage")),
                   },
                   {
                     path: "/subjects/:id",
-                    ...page(() => import("@/pages/Assuntos/AssuntoFormPage")),
+                    ...page(() => import("@/pages/Subjects/SubjectFormPage")),
                   },
                   {
                     path: "/documents",
-                    ...page(() => import("@/pages/Documentos")),
+                    ...page(() => import("@/pages/Documents")),
                   },
                   {
                     path: "/agent",
-                    ...page(() => import("@/pages/Agente/Agente")),
+                    ...page(() => import("@/pages/Agent/Agent")),
                   },
                   {
                     path: "/agent/runs",
-                    ...page(() => import("@/pages/Agente/Execucoes")),
+                    ...page(() => import("@/pages/Agent/Runs")),
                   },
                   {
                     path: "/agent/runs/:id",
-                    ...page(() => import("@/pages/Agente/ExecucaoDetalhe")),
+                    ...page(() => import("@/pages/Agent/RunDetail")),
                   },
                 ],
               },
@@ -116,7 +116,7 @@ const router = createBrowserRouter([
         ],
       },
 
-      // 404 na própria URL digitada
+      // 404 on the typed URL itself
       { path: "*", ...page(() => import("@/pages/OtherPage/NotFound")) },
     ],
   },

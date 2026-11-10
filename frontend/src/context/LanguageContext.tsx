@@ -51,7 +51,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.setItem(STORAGE_KEY, language);
     } catch {
-      // localStorage indisponível: o idioma vale só nesta sessão
+      // localStorage unavailable: the language lasts only this session
     }
   }, [language, dir]);
 

@@ -6,7 +6,7 @@ import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router";
 
-/** Entrega ao cliente da API a função que obtém o access token do Auth0. */
+/** Gives the API client the function that gets the Auth0 access token. */
 function ApiTokenBridge() {
   const { getAccessTokenSilently } = useAuth0();
   useEffect(() => {
@@ -17,8 +17,8 @@ function ApiTokenBridge() {
 }
 
 /**
- * Rota raiz: envolve todas as páginas no Auth0Provider.
- * Fica dentro do roteador para poder navegar após o retorno do login.
+ * Root route: wraps every page in the Auth0Provider.
+ * It lives inside the router so it can navigate after the login redirect.
  */
 export default function AuthProvider() {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ export default function AuthProvider() {
         redirect_uri: `${window.location.origin}/login`,
         audience: auth0Config.audience,
       }}
-      // Mantém a sessão ao recarregar a página, sem depender de cookies de terceiros
+      // Keeps the session on page reload, without relying on third-party cookies
       useRefreshTokens
       cacheLocation="localstorage"
       onRedirectCallback={(appState) => {

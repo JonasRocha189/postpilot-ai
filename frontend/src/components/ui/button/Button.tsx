@@ -9,7 +9,7 @@ interface ButtonProps {
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
   className?: string; // Disabled state
-  type?: "button" | "submit"; // Sem type, dentro de um form, envia o form
+  type?: "button" | "submit"; // Without a type, inside a form, it submits the form
 }
 
 const Button: React.FC<ButtonProps> = ({

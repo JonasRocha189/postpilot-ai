@@ -34,7 +34,7 @@ export function isLocale(value: string | null | undefined): value is Locale {
   return locales.includes(value as Locale);
 }
 
-/** Converte um código qualquer (ex.: "pt", "en-US") para um idioma suportado. */
+/** Turns any code (e.g. "pt", "en-US") into a supported language. */
 export function toLocale(value: string | null | undefined): Locale | null {
   if (!value) return null;
   if (isLocale(value)) return value;

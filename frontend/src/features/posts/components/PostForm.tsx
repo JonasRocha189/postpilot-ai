@@ -6,8 +6,8 @@ import {
 import { FormInput, FormSelect } from "@/components/form/FormField";
 import Badge from "@/components/ui/badge/Badge";
 import Button from "@/components/ui/button/Button";
-import type { Assunto } from "@/features/assuntos/types";
-import { REDE_LABEL, STATUS_POST_COR, type Rede } from "@/lib/dominio";
+import type { Subject } from "@/features/subjects/types";
+import { NETWORK_LABEL, POST_STATUS_COLOR, type Network } from "@/lib/domain";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +20,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { LIMITE_CARACTERES } from "../redes";
+import { CHAR_LIMIT_BY_NETWORK } from "../networks";
 import {
   NETWORK_ORDER,
   newVariation,
@@ -37,8 +37,8 @@ import VariationEditor from "./VariationEditor";
  * date, format, images and text.
  */
 export default function PostForm({
-  projetoId,
-  assuntos,
+  projectId,
+  subjects,
   defaultValues,
   initialNetwork,
   onSubmit,
@@ -46,11 +46,11 @@ export default function PostForm({
   submitError,
 }: {
   /** Project of the post: images come from its library */
-  projetoId: string;
-  assuntos: Assunto[];
+  projectId: string;
+  subjects: Subject[];
   defaultValues: PostFormValues;
   /** Tab opened first (e.g. coming from the calendar) */
-  initialNetwork?: Rede | null;
+  initialNetwork?: Network | null;
   onSubmit: (values: PostFormValues) => Promise<unknown>;
   submitLabel: string;
   submitError?: string | null;
@@ -75,17 +75,17 @@ export default function PostForm({
   const variations = useWatch({ control, name: "variations" });
   const networks = fields.map((f) => f.network);
 
-  const [active, setActive] = useState<Rede>(() =>
+  const [active, setActive] = useState<Network>(() =>
     initialNetwork && networks.includes(initialNetwork)
       ? initialNetwork
       : (networks[0] ?? "instagram"),
   );
   const activeIndex = Math.max(0, networks.indexOf(active));
-  const tabRefs = useRef(new Map<Rede, HTMLButtonElement>());
+  const tabRefs = useRef(new Map<Network, HTMLButtonElement>());
   /** Unchecked networks keep their text here, in case they come back */
-  const removed = useRef(new Map<Rede, VariationFormValues>());
+  const removed = useRef(new Map<Network, VariationFormValues>());
 
-  const toggleNetwork = (network: Rede) => {
+  const toggleNetwork = (network: Network) => {
     const index = networks.indexOf(network);
     if (index === -1) {
       // Appended at the end; tabs and the API body use the fixed network order
@@ -159,7 +159,7 @@ export default function PostForm({
             {...register("subject_id")}
           >
             <option value="">{t("posts.form.subjectPlaceholder")}</option>
-            {assuntos.map((a) => (
+            {subjects.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
               </option>
@@ -185,12 +185,12 @@ export default function PostForm({
                         className="size-4 accent-brand-500"
                       />
                       <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {REDE_LABEL[n]}
+                        {NETWORK_LABEL[n]}
                       </span>
                     </span>
                     <span className="text-theme-xs text-gray-500 dark:text-gray-400">
                       {t("posts.form.networkHint", {
-                        limit: fmt.number(LIMITE_CARACTERES[n]),
+                        limit: fmt.number(CHAR_LIMIT_BY_NETWORK[n]),
                       })}
                     </span>
                   </label>
@@ -249,8 +249,8 @@ export default function PostForm({
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
                 )}
               >
-                {REDE_LABEL[n]}
-                <Badge color={STATUS_POST_COR[status]} size="sm">
+                {NETWORK_LABEL[n]}
+                <Badge color={POST_STATUS_COLOR[status]} size="sm">
                   {t(`domain.postStatus.${status}`)}
                 </Badge>
                 {hasErrors(index) && (
@@ -278,7 +278,7 @@ export default function PostForm({
             key={fields[activeIndex]?.id ?? active}
             index={activeIndex}
             network={networks[activeIndex] ?? active}
-            projectId={projetoId}
+            projectId={projectId}
             control={control}
             register={register}
             setValue={setValue}

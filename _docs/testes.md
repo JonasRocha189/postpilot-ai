@@ -18,8 +18,8 @@ Requisito do TCC: testes de **unidade, integração e aceite**. Nenhum teste cha
 
 - Configuração em `frontend/vitest.config.ts` (ambiente `jsdom`). O teste roda em modo **http**: `VITE_API_URL=http://api.test`, e o MSW responde (`onUnhandledFrame: "error"`, então qualquer chamada sem handler falha o teste).
 - `src/test/fakeApi.ts`: handlers do MSW que imitam o FastAPI, com dados em memória, um **log das requisições** (para conferir URL, query string e corpo) e helpers para preparar dados (`addProject`, `addSubject`, `addPost`, `addImage`).
-- `src/test/render.tsx`: `renderPage()` monta a página como no app (QueryClient novo por teste, `createMemoryRouter`, `ProjetoAtualProvider`, `ExigeProjeto`) e expõe a URL atual para conferir navegação.
-- O jsdom não tem `<canvas>`: o teste de integração do editor de arte (`src/test/integration/art.test.tsx`) substitui só o módulo de desenho (`features/arte/canvas.ts`) e confere o resto (tamanho, escolhas, upload e corpo do post). Os cálculos (quebra de linha, ajuste da fonte, recorte) têm teste de unidade em `features/arte/layout.test.ts`, e o desenho real é conferido no aceite (`e2e/tests/artwork.spec.ts`, pela cor dos pixels), para imagem única e carrossel.
+- `src/test/render.tsx`: `renderPage()` monta a página como no app (QueryClient novo por teste, `createMemoryRouter`, `CurrentProjectProvider`, `ExigeProjeto`) e expõe a URL atual para conferir navegação.
+- O jsdom não tem `<canvas>`: o teste de integração do editor de arte (`src/test/integration/art.test.tsx`) substitui só o módulo de desenho (`features/art/canvas.ts`) e confere o resto (tamanho, escolhas, upload e corpo do post). Os cálculos (quebra de linha, ajuste da fonte, recorte) têm teste de unidade em `features/art/layout.test.ts`, e o desenho real é conferido no aceite (`e2e/tests/artwork.spec.ts`, pela cor dos pixels), para imagem única e carrossel.
 - Limite de 15 s por teste (`testTimeout`), porque os fluxos longos de formulário passam dos 5 s padrão quando os arquivos rodam em paralelo.
 - O teste de traduções (`src/locales/locales.test.ts`) falha se uma chave existir só em um idioma ou se os `{placeholders}` forem diferentes.
 

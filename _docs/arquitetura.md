@@ -132,8 +132,8 @@ Regras de dependência:
 src/
 ├── pages/          # uma página por rota (React Router), carregadas sob demanda
 ├── components/     # layout, cabeçalho (seletor de projeto, saúde, usuário) e UI do TailAdmin
-├── features/       # um módulo por recurso: projetos, assuntos, posts, imagens, ideas,
-│   │               # documentos, agente, metricas, dashboard, calendario, health...
+├── features/       # um módulo por recurso: projects, subjects, posts, images, ideas,
+│   │               # documents, agent, metrics, dashboard, calendar, art, health...
 │   ├── */service.ts  # chamadas HTTP (ou a API fictícia no modo de demonstração)
 │   └── */api.ts      # hooks TanStack Query: única forma de as telas chamarem a API
 ├── lib/            # cliente HTTP com o token, Auth0 (login, saída por inatividade), formatação

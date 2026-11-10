@@ -1,13 +1,13 @@
-import CampoData from "@/components/form/CampoData";
+import DateField from "@/components/form/DateField";
 import { FormSelect } from "@/components/form/FormField";
-import CriarArte from "@/features/arte/components/CriarArte";
-import SeletorImagens from "@/features/imagens/components/SeletorImagens";
+import CreateArt from "@/features/art/components/CreateArt";
+import ImagePicker from "@/features/images/components/ImagePicker";
 import {
-  REDE_LABEL,
-  STATUS_POST,
-  type FormatoPost,
-  type Rede,
-} from "@/lib/dominio";
+  NETWORK_LABEL,
+  POST_STATUS,
+  type PostFormat,
+  type Network,
+} from "@/lib/domain";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/utils";
 import {
@@ -21,9 +21,13 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { FORMATOS_POR_REDE, LIMITE_CARACTERES, maximoImagens } from "../redes";
+import {
+  FORMATS_BY_NETWORK,
+  CHAR_LIMIT_BY_NETWORK,
+  maxImagesFor,
+} from "../networks";
 import type { PostFormValues } from "../schema";
-import EditorTexto from "./EditorTexto";
+import TextEditor from "./TextEditor";
 import { optionClass } from "./optionClass";
 
 /**
@@ -41,7 +45,7 @@ export default function VariationEditor({
   errors,
 }: {
   index: number;
-  network: Rede;
+  network: Network;
   /** Project of the post: images come from its library */
   projectId: string;
   control: Control<PostFormValues>;
@@ -54,24 +58,24 @@ export default function VariationEditor({
   const fmt = useFormat();
   const path = `variations.${index}` as const;
   const format = useWatch({ control, name: `${path}.format` });
-  const maxImages = maximoImagens(network, format);
+  const maxImages = maxImagesFor(network, format);
   const fieldErrors = errors.variations?.[index];
 
   const message = (key?: string, values: Record<string, unknown> = {}) =>
     key
       ? t(key, {
           max: maxImages,
-          limit: fmt.number(LIMITE_CARACTERES[network]),
-          network: REDE_LABEL[network],
+          limit: fmt.number(CHAR_LIMIT_BY_NETWORK[network]),
+          network: NETWORK_LABEL[network],
           ...values,
         })
       : undefined;
 
   /** Changing the format trims the images: text has none, single keeps the first. */
-  const chooseFormat = (next: FormatoPost) => {
+  const chooseFormat = (next: PostFormat) => {
     setValue(`${path}.format`, next, { shouldDirty: true });
     const images = getValues(`${path}.image_ids`);
-    const limit = maximoImagens(network, next);
+    const limit = maxImagesFor(network, next);
     if (images.length > limit) {
       setValue(`${path}.image_ids`, images.slice(0, limit), {
         shouldDirty: true,
@@ -88,7 +92,7 @@ export default function VariationEditor({
           hint={t("posts.form.statusHint")}
           {...register(`${path}.status`)}
         >
-          {STATUS_POST.map((s) => (
+          {POST_STATUS.map((s) => (
             <option key={s} value={s}>
               {t(`domain.postStatus.${s}`)}
             </option>
@@ -98,7 +102,7 @@ export default function VariationEditor({
           control={control}
           name={`${path}.expected_date`}
           render={({ field }) => (
-            <CampoData
+            <DateField
               id={`post-date-${network}`}
               label={t("posts.form.scheduledFor")}
               value={field.value}
@@ -115,12 +119,12 @@ export default function VariationEditor({
         <div
           className={cn(
             "grid grid-cols-1 gap-3",
-            FORMATOS_POR_REDE[network].length === 3
+            FORMATS_BY_NETWORK[network].length === 3
               ? "sm:grid-cols-3"
               : "sm:grid-cols-2",
           )}
         >
-          {FORMATOS_POR_REDE[network].map((f) => (
+          {FORMATS_BY_NETWORK[network].map((f) => (
             <label key={f} className={optionClass(f === format)}>
               <input
                 type="radio"
@@ -148,7 +152,9 @@ export default function VariationEditor({
           to={`/best-practices?network=${network}`}
           className="mt-2 inline-block text-theme-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
         >
-          {t("posts.form.seeBestPractices", { network: REDE_LABEL[network] })}
+          {t("posts.form.seeBestPractices", {
+            network: NETWORK_LABEL[network],
+          })}
         </Link>
       </fieldset>
 
@@ -158,22 +164,22 @@ export default function VariationEditor({
           name={`${path}.image_ids`}
           render={({ field }) => (
             <div className="space-y-4">
-              <SeletorImagens
-                projetoId={projectId}
+              <ImagePicker
+                projectId={projectId}
                 value={field.value}
                 onChange={field.onChange}
                 max={maxImages}
                 error={message(fieldErrors?.image_ids?.message)}
               />
               {/* Single image: replaces it; carousel: adds the slides at the end */}
-              <CriarArte
-                projetoId={projectId}
-                rede={network}
-                textoInicial={() => getValues("title")}
+              <CreateArt
+                projectId={projectId}
+                network={network}
+                initialText={() => getValues("title")}
                 maxSlides={
                   format === "single" ? 1 : maxImages - field.value.length
                 }
-                onCriadas={(images) => {
+                onCreated={(images) => {
                   const ids = images.map((i) => i.id);
                   field.onChange(
                     format === "single"
@@ -191,7 +197,7 @@ export default function VariationEditor({
         control={control}
         name={`${path}.content`}
         render={({ field }) => (
-          <EditorTexto
+          <TextEditor
             id={`post-content-${network}`}
             label={t("posts.form.content")}
             value={field.value}
