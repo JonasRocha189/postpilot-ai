@@ -36,25 +36,30 @@
 
 - **Projetos:** a marca do próprio usuário ou cada cliente, com público-alvo e tom de voz padrão (CRUD). Assuntos, documentos e conversas com o agente ficam dentro de um projeto, e o conteúdo de um cliente nunca se mistura com o de outro.
 - **Assuntos:** cadastro completo (CRUD) com descrição e, se quiser, público-alvo e tom de voz próprios.
-- **Posts e variações:** tela mestre/detalhe em que um post tem uma variação por rede (LinkedIn, Instagram, X), com texto, hashtags e imagem.
+- **Posts e variações:** tela mestre/detalhe em que um post tem uma variação por rede (LinkedIn, Instagram, X), com texto, formato, imagens da biblioteca, status e data prevista. As regras de cada rede (limite de caracteres, formatos) são validadas no frontend e no backend.
+- **Biblioteca de imagens e editor de arte:** imagens por projeto, usadas nas variações; o editor monta a arte (texto sobre cor ou foto, carrossel) no tamanho de cada rede.
+- **Ideias e calendário:** ideias salvas à mão ou pelo agente, que viram post com um clique; calendário pela data prevista.
 - **Documentos:** upload direto para o S3, extração de texto, chunking e indexação vetorial para RAG.
 - **Agente de IA**, em dois modos:
   - **Ideação:** sugere temas a partir de pesquisa na web, do histórico de posts e do desempenho anterior.
   - **Criação:** escreve o post com base nos documentos (RAG) e em posts aprovados (voz da marca), adapta-o para cada rede e gera a imagem.
   - Cada execução mostra os passos e as ferramentas usadas. O agente só salva rascunhos; aprovar e publicar é sempre decisão do usuário.
-- **Métricas e relatório:** registro de impressões, curtidas, comentários, compartilhamentos e cliques, com análise por assunto, rede, dia e horário.
+- **Métricas e dashboard:** importação do CSV que cada rede exporta (impressões, curtidas, comentários, compartilhamentos, cliques e horário de publicação) e um dashboard com posts por status, próximos posts, últimas execuções do agente e desempenho por rede, assunto e dia × horário. Os mesmos dados orientam as sugestões do agente (só com pelo menos 5 posts por grupo).
+- **Segurança da sessão:** login, cadastro e troca de senha pelo Auth0; saída automática após 30 minutos sem atividade.
 
 ## Acesso à aplicação
 
 | Item | Valor |
 | --- | --- |
-| URL de produção | https://postpilot.jonas-rocha.com *(em implantação)* |
-| Documentação da API | https://postpilot.jonas-rocha.com/api/docs *(em implantação)* |
+| URL de produção | https://postpilot.jonas-rocha.com |
+| Documentação da API | https://postpilot.jonas-rocha.com/api/docs |
 | Usuário de teste | [a definir] |
 | Senha de teste | [informada ao professor] |
 | Vídeo de apresentação | [a definir] |
 
 > O acesso ao repositório e ao pipeline deve ser liberado para **71724@sga.pucminas.br**.
+>
+> O backend roda no plano gratuito da Render, que dorme sem uso: a primeira requisição pode levar até um minuto (o indicador de saúde no cabeçalho mostra quando a API acordou).
 
 ## Tecnologias
 
@@ -67,7 +72,7 @@
 | Autenticação | Auth0 (OAuth 2.0 / OpenID Connect, Authorization Code + PKCE) |
 | Arquivos | AWS S3 (bucket privado, URLs pré-assinadas) |
 | Infraestrutura | Vercel (frontend), Render (backend em Docker), Neon (PostgreSQL) |
-| IaC | Terraform (AWS, Vercel, Render, Neon) |
+| IaC | Terraform (AWS: bucket S3, usuário IAM de menor privilégio, alerta de orçamento, estado remoto). Vercel, Render e Neon são configurados pelo painel |
 | CI/CD | GitHub Actions + GitHub Container Registry |
 | Testes | pytest, Testcontainers, moto/LocalStack, Vitest + Testing Library, Playwright |
 | Qualidade | Ruff, mypy, ESLint, Prettier, pre-commit |
@@ -86,30 +91,31 @@ Navegador ──HTTPS──> Vercel
 
 O agente usa o `create_agent` do LangChain (sobre o LangGraph), com o chat na OpenAI e fallback automático para o Groq. O código depende das interfaces do LangChain (`BaseChatModel`, `Embeddings`), então trocar de modelo é configuração. A busca nos documentos é própria: pgvector + full-text em SQL ([decisão 34](_docs/decisoes.md)).
 
-A documentação técnica está em [`_docs/`](_docs/README.md): [modelos C4](_docs/arquitetura.md) (contexto, contêineres, componentes), [diagrama de classes](_docs/modelo-de-dados.md), [agente e RAG](_docs/agente-e-rag.md), [API](_docs/api.md), [modelo de implantação](_docs/implantacao.md), [decisões](_docs/decisoes.md) e [changelog](_docs/changelog.md).
+A documentação técnica está em [`_docs/`](_docs/README.md): [descoberta de produto](_docs/produto.md) (Lean Canvas, personas, jornadas, histórias), [modelos C4](_docs/arquitetura.md) (contexto, contêineres, componentes), [diagrama de classes](_docs/modelo-de-dados.md), [agente e RAG](_docs/agente-e-rag.md), [API](_docs/api.md), [modelo de implantação](_docs/implantacao.md), [decisões](_docs/decisoes.md) e [changelog](_docs/changelog.md).
 
 ## Como executar localmente
 
-> Em construção: os comandos abaixo valem depois que a estrutura do projeto for criada.
-
-Pré-requisitos: Docker, [uv](https://docs.astral.sh/uv/) e Node.js.
+Pré-requisitos: Docker, [uv](https://docs.astral.sh/uv/) e Node.js 20+.
 
 ```bash
-# Ambiente completo (Postgres + pgvector, S3 simulado, backend e frontend)
-cp .env.example .env
+# Postgres + pgvector (porta 5433) e S3 simulado (LocalStack)
 docker compose up -d
 
-# Backend
+# Backend: http://127.0.0.1:8000/api/docs
 cd backend
+cp .env.example .env        # AUTH_DEV_USER=dev-user: aceita requisições sem token (só local)
 uv sync
 uv run alembic upgrade head
-uv run fastapi dev main.py               # http://127.0.0.1:8000/api/docs
+uv run fastapi dev main.py
 
-# Frontend
+# Frontend: http://localhost:5173
 cd frontend
+cp .env.example .env        # VITE_API_URL=http://localhost:8000 para usar o backend local
 npm ci
 npm run dev
 ```
+
+As chaves de IA (`OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY`) são opcionais localmente: sem elas, o agente e o processamento de documentos respondem que a IA não está configurada, e o restante funciona. Sem `VITE_API_URL`, o `npm run dev` usa uma API fictícia guardada no navegador (modo de demonstração, sem backend); sem `VITE_AUTH0_*`, entra com um usuário fictício (ver `frontend/.env.example`).
 
 ### Testes
 
@@ -122,38 +128,38 @@ cd e2e && npx playwright test                   # aceite (ver _docs/testes.md)
 
 ## Entregas
 
-- [ ] Lean Canvas
-- [ ] Personas
-- [ ] Jornadas dos usuários
-- [ ] Mapeamento de histórias de usuário
-- [ ] Modelos de contexto, contêineres, componentes, classes e implantação (C4)
-- [ ] Repositório e respectivo código-fonte
-- [ ] Pipeline CI/CD e artefatos IaC
-- [ ] Solução implantada em plataforma de computação em nuvem
+- [x] [Lean Canvas](_docs/produto.md#lean-canvas)
+- [x] [Personas](_docs/produto.md#personas)
+- [x] [Jornadas dos usuários](_docs/produto.md#jornadas-dos-usuários)
+- [x] [Mapeamento de histórias de usuário](_docs/produto.md#mapeamento-de-histórias-de-usuário)
+- [x] Modelos de [contexto, contêineres e componentes](_docs/arquitetura.md), [classes](_docs/modelo-de-dados.md) e [implantação](_docs/implantacao.md) (C4)
+- [x] Repositório e respectivo código-fonte (este repositório)
+- [x] Pipeline [CI/CD](.github/workflows/ci-cd.yml) e artefatos [IaC](infra/terraform/)
+- [x] Solução implantada em plataforma de computação em nuvem (https://postpilot.jonas-rocha.com)
 - [ ] Vídeo de até 15 minutos apresentando a solução (conforme template)
 
 ## Requisitos não-funcionais
 
 | | Requisito | Como é atendido |
 | --- | --- | --- |
-| [ ] | Acesso por navegador, com responsividade | React + Tailwind, layout mobile-first |
-| [ ] | Persistência em banco de dados | PostgreSQL 16 + pgvector |
-| [ ] | OAuth para autenticação e autorização das APIs | Auth0 (OIDC + PKCE), JWT validado no backend |
-| [ ] | Backend com API consumida pelo frontend | API REST FastAPI em `/api/v1` |
-| [ ] | Controle de versões na internet | GitHub |
-| [ ] | CI/CD com build, testes, publicação e IaC | GitHub Actions, GHCR, Terraform |
-| [ ] | Implantação em nuvem | Vercel + Render + Neon + AWS S3 |
-| [ ] | Declaração e isolamento de dependências | `uv.lock`, `package-lock.json`, imagens Docker |
-| [ ] | Configuração por variáveis de ambiente | pydantic-settings, variáveis da Render e da Vercel, GitHub Secrets |
-| [ ] | Logs como fluxo de eventos | JSON no stdout (structlog) |
-| [ ] | Testes de unidade, integração e aceite | pytest, Vitest, Testcontainers, Playwright |
-| [ ] | Ciclo de vida do usuário (cadastro e alteração de credenciais) | Auth0 |
+| [x] | Acesso por navegador, com responsividade | React + Tailwind, layout mobile-first |
+| [x] | Persistência em banco de dados | PostgreSQL 16 + pgvector |
+| [x] | OAuth para autenticação e autorização das APIs | Auth0 (OIDC + PKCE), JWT validado no backend |
+| [x] | Backend com API consumida pelo frontend | API REST FastAPI em `/api/v1` |
+| [x] | Controle de versões na internet | GitHub |
+| [x] | CI/CD com build, testes, publicação e IaC | GitHub Actions, GHCR, Terraform |
+| [x] | Implantação em nuvem | Vercel + Render + Neon + AWS S3 |
+| [x] | Declaração e isolamento de dependências | `uv.lock`, `package-lock.json`, imagens Docker |
+| [x] | Configuração por variáveis de ambiente | pydantic-settings, variáveis da Render e da Vercel, GitHub Secrets |
+| [x] | Logs como fluxo de eventos | JSON no stdout (structlog) |
+| [x] | Testes de unidade, integração e aceite | pytest, Vitest, Testcontainers, Playwright |
+| [x] | Ciclo de vida do usuário (cadastro e alteração de credenciais) | Auth0 |
 
 ## Requisitos funcionais
 
-- [ ] **CRUD completo:** Projeto, Assunto e Post
-- [ ] **Cadastro mestre/detalhe na mesma tela:** Post → Variações por rede
-- [ ] **Recurso de IA:** agente com RAG, busca na web e geração de imagem
+- [x] **CRUD completo:** Projeto, Assunto e Post (`/projects`, `/subjects`, `/posts`)
+- [x] **Cadastro mestre/detalhe na mesma tela:** Post → Variações por rede (`/posts/new`)
+- [x] **Recurso de IA:** agente com RAG, busca na web e geração de imagem (`/agent`, ver [agente e RAG](_docs/agente-e-rag.md))
 
 ## Fora do escopo
 

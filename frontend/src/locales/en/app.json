@@ -656,45 +656,6 @@
     "deleteMessage": "The image will be removed from the library and from storage. This can't be undone.",
     "deleteConflict": "This image is used by a post. Change or remove the image on those posts before deleting it."
   },
-  "metrics": {
-    "fields": {
-      "impressoes": "Impressions",
-      "curtidas": "Likes",
-      "comentarios": "Comments",
-      "compartilhamentos": "Shares",
-      "cliques": "Clicks"
-    },
-    "interactions": "Interactions",
-    "engagement": "Engagement",
-    "latest": "Last collected on {collected} · published on {published}",
-    "history": "Collection history",
-    "collectedAt": "Collected on",
-    "collectedAtHint": "When you checked the numbers on the network.",
-    "publishedAt": "Published on",
-    "actions": "Actions",
-    "deleteLabel": "Delete the collection from {date}",
-    "empty": "No metrics recorded yet.",
-    "notPublished": "To record metrics, mark the post as published and save it.",
-    "register": "Record metrics",
-    "registerTitle": "Record metrics",
-    "registerHint": "Copy the numbers the network shows for this post.",
-    "totalsHint": "Enter the totals at the time of collection (not just the change since the last one).",
-    "save": "Record",
-    "saveError": "Could not record the metrics. Please try again.",
-    "loadError": "Could not load the metrics.",
-    "deleteTitle": "Delete this collection?",
-    "deleteMessage": "These numbers will no longer count in the report. This cannot be undone.",
-    "errors": {
-      "number": "Enter a number.",
-      "integer": "Use a whole number.",
-      "negative": "Cannot be negative.",
-      "tooBig": "Number too large.",
-      "publishedRequired": "Enter when it was published.",
-      "collectedRequired": "Enter when the numbers were collected.",
-      "future": "Cannot be in the future.",
-      "beforePublished": "Collection cannot be before publication."
-    }
-  },
   "art": {
     "ctaTitle": "Create artwork for the post",
     "ctaHint": "Colored background or a library photo, with text, in the right size for {network}.",

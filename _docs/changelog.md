@@ -12,6 +12,21 @@ Formato de cada entrada:
 
 ---
 
+## 2026-11-10
+
+### Adicionado
+
+- Infra: **backup diário do banco** (`.github/workflows/backup.yml`): `pg_dump` do Neon às 06:00 UTC enviado para `backups/` no S3, com um usuário IAM que só pode gravar ali e retenção de 30 dias (Terraform). Restauração documentada em `implantacao.md`.
+- Docs: **descoberta de produto** (`_docs/produto.md`): Lean Canvas, personas (social media freelancer e dono de pequena empresa), jornadas dos usuários (diagramas Mermaid) e mapeamento de histórias com MVP, versão 1.1 e roadmap.
+
+### Alterado
+
+- Docs: **arquitetura C4** reescrita conforme o código em produção (OpenAI + Groq + LangSmith no contexto, tarefas em segundo plano nos contêineres, componentes reais do backend e do frontend). **README** fechado: URL de produção, funcionalidades atuais, como executar localmente corrigido (o `docker compose` sobe só o Postgres e o S3) e entregas e requisitos marcados. Status da implantação atualizado.
+
+### Removido
+
+- Frontend: o cadastro manual de métricas por variação (`MetricaForm`, `MetricasVariacao`, `calculo.ts`, `schema.ts`, 3 hooks e os textos `metrics.*`), que não estava em nenhuma tela e chamava endpoints que o backend não tem. As métricas entram só pela importação de CSV. Saem também da `api.md` os três endpoints que nunca existiram (`/variations/{id}/metrics` e `DELETE /metrics/{id}`).
+
 ## 2026-11-09
 
 ### Adicionado

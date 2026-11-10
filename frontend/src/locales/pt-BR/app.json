@@ -656,45 +656,6 @@
     "deleteMessage": "A imagem será removida da biblioteca e do armazenamento. Esta ação não pode ser desfeita.",
     "deleteConflict": "Esta imagem é usada por algum post. Troque ou remova a imagem desses posts antes de excluir."
   },
-  "metrics": {
-    "fields": {
-      "impressoes": "Impressões",
-      "curtidas": "Curtidas",
-      "comentarios": "Comentários",
-      "compartilhamentos": "Compartilhamentos",
-      "cliques": "Cliques"
-    },
-    "interactions": "Interações",
-    "engagement": "Engajamento",
-    "latest": "Última coleta em {collected} · publicado em {published}",
-    "history": "Histórico de coletas",
-    "collectedAt": "Coletado em",
-    "collectedAtHint": "Quando você consultou os números na rede.",
-    "publishedAt": "Publicado em",
-    "actions": "Ações",
-    "deleteLabel": "Excluir a coleta de {date}",
-    "empty": "Nenhuma métrica registrada ainda.",
-    "notPublished": "Para registrar métricas, marque o post como publicado e salve.",
-    "register": "Registrar métricas",
-    "registerTitle": "Registrar métricas",
-    "registerHint": "Copie os números que a rede mostra para esta publicação.",
-    "totalsHint": "Informe os totais até o momento da coleta (não só o que mudou desde a anterior).",
-    "save": "Registrar",
-    "saveError": "Não foi possível registrar as métricas. Tente novamente.",
-    "loadError": "Não foi possível carregar as métricas.",
-    "deleteTitle": "Excluir esta coleta?",
-    "deleteMessage": "Os números desta coleta deixarão de contar no relatório. Esta ação não pode ser desfeita.",
-    "errors": {
-      "number": "Informe um número.",
-      "integer": "Use um número inteiro.",
-      "negative": "Não pode ser negativo.",
-      "tooBig": "Número grande demais.",
-      "publishedRequired": "Informe quando foi publicado.",
-      "collectedRequired": "Informe quando os números foram coletados.",
-      "future": "Não pode ser no futuro.",
-      "beforePublished": "A coleta não pode ser antes da publicação."
-    }
-  },
   "art": {
     "ctaTitle": "Criar arte para o post",
     "ctaHint": "Fundo colorido ou foto da biblioteca, com texto, no tamanho certo do {network}.",

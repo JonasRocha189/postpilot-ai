@@ -67,9 +67,6 @@ A API não sobe sem `AUTH0_DOMAIN` e `AUTH0_AUDIENCE`, a não ser que `AUTH_DEV_
 | DELETE | `/ideas/{id}` | Remove a ideia. O post criado a partir dela continua |
 | **Metrics e relatório** | | |
 | POST | `/metrics/import` | Importa a exportação de uma rede de uma vez (corpo abaixo, [decisão 32](decisoes.md)). **Tudo ou nada:** `422` se alguma linha apontar para uma variação que não é do usuário, não é da rede informada ou não está `published`, se algum número for negativo ou se `collected_at` for antes de algum `published_at`. Responde `201` com `{created}` |
-| GET | `/variations/{id}/metrics` | Coletas da variação, da mais recente para a mais antiga |
-| POST | `/variations/{id}/metrics` | Registra uma coleta (corpo abaixo). `422` se o post não estiver `published`, se algum número for negativo, se `collected_at` for antes de `published_at` ou se alguma data estiver no futuro |
-| DELETE | `/metrics/{id}` | Remove uma coleta (para corrigir um registro errado) |
 | GET | `/reports/performance` 🅿 | Os números mais recentes de cada variação com métricas do projeto (resposta abaixo). O frontend agrupa por rede, assunto e dia × horário para os gráficos do dashboard; a tool `analyze_performance` lê os mesmos dados (`services/performance.py`) |
 | **Documents** | | |
 | GET | `/documents` 🅿 | Lista os documentos do projeto (mais recentes primeiro), com status de processamento |
@@ -177,24 +174,11 @@ Ficam numa **biblioteca por projeto** ([decisão 22](decisoes.md)); cada variaç
 ```
 
 - Cada linha vira um registro de `Metric` com o `collected_at` do corpo. O `published_at` leva o horário do arquivo quando a coluna de data tem hora (é o que alimenta o dia × horário do relatório); data sem hora vai ao meio-dia UTC, para continuar no mesmo dia em qualquer fuso. O frontend casa a linha com a variação pela data (`expected_date`).
+- As métricas entram só pela importação (decisão 32); não há cadastro manual de uma coleta.
 - O frontend já filtra: só envia linhas sem erro, associadas e com `published_at` até a data da coleta.
 
-**Corpo de `POST /variations/{id}/metrics`:**
-
-```json
-{
-  "published_at": "2026-10-19T18:00:00Z",
-  "collected_at": "2026-10-26T18:00:00Z",
-  "impressions": 2720,
-  "likes": 65,
-  "comments": 13,
-  "shares": 9,
-  "clicks": 22
-}
-```
-
 - Os números são o **total acumulado** no momento da coleta (o que a rede mostra), não a diferença desde a coleta anterior. A coleta mais recente é a que vale.
-- Taxa de engajamento = (likes + comments + shares + clicks) ÷ impressions. Mesma regra no frontend (`features/metricas/calculo.ts`) e no relatório.
+- Taxa de engajamento = (likes + comments + shares + clicks) ÷ impressions. Mesma regra no dashboard (`features/dashboard/metrics.ts`) e na tool `analyze_performance` (`services/performance.py`).
 
 ## Resposta de `GET /reports/performance`
 

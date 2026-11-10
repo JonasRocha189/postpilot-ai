@@ -4,6 +4,7 @@ Documentação técnica do projeto. A visão geral, como executar e os requisito
 
 | Documento | Conteúdo |
 | --- | --- |
+| [Descoberta de produto](produto.md) | Lean Canvas, personas, jornadas dos usuários e mapeamento de histórias |
 | [Arquitetura (C4)](arquitetura.md) | Diagramas de contexto, contêineres e componentes |
 | [Modelo de dados](modelo-de-dados.md) | Diagrama de classes e entidades |
 | [Agente e RAG](agente-e-rag.md) | Loop do agente, tools, pipeline de documentos e busca híbrida |

@@ -43,4 +43,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "app" {
       days_after_initiation = 1
     }
   }
+
+  # Database dumps (.github/workflows/backup.yml): the last 30 days are kept
+  rule {
+    id     = "expire-backups"
+    status = "Enabled"
+    filter {
+      prefix = "backups/"
+    }
+    expiration {
+      days = 30
+    }
+  }
 }
