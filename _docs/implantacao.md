@@ -144,6 +144,7 @@ O projeto da Vercel usa Root Directory `frontend` e o preset Vite (`npm run buil
 
 - Em produção, `VITE_API_URL` fica **vazio**: o cliente HTTP chama `/api/v1` na mesma origem.
 - **Variáveis da Vercel (Production), todas públicas:** `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE` (`https://postpilot.jonas-rocha.com/api`) e `VITE_AUTH0_DB_CONNECTION` (`Username-Password-Authentication`, o nome da conexão de usuários do Auth0, **não** o Postgres). Tipo **Config**: a Vercel avisa que o prefixo `VITE_` expõe o valor, e aqui isso é o esperado.
+- **Aplicação no Auth0 (Settings):** o Auth0 só redireciona para endereços cadastrados. **Allowed Callback URLs** e **Allowed Web Origins**: `https://postpilot.jonas-rocha.com, http://localhost:5173`; **Allowed Logout URLs**: `https://postpilot.jonas-rocha.com/login, http://localhost:5173/login`. Sem a URL de logout, sair da conta para numa página de erro do Auth0 em vez de voltar ao login.
 - **Nunca coloque segredo numa variável `VITE_*`:** o Vite grava o valor no JavaScript público, e qualquer um lê pelo DevTools; deployments antigos da Vercel continuam servindo o bundle antigo. Segredos ficam só na Render (backend) e no GitHub Secrets (pipeline). Se um segredo vazar num bundle, troque-o na origem (ex.: senha do Neon), não basta corrigir a variável. Para conferir o bundle publicado: baixar o `/assets/index-*.js` e procurar `npg_` ou `postgres`.
 - Uma variável **Sensitive** da Vercel não volta a ser Config: remova e crie de novo (`vercel env add <nome> --environment production --type config --value <valor>`, que evita colar da área de transferência).
 - **Limite com a Render gratuita:** se o backend estiver dormindo, a primeira chamada pelo rewrite pode estourar o tempo de espera da Vercel; as seguintes funcionam (o TanStack Query tenta de novo).
@@ -164,6 +165,8 @@ Web service criado pelo painel a partir da imagem do GHCR (**Existing Image**: `
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Chave do usuário IAM `postpilot-backend` (`terraform output -raw backend_secret_access_key \| clip`, sem mostrar na tela) |
 | `CORS_ORIGINS` | `[]` (mesma origem pela Vercel) |
 | `LOG_JSON` | `true` |
+| `OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY` | Chaves dos provedores de IA (chat, fallback, embeddings, imagem e busca web) |
+| `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | `true`, chave criada só para este projeto (Settings → API Keys no LangSmith) e `postpilot`. Lidas direto do ambiente pela biblioteca `langsmith`, não pelo `Settings`. Cada execução do agente aparece como `agent-run-{id}`, com a tag do modo (`creation` ou `ideation`) |
 
 - **Ficam de fora:** `S3_ENDPOINT_URL` (vazio = AWS de verdade), `AUTH_DEV_USER` (o padrão vazio exige token) e `PORT` (a Render define).
 - **Atenção ao `DATABASE_URL`:** o Neon entrega `postgresql://...?sslmode=require&channel_binding=require`. O driver asyncpg não aceita `sslmode` nem `channel_binding` (`TypeError: connect() got an unexpected keyword argument 'sslmode'`), então troque o prefixo por `postgresql+asyncpg://` e deixe só `?ssl=require`, com um único `?`.
