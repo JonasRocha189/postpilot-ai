@@ -16,6 +16,8 @@ Formato de cada entrada:
 
 ### Alterado
 
+- Docs: URLs permitidas da aplicação no Auth0 (callback, web origins e logout) em `implantacao.md`. Sem a de logout, sair da conta parava numa página de erro do Auth0.
+- Infra: **LangSmith ligado em produção** (variáveis `LANGSMITH_*` na Render); cada execução do agente aparece como `agent-run-{id}` no projeto `postpilot`. As variáveis da Render, incluindo as chaves de IA, documentadas em `implantacao.md`. Testes e CI continuam sem rastreio.
 - Frontend: **código em inglês** (decisão 20). Pastas, arquivos, componentes, hooks, tipos, variáveis e comentários renomeados do português para o inglês (`features/assuntos` → `features/subjects`, `useProjetoAtual` → `useCurrentProject`, `EditorArte` → `ArtEditor`...). Nenhuma mudança de comportamento: os textos da interface (i18n), as URLs e os valores guardados (ex.: faixas de horário) continuam iguais. Typecheck, lint, 139 testes Vitest e 10 testes Playwright passando.
 
 ### Adicionado
